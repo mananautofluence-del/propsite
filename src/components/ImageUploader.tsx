@@ -27,7 +27,7 @@ export default function ImageUploader({ images, onChange, maxFiles = 10 }: Image
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const newFiles = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+      const newFiles = Array.from(e.dataTransfer.files as Iterable<File>).filter(file => file.type.startsWith('image/'));
       const combined = [...images, ...newFiles].slice(0, maxFiles);
       onChange(combined);
     }
@@ -35,7 +35,7 @@ export default function ImageUploader({ images, onChange, maxFiles = 10 }: Image
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files).filter(file => file.type.startsWith('image/'));
+      const newFiles = Array.from(e.target.files as Iterable<File>).filter(file => file.type.startsWith('image/'));
       const combined = [...images, ...newFiles].slice(0, maxFiles);
       onChange(combined);
     }

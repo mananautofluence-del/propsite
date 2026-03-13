@@ -11,20 +11,23 @@ import CreateListing from './pages/CreateListing';
 import CreateBrochure from './pages/CreateBrochure';
 import ListingView from './pages/ListingView';
 import BrochureView from './pages/BrochureView';
+import { AuthProvider } from './contexts/AuthContext';
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="create-listing" element={<CreateListing />} />
-          <Route path="create-brochure" element={<CreateBrochure />} />
-          <Route path="listing/:slug" element={<ListingView />} />
-          <Route path="brochure/:slug" element={<BrochureView />} />
-        </Route>
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="create-listing" element={<CreateListing />} />
+            <Route path="create-brochure" element={<CreateBrochure />} />
+            <Route path="listing/:id" element={<ListingView />} />
+            <Route path="brochure/:id" element={<BrochureView />} />
+          </Route>
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }

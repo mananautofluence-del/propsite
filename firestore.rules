@@ -10,11 +10,11 @@ service cloud.firestore {
     //
     // Collection: listings
     // Document ID: {listingId}
-    // Fields: userId, title, price, city, locality, slug, createdAt, etc.
+    // Fields: ownerId, title, price, city, locality, slug, createdAt, etc.
     //
     // Collection: brochures
     // Document ID: {brochureId}
-    // Fields: userId, projectName, developerName, city, locality, slug, createdAt, etc.
+    // Fields: ownerId, projectName, developerName, city, locality, slug, createdAt, etc.
     // ===============================================================
 
     // ===============================================================
@@ -27,13 +27,13 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     function isDocOwner() {
-      return isAuthenticated() && request.auth.uid == resource.data.userId;
+      return isAuthenticated() && request.auth.uid == resource.data.ownerId;
     }
     function uidUnchanged() {
-      return !('userId' in request.resource.data) || request.resource.data.userId == request.auth.uid;
+      return !('ownerId' in request.resource.data) || request.resource.data.ownerId == request.auth.uid;
     }
     function uidNotModified() {
-      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+      return !('ownerId' in request.resource.data) || request.resource.data.ownerId == resource.data.ownerId;
     }
     function isValidEmail(email) {
       return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
@@ -51,24 +51,22 @@ service cloud.firestore {
     }
 
     function isValidListing(data) {
-      return data.keys().hasAll(['userId', 'title', 'price', 'city', 'locality', 'slug', 'createdAt']) &&
-             data.userId is string && data.userId.size() > 0 && data.userId.size() < 50 &&
+      return data.keys().hasAll(['ownerId', 'title', 'price', 'city', 'locality', 'createdAt']) &&
+             data.ownerId is string && data.ownerId.size() > 0 && data.ownerId.size() < 50 &&
              data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
              data.price is string && data.price.size() > 0 && data.price.size() < 50 &&
              data.city is string && data.city.size() > 0 && data.city.size() < 50 &&
              data.locality is string && data.locality.size() > 0 && data.locality.size() < 100 &&
-             data.slug is string && data.slug.size() > 0 && data.slug.size() < 150 &&
              data.createdAt is timestamp;
     }
 
     function isValidBrochure(data) {
-      return data.keys().hasAll(['userId', 'projectName', 'developerName', 'city', 'locality', 'slug', 'createdAt']) &&
-             data.userId is string && data.userId.size() > 0 && data.userId.size() < 50 &&
+      return data.keys().hasAll(['ownerId', 'projectName', 'developerName', 'city', 'locality', 'createdAt']) &&
+             data.ownerId is string && data.ownerId.size() > 0 && data.ownerId.size() < 50 &&
              data.projectName is string && data.projectName.size() > 0 && data.projectName.size() < 100 &&
              data.developerName is string && data.developerName.size() > 0 && data.developerName.size() < 100 &&
              data.city is string && data.city.size() > 0 && data.city.size() < 50 &&
              data.locality is string && data.locality.size() > 0 && data.locality.size() < 100 &&
-             data.slug is string && data.slug.size() > 0 && data.slug.size() < 150 &&
              data.createdAt is timestamp;
     }
 

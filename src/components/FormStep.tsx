@@ -12,6 +12,7 @@ interface FormStepProps {
   isLastStep?: boolean;
   nextLabel?: string;
   isValid?: boolean;
+  isSubmitting?: boolean;
 }
 
 export default function FormStep({
@@ -24,6 +25,7 @@ export default function FormStep({
   isLastStep,
   nextLabel = 'Continue',
   isValid = true,
+  isSubmitting = false,
 }: FormStepProps) {
   return (
     <div className="flex flex-col h-full min-h-[calc(100vh-4rem)] bg-slate-50">
@@ -39,27 +41,34 @@ export default function FormStep({
       </div>
 
       <div className="sticky bottom-0 w-full bg-white border-t border-slate-200 p-4 sm:px-6 z-10">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          {!isFirstStep ? (
-            <Button 
-              variant="outline" 
-              onClick={onPrev}
-              className="w-full sm:w-auto"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back
-            </Button>
-          ) : (
-            <div /> // Spacer
-          )}
+        <div className="max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center w-full sm:w-auto order-2 sm:order-1">
+            {!isFirstStep && (
+              <Button 
+                variant="outline" 
+                onClick={onPrev}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back
+              </Button>
+            )}
+          </div>
           
-          <Button 
-            onClick={onNext} 
-            disabled={!isValid}
-            className="w-full sm:w-auto min-w-[140px]"
-          >
-            {isLastStep ? 'Generate Page' : nextLabel}
-            {!isLastStep && <ArrowRight className="w-4 h-4 ml-2" />}
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto order-1 sm:order-2">
+            {!isValid && !isSubmitting && (
+              <span className="text-sm text-red-500 font-medium">
+                Please fill in all required fields
+              </span>
+            )}
+            <Button 
+              onClick={onNext} 
+              disabled={!isValid || isSubmitting}
+              className="w-full sm:w-auto min-w-[140px]"
+            >
+              {isLastStep ? (nextLabel !== 'Continue' ? nextLabel : 'Generate Page') : nextLabel}
+              {!isLastStep && <ArrowRight className="w-4 h-4 ml-2" />}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

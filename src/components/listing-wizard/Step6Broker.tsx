@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useListingStore } from '@/src/store/useListingStore';
 import FormStep from '../FormStep';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { UploadCloud, X } from 'lucide-react';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { uploadFile, uploadFiles } from '@/src/lib/storage';
+import { db, auth } from '@/src/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Step6Broker() {
-  const { data, updateData, prevStep } = useListingStore();
+  const { data, updateData, prevStep, reset } = useListingStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, signIn } = useAuth();
+  const navigate = useNavigate();
 
   const isValid = data.brokerName.trim() !== '' && data.brokerPhone.trim() !== '';
 
@@ -22,14 +29,68 @@ export default function Step6Broker() {
   };
 
   const handleSubmit = async () => {
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        await signIn();
+        // After signIn, we need to get the current user from auth since context might not have updated yet
+        currentUser = auth.currentUser;
+        if (!currentUser) return;
+      } catch (error) {
+        console.error('Sign in failed:', error);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
-      // TODO: Implement Firebase upload and save logic
-      console.log('Submitting data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-      alert('Listing created successfully! (Mock)');
+      // 1. Upload images
+      const imageUrls = await uploadFiles(data.images, `listings/${currentUser.uid}`);
+      
+      // 2. Upload broker photo if exists
+      let brokerPhotoUrl = null;
+      if (data.brokerPhoto) {
+        brokerPhotoUrl = await uploadFile(data.brokerPhoto, `brokers/${currentUser.uid}`);
+      }
+
+      // 3. Save to Firestore
+      const listingData = {
+        title: data.title,
+        propertyType: data.propertyType,
+        configuration: data.configuration,
+        carpetArea: data.carpetArea,
+        price: data.price,
+        city: data.city,
+        locality: data.locality,
+        possessionStatus: data.possessionStatus,
+        images: imageUrls,
+        bedrooms: data.bedrooms,
+        bathrooms: data.bathrooms,
+        parking: data.parking,
+        floorNumber: data.floorNumber,
+        totalFloors: data.totalFloors,
+        furnishingStatus: data.furnishingStatus,
+        highlights: data.highlights,
+        locationAdvantages: data.locationAdvantages,
+        mapLink: data.mapLink,
+        brokerName: data.brokerName,
+        brokerPhone: data.brokerPhone,
+        brokerCompany: data.brokerCompany,
+        brokerWhatsapp: data.brokerWhatsapp,
+        brokerPhotoUrl: brokerPhotoUrl,
+        ownerId: currentUser.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        status: 'active'
+      };
+
+      const docRef = await addDoc(collection(db, 'listings'), listingData);
+      
+      reset();
+      navigate(`/listing/${docRef.id}`);
     } catch (error) {
       console.error('Error creating listing:', error);
+      alert('Failed to create listing. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -42,8 +103,9 @@ export default function Step6Broker() {
       onNext={handleSubmit}
       onPrev={prevStep}
       isLastStep
-      isValid={isValid && !isSubmitting}
-      nextLabel={isSubmitting ? 'Generating...' : 'Generate Page'}
+      isValid={isValid}
+      isSubmitting={isSubmitting}
+      nextLabel={isSubmitting ? 'Generating...' : (user ? 'Generate Page' : 'Sign in to Generate')}
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

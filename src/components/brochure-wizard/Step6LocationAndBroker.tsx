@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useBrochureStore } from '@/src/store/useBrochureStore';
 import FormStep from '../FormStep';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Button } from '../ui/button';
 import { UploadCloud, X, Plus, MapPin } from 'lucide-react';
+import { useAuth } from '@/src/contexts/AuthContext';
+import { uploadFile, uploadFiles } from '@/src/lib/storage';
+import { db, auth } from '@/src/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Step6LocationAndBroker() {
-  const { data, updateData, prevStep } = useBrochureStore();
+  const { data, updateData, prevStep, reset } = useBrochureStore();
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, signIn } = useAuth();
+  const navigate = useNavigate();
 
   const isValid = data.brokerName.trim() !== '' && data.brokerPhone.trim() !== '';
 
@@ -44,14 +51,79 @@ export default function Step6LocationAndBroker() {
   };
 
   const handleSubmit = async () => {
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        await signIn();
+        currentUser = auth.currentUser;
+        if (!currentUser) return;
+      } catch (error) {
+        console.error('Sign in failed:', error);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
-      // TODO: Implement Firebase upload and save logic
-      console.log('Submitting data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
-      alert('Brochure created successfully! (Mock)');
+      // 1. Upload Hero Image
+      let heroImageUrl = null;
+      if (data.heroImage) {
+        heroImageUrl = await uploadFile(data.heroImage, `brochures/${currentUser.uid}/hero`);
+      }
+
+      // 2. Upload Gallery Images
+      const galleryImageUrls = await uploadFiles(data.galleryImages, `brochures/${currentUser.uid}/gallery`);
+
+      // 3. Upload Floor Plans
+      const floorPlanPromises = data.floorPlans.map(async (plan) => {
+        const url = await uploadFile(plan.file, `brochures/${currentUser.uid}/floorplans`);
+        return { label: plan.label, url };
+      });
+      const floorPlansData = await Promise.all(floorPlanPromises);
+
+      // 4. Upload broker photo if exists
+      let brokerPhotoUrl = null;
+      if (data.brokerPhoto) {
+        brokerPhotoUrl = await uploadFile(data.brokerPhoto, `brokers/${currentUser.uid}`);
+      }
+
+      // 5. Save to Firestore
+      const brochureData = {
+        projectName: data.projectName,
+        developerName: data.developerName,
+        city: data.city,
+        locality: data.locality,
+        tagline: data.tagline,
+        heroImageUrl,
+        galleryImages: galleryImageUrls,
+        videoUrl: data.videoUrl,
+        configurations: data.configurations,
+        startingPrice: data.startingPrice,
+        landParcel: data.landParcel,
+        towerCount: data.towerCount,
+        possessionDate: data.possessionDate,
+        amenities: data.amenities,
+        floorPlans: floorPlansData,
+        locationAdvantages: data.locationAdvantages,
+        mapLink: data.mapLink,
+        brokerName: data.brokerName,
+        brokerPhone: data.brokerPhone,
+        brokerCompany: data.brokerCompany,
+        brokerWhatsapp: data.brokerWhatsapp,
+        brokerPhotoUrl,
+        ownerId: currentUser.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        status: 'active'
+      };
+
+      const docRef = await addDoc(collection(db, 'brochures'), brochureData);
+      
+      reset();
+      navigate(`/brochure/${docRef.id}`);
     } catch (error) {
       console.error('Error creating brochure:', error);
+      alert('Failed to create brochure. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,8 +136,9 @@ export default function Step6LocationAndBroker() {
       onNext={handleSubmit}
       onPrev={prevStep}
       isLastStep
-      isValid={isValid && !isSubmitting}
-      nextLabel={isSubmitting ? 'Generating...' : 'Generate Brochure'}
+      isValid={isValid}
+      isSubmitting={isSubmitting}
+      nextLabel={isSubmitting ? 'Generating...' : (user ? 'Generate Brochure' : 'Sign in to Generate')}
     >
       <div className="space-y-10">
         {/* Location Advantages */}
