@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: users
+    // Document ID: {userId}
+    // Fields: email, role, createdAt
+    //
+    // Collection: listings
+    // Document ID: {listingId}
+    // Fields: userId, title, price, city, locality, slug, createdAt, etc.
+    //
+    // Collection: brochures
+    // Document ID: {brochureId}
+    // Fields: userId, projectName, developerName, city, locality, slug, createdAt, etc.
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    function uidUnchanged() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == request.auth.uid;
+    }
+    function uidNotModified() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+    }
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role', 'createdAt']) &&
+             data.email is string && isValidEmail(data.email) &&
+             data.email.size() < 100 &&
+             data.role in ['user', 'admin'] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidListing(data) {
+      return data.keys().hasAll(['userId', 'title', 'price', 'city', 'locality', 'slug', 'createdAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 50 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.price is string && data.price.size() > 0 && data.price.size() < 50 &&
+             data.city is string && data.city.size() > 0 && data.city.size() < 50 &&
+             data.locality is string && data.locality.size() > 0 && data.locality.size() < 100 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() < 150 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidBrochure(data) {
+      return data.keys().hasAll(['userId', 'projectName', 'developerName', 'city', 'locality', 'slug', 'createdAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 50 &&
+             data.projectName is string && data.projectName.size() > 0 && data.projectName.size() < 100 &&
+             data.developerName is string && data.developerName.size() > 0 && data.developerName.size() < 100 &&
+             data.city is string && data.city.size() > 0 && data.city.size() < 50 &&
+             data.locality is string && data.locality.size() > 0 && data.locality.size() < 100 &&
+             data.slug is string && data.slug.size() > 0 && data.slug.size() < 150 &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == 'user';
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role;
+      allow delete: if isOwner(userId);
+    }
+
+    match /listings/{listingId} {
+      allow read: if true; // Publicly readable for sharing
+      allow create: if isAuthenticated() && uidUnchanged() && isValidListing(request.resource.data);
+      allow update: if isDocOwner() && uidNotModified() && isValidListing(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+
+    match /brochures/{brochureId} {
+      allow read: if true; // Publicly readable for sharing
+      allow create: if isAuthenticated() && uidUnchanged() && isValidBrochure(request.resource.data);
+      allow update: if isDocOwner() && uidNotModified() && isValidBrochure(request.resource.data);
+      allow delete: if isDocOwner();
+    }
+  }
+}

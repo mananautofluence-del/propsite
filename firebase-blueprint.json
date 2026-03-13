@@ -1,0 +1,245 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Information about a user.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin"],
+          "description": "The user's role."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the user was created."
+        }
+      },
+      "required": ["email", "role", "createdAt"]
+    },
+    "Listing": {
+      "title": "Property Listing",
+      "description": "A property listing created by a broker.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who created the listing."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the property."
+        },
+        "propertyType": {
+          "type": "string",
+          "description": "The type of property (e.g., Apartment, Villa)."
+        },
+        "configuration": {
+          "type": "string",
+          "description": "The configuration (e.g., 2 BHK)."
+        },
+        "carpetArea": {
+          "type": "string",
+          "description": "The carpet area."
+        },
+        "price": {
+          "type": "string",
+          "description": "The price of the property."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city where the property is located."
+        },
+        "locality": {
+          "type": "string",
+          "description": "The locality where the property is located."
+        },
+        "possessionStatus": {
+          "type": "string",
+          "description": "The possession status."
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of image URLs."
+        },
+        "coverImage": {
+          "type": "string",
+          "description": "The cover image URL."
+        },
+        "details": {
+          "type": "object",
+          "properties": {
+            "bedrooms": { "type": "string" },
+            "bathrooms": { "type": "string" },
+            "parking": { "type": "string" },
+            "floorNumber": { "type": "string" },
+            "totalFloors": { "type": "string" },
+            "furnishingStatus": { "type": "string" }
+          }
+        },
+        "highlights": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "locationAdvantages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mapLink": {
+          "type": "string"
+        },
+        "brokerInfo": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "phone": { "type": "string" },
+            "company": { "type": "string" },
+            "whatsapp": { "type": "boolean" },
+            "photoUrl": { "type": "string" }
+          }
+        },
+        "slug": {
+          "type": "string",
+          "description": "The unique slug for the listing."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "title", "price", "city", "locality", "slug", "createdAt"]
+    },
+    "Brochure": {
+      "title": "Project Brochure",
+      "description": "A project brochure created by a broker.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who created the brochure."
+        },
+        "projectName": {
+          "type": "string",
+          "description": "The name of the project."
+        },
+        "developerName": {
+          "type": "string",
+          "description": "The name of the developer."
+        },
+        "city": {
+          "type": "string",
+          "description": "The city where the project is located."
+        },
+        "locality": {
+          "type": "string",
+          "description": "The locality where the project is located."
+        },
+        "tagline": {
+          "type": "string",
+          "description": "The tagline of the project."
+        },
+        "heroImage": {
+          "type": "string",
+          "description": "The hero image URL."
+        },
+        "galleryImages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of gallery image URLs."
+        },
+        "videoUrl": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object",
+          "properties": {
+            "configurations": { "type": "string" },
+            "startingPrice": { "type": "string" },
+            "landParcel": { "type": "string" },
+            "towerCount": { "type": "string" },
+            "possessionDate": { "type": "string" }
+          }
+        },
+        "amenities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "floorPlans": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "imageUrl": { "type": "string" }
+            }
+          }
+        },
+        "locationAdvantages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mapLink": {
+          "type": "string"
+        },
+        "brokerInfo": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "phone": { "type": "string" },
+            "company": { "type": "string" },
+            "whatsapp": { "type": "boolean" },
+            "photoUrl": { "type": "string" }
+          }
+        },
+        "slug": {
+          "type": "string",
+          "description": "The unique slug for the brochure."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "projectName", "developerName", "city", "locality", "slug", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores user profiles."
+    },
+    "/listings/{listingId}": {
+      "schema": {
+        "$ref": "#/entities/Listing"
+      },
+      "description": "Stores property listings."
+    },
+    "/brochures/{brochureId}": {
+      "schema": {
+        "$ref": "#/entities/Brochure"
+      },
+      "description": "Stores project brochures."
+    }
+  }
+}
