@@ -13,6 +13,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 export default function Step6Broker() {
   const { data, updateData, prevStep, reset } = useListingStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const { user, signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -29,6 +30,7 @@ export default function Step6Broker() {
   };
 
   const handleSubmit = async () => {
+    setSubmitError(null);
     let currentUser = user;
     if (!currentUser) {
       try {
@@ -38,6 +40,7 @@ export default function Step6Broker() {
         if (!currentUser) return;
       } catch (error) {
         console.error('Sign in failed:', error);
+        setSubmitError('Sign in failed. Please try again.');
         return;
       }
     }
@@ -88,9 +91,9 @@ export default function Step6Broker() {
       
       reset();
       navigate(`/listing/${docRef.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating listing:', error);
-      alert('Failed to create listing. Please try again.');
+      setSubmitError(error.message || 'Failed to create listing. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -108,6 +111,11 @@ export default function Step6Broker() {
       nextLabel={isSubmitting ? 'Generating...' : (user ? 'Generate Page' : 'Sign in to Generate')}
     >
       <div className="space-y-6">
+        {submitError && (
+          <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-sm">
+            {submitError}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="brokerName">Your Name *</Label>
