@@ -38,9 +38,13 @@ export default function Step6Broker() {
         // After signIn, we need to get the current user from auth since context might not have updated yet
         currentUser = auth.currentUser;
         if (!currentUser) return;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Sign in failed:', error);
-        setSubmitError('Sign in failed. Please try again.');
+        if (error.code === 'auth/unauthorized-domain') {
+          setSubmitError('Firebase Error: You need to add this Netlify domain to your Firebase Console -> Authentication -> Settings -> Authorized Domains.');
+        } else {
+          setSubmitError('Sign in failed. Please try again.');
+        }
         return;
       }
     }
