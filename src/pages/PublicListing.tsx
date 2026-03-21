@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { formatPrice } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
-import { Share2, Copy, ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Calendar, Clock, Check, Camera, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2 } from 'lucide-react';
 
 function PhotoFallback() {
   return (
@@ -16,6 +16,87 @@ function SafeImage({ src, alt = '', className = '', onError }: { src: string; al
   const [error, setError] = useState(false);
   if (error) return <PhotoFallback />;
   return <img src={src} alt={alt} className={className} onError={() => { setError(true); onError?.(); }} loading="lazy" />;
+}
+
+function getHighlightIcon(text: string): string {
+  const t = text.toLowerCase();
+  const rules: [RegExp, string][] = [
+    [/area|sqft|carpet|sq\.?\s*ft/, '📐'],
+    [/sea|ocean|water\s*view|seaface/, '🌊'],
+    [/floor|view|high/, '🏙️'],
+    [/parking|car/, '🚗'],
+    [/furnished|furniture/, '🛋️'],
+    [/pool|swimming/, '🏊'],
+    [/gym|gymnasium/, '💪'],
+    [/garden|park|green/, '🌿'],
+    [/school|education/, '🎓'],
+    [/hospital|medical/, '🏥'],
+    [/metro|station|transport/, '🚇'],
+    [/cricket|sport|ground/, '🏏'],
+    [/security|cctv|gated/, '🔒'],
+    [/lift|elevator/, '🛗'],
+    [/power|backup/, '⚡'],
+    [/vastu/, '🕉️'],
+  ];
+  for (const [re, icon] of rules) {
+    if (re.test(t)) return icon;
+  }
+  return '✨';
+}
+
+function AboutProperty({ text }: { text: string | null | undefined }) {
+  const [expanded, setExpanded] = useState(false);
+  const words = useMemo(() => (text || '').trim().split(/\s+/).filter(Boolean), [text]);
+  const isLong = words.length > 120;
+  const preview = words.slice(0, 80).join(' ');
+  const full = words.join(' ');
+
+  if (!text?.trim()) return null;
+
+  return (
+    <div>
+      <div className="text-label text-text-3 mb-2">About This Property</div>
+      <p className="text-sm text-text-2 leading-relaxed font-sans">
+        {isLong && !expanded ? (
+          <>
+            {preview}
+            …{' '}
+            <button type="button" onClick={() => setExpanded(true)} className="text-primary font-medium text-sm inline">
+              Read more
+            </button>
+          </>
+        ) : (
+          <>
+            {full}
+            {isLong && expanded && (
+              <>
+                {' '}
+                <button type="button" onClick={() => setExpanded(false)} className="text-primary font-medium text-sm inline">
+                  Read less
+                </button>
+              </>
+            )}
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
+function VirtualTourEmbed({ url }: { url: string }) {
+  const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=))([\w-]+)/);
+  if (yt) {
+    return (
+      <div className="aspect-video w-full rounded-lg overflow-hidden border border-[#E2E0D8]">
+        <iframe title="Virtual tour" className="w-full h-full" src={`https://www.youtube.com/embed/${yt[1]}`} allowFullScreen />
+      </div>
+    );
+  }
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="btn-primary w-full inline-flex items-center justify-center gap-2">
+      Open virtual tour
+    </a>
+  );
 }
 
 function AnalyticsTracker({ listingId }: { listingId: string }) {
@@ -133,14 +214,21 @@ export default function PublicListingPage() {
   const otherPhotos = photos.filter((p: any) => p.id !== heroPhoto?.id);
   const allPhotos = heroPhoto ? [heroPhoto, ...otherPhotos] : photos;
 
-  const quickSpecs = [
+  const shortHeadline =
+    (listing.headline || '').length > 20 ? `${(listing.headline || '').slice(0, 20)}…` : listing.headline || '';
+
+  const specChips = [
     listing.bhk_config,
     listing.carpet_area ? `${listing.carpet_area} sq ft` : null,
-    listing.floor_number ? `Floor ${listing.floor_number}/${listing.total_floors}` : null,
-    listing.parking_car ? `${listing.parking_car} Parking` : null,
-    listing.possession_status === 'ready' || listing.possession_status === 'Ready to Move' ? 'Ready Possession' : listing.possession_status,
-    listing.furnishing_status ? listing.furnishing_status.replace('-', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : null,
-    listing.facing_direction ? `${listing.facing_direction} Facing` : null,
+    listing.floor_number != null && listing.total_floors != null
+      ? `Floor ${listing.floor_number}/${listing.total_floors}`
+      : listing.floor_number != null
+        ? `Floor ${listing.floor_number}`
+        : null,
+    listing.parking_car != null && listing.parking_car > 0 ? `${listing.parking_car} Parking` : null,
+    listing.furnishing_status
+      ? String(listing.furnishing_status).replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+      : null,
   ].filter(Boolean);
 
   const whatsappUrl = `https://wa.me/91${listing.broker_whatsapp}?text=${encodeURIComponent(`Hi ${listing.broker_name}, I'm interested in ${listing.headline}. Please share more details.`)}`;
@@ -162,8 +250,15 @@ export default function PublicListingPage() {
   ].filter(([_, v]) => v != null && v !== '' && v !== 0) as [string, string | number][];
 
   const amenities = listing.amenities || [];
-  const aiHighlights = listing.ai_highlights || [];
+  const aiHighlights = (listing.ai_highlights || []).filter(Boolean);
   const neighbourhoodHighlights = listing.ai_neighbourhood_highlights || [];
+
+  const rawPriceNote = listing.price_history_note?.trim();
+  const priceHistoryBadge =
+    rawPriceNote &&
+    (rawPriceNote.startsWith('↓') || rawPriceNote.toLowerCase().includes('reduced')
+      ? rawPriceNote
+      : `↓ Reduced from ${rawPriceNote}`);
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
@@ -176,11 +271,15 @@ export default function PublicListingPage() {
       )}
 
       {showStickyHeader && (
-        <div className="fixed top-0 left-0 right-0 h-14 bg-surface/95 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 z-50 animate-fade-in">
-          <div className="text-sm font-medium text-text-1 truncate max-w-[50%]">{listing.headline}</div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-primary hidden sm:block">{formatPrice(listing.price)}</span>
-            <a href={whatsappUrl} target="_blank" rel="noopener" onClick={() => trackEvent('whatsapp_click')} className="btn-primary text-xs h-8">Contact</a>
+        <div
+          className="fixed top-0 left-0 right-0 h-[52px] bg-white border-b border-[#E2E0D8] flex items-center justify-between px-4 z-50 animate-fade-in"
+        >
+          <div className="text-sm font-medium text-text-1 truncate max-w-[45%] font-sans">{shortHeadline}</div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="font-display text-sm font-medium text-primary">{formatPrice(listing.price, listing.transaction_type)}</span>
+            <a href={whatsappUrl} target="_blank" rel="noopener" onClick={() => trackEvent('whatsapp_click')} className="btn-primary text-xs h-8">
+              Contact
+            </a>
           </div>
         </div>
       )}
@@ -233,38 +332,46 @@ export default function PublicListingPage() {
           <div className="space-y-6 min-w-0">
             <div>
               <h1 className="font-display text-2xl md:text-[32px] font-medium text-text-1 leading-tight break-words">{listing.headline}</h1>
-              <div className="flex items-center gap-1.5 mt-1.5 text-sm text-text-2">
+              <div className="flex items-center gap-1.5 mt-1.5 text-sm text-text-2 font-sans">
                 <MapPin size={14} /> {listing.locality}, {listing.city}
               </div>
               <div className="flex items-center flex-wrap gap-2 mt-3">
-                <span className="text-price text-primary">{formatPrice(listing.price, listing.transaction_type)}</span>
+                <span className="text-price text-primary font-display">{formatPrice(listing.price, listing.transaction_type)}</span>
                 {listing.price_negotiable && <span className="badge-live text-2xs">Negotiable</span>}
-                {listing.price_history_note && (
-                  <span className="text-2xs text-[hsl(var(--amber))] bg-[hsl(var(--amber-light))] px-2 py-0.5 rounded">{listing.price_history_note}</span>
+                {priceHistoryBadge && (
+                  <span className="text-2xs text-[hsl(var(--amber))] bg-[hsl(var(--amber-light))] px-2 py-0.5 rounded font-sans">{priceHistoryBadge}</span>
                 )}
               </div>
             </div>
 
             <div className="flex flex-wrap gap-1.5 overflow-x-auto">
-              {quickSpecs.map((s, i) => (
-                <span key={i} className="bg-surface-2 text-text-1 text-xs px-2.5 py-1 rounded shrink-0">{s}</span>
+              {specChips.map((s, i) => (
+                <span key={i} className="bg-surface-2 text-text-1 text-xs px-2.5 py-1 rounded shrink-0 font-sans">
+                  {s}
+                </span>
               ))}
             </div>
 
-            <div>
-              <div className="text-label text-text-3 mb-2">About This Property</div>
-              <p className="text-sm text-text-2 leading-relaxed">{listing.ai_description}</p>
-              {aiHighlights.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {aiHighlights.filter(Boolean).map((h: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-text-1">
-                      <div className="w-0.5 h-full min-h-[20px] bg-primary rounded-full mt-0.5 shrink-0" />
-                      {h}
+            {aiHighlights.length > 0 && (
+              <div>
+                <div className="text-label text-text-3 mb-2">AI Highlights</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {aiHighlights.map((h: string, i: number) => (
+                    <div
+                      key={i}
+                      className="flex gap-2 items-start bg-white border border-[#E2E0D8] rounded-[10px] p-3"
+                    >
+                      <span className="text-lg leading-none shrink-0" aria-hidden>
+                        {getHighlightIcon(h)}
+                      </span>
+                      <p className="text-[13px] text-text-1 leading-snug font-sans">{h}</p>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            <AboutProperty text={listing.ai_description} />
 
             <div>
               <div className="text-label text-text-3 mb-3">Property Details</div>
@@ -272,7 +379,7 @@ export default function PublicListingPage() {
                 {propertyDetails.map(([label, val], i) => (
                   <div key={i} className="py-2.5 border-b border-border">
                     <div className="text-[11px] text-text-3 mb-0.5">{label}</div>
-                    <div className="text-[13px] font-medium text-text-1">{String(val)}</div>
+                    <div className="text-[13px] font-medium text-text-1 font-sans">{String(val)}</div>
                   </div>
                 ))}
               </div>
@@ -283,7 +390,7 @@ export default function PublicListingPage() {
                 <div className="text-label text-text-3 mb-2.5">Amenities</div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {amenities.map((a: string, i: number) => (
-                    <div key={i} className="flex items-center gap-1.5 text-xs text-text-2">
+                    <div key={i} className="flex items-center gap-1.5 text-xs text-text-2 font-sans">
                       <Check size={14} className="text-primary shrink-0" /> {a}
                     </div>
                   ))}
@@ -291,13 +398,35 @@ export default function PublicListingPage() {
               </div>
             )}
 
+            {listing.floor_plan_url && (
+              <div>
+                <div className="text-label text-text-3 mb-2">FLOOR PLAN</div>
+                <SafeImage
+                  src={listing.floor_plan_url}
+                  alt="Floor plan"
+                  className="w-full rounded-lg border border-[#E2E0D8]"
+                />
+              </div>
+            )}
+
+            {listing.virtual_tour_url && (
+              <div>
+                <div className="text-label text-text-3 mb-2">VIRTUAL TOUR</div>
+                <VirtualTourEmbed url={listing.virtual_tour_url} />
+              </div>
+            )}
+
             {neighbourhoodHighlights.length > 0 && (
               <div>
-                <div className="text-label text-text-3 mb-3">Neighbourhood</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="text-label text-text-3 mb-2">NEARBY</div>
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
                   {neighbourhoodHighlights.map((h: string, i: number) => (
-                    <span key={i} className="bg-surface-2 text-text-1 text-xs px-3 py-1.5 rounded-md flex items-center gap-1.5">
-                      <MapPin size={12} className="text-primary" /> {h}
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1.5 shrink-0 text-[12px] text-text-1 font-sans bg-[#F0EFE9] border border-[#E2E0D8] rounded-[20px] px-3 py-1.5"
+                    >
+                      <span aria-hidden>📍</span>
+                      {h}
                     </span>
                   ))}
                 </div>
@@ -307,9 +436,32 @@ export default function PublicListingPage() {
             {listing.google_maps_url && (
               <div>
                 <div className="text-label text-text-3 mb-3">Location</div>
-                <a href={listing.google_maps_url} target="_blank" rel="noopener" className="text-xs text-primary hover:underline flex items-center gap-1">
+                <a href={listing.google_maps_url} target="_blank" rel="noopener" className="text-xs text-primary hover:underline flex items-center gap-1 font-sans">
                   <MapPin size={14} /> Open in Google Maps
                 </a>
+              </div>
+            )}
+
+            {listing.broker_personal_note && (
+              <div className="bg-surface-2/80 rounded-lg p-3 border border-border/60">
+                <p className="text-xs text-text-2 italic font-sans leading-relaxed">
+                  &ldquo;{listing.broker_personal_note}&rdquo;
+                </p>
+              </div>
+            )}
+
+            {listing.open_house_date && (
+              <div className="rounded-lg p-3 bg-[hsl(var(--green-light))] border border-primary/15">
+                <div className="text-sm font-medium text-text-1 font-sans">
+                  🗓 Open House: {listing.open_house_date}
+                  {listing.open_house_time_start && (
+                    <span className="text-text-2 font-normal">
+                      {' '}
+                      {listing.open_house_time_start}
+                      {listing.open_house_time_end ? ` – ${listing.open_house_time_end}` : ''}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
@@ -317,18 +469,15 @@ export default function PublicListingPage() {
               <div className="card-base p-4">
                 <div className="text-label text-text-3 mb-3">Presented By</div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
+                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium font-display">
                     {listing.broker_name?.[0]}
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-text-1">{listing.broker_name}</div>
-                    <div className="text-xs text-text-2">{listing.broker_agency}</div>
-                    {listing.broker_rera && <div className="text-2xs text-text-3">RERA: {listing.broker_rera}</div>}
+                    <div className="text-sm font-medium text-text-1 font-sans">{listing.broker_name}</div>
+                    <div className="text-xs text-text-2 font-sans">{listing.broker_agency}</div>
+                    {listing.broker_rera && <div className="text-2xs text-text-3 font-sans">RERA: {listing.broker_rera}</div>}
                   </div>
                 </div>
-                {listing.broker_personal_note && (
-                  <div className="bg-surface-2 rounded-md p-3 mb-3 text-xs text-text-2 italic">"{listing.broker_personal_note}"</div>
-                )}
                 <div className="flex gap-2">
                   <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')} className="btn-secondary flex-1 flex items-center justify-center gap-1.5 text-xs">
                     <MessageCircle size={14} /> WhatsApp
@@ -345,12 +494,12 @@ export default function PublicListingPage() {
             <div className="sticky top-20 space-y-4">
               <div className="card-base p-5">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium font-display">
                     {listing.broker_name?.[0]}
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-text-1">{listing.broker_name}</div>
-                    <div className="text-2xs text-text-3">{listing.broker_agency}</div>
+                    <div className="text-xs font-medium text-text-1 font-sans">{listing.broker_name}</div>
+                    <div className="text-2xs text-text-3 font-sans">{listing.broker_agency}</div>
                   </div>
                 </div>
                 <div className="font-display text-2xl font-medium text-primary mb-4">{formatPrice(listing.price, listing.transaction_type)}</div>
@@ -360,16 +509,6 @@ export default function PublicListingPage() {
                 <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')} className="btn-secondary w-full flex items-center justify-center gap-1.5 mb-4">
                   <Phone size={14} /> Call Broker
                 </a>
-
-                {listing.open_house_date && (
-                  <div className="bg-surface-2 rounded-md p-3 mb-4">
-                    <div className="text-label text-text-3 mb-1">Open House</div>
-                    <div className="flex items-center gap-1.5 text-xs text-text-1">
-                      <Calendar size={12} /> {listing.open_house_date}
-                      {listing.open_house_time_start && <span className="text-text-3">· {listing.open_house_time_start} - {listing.open_house_time_end}</span>}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -377,10 +516,10 @@ export default function PublicListingPage() {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 h-14 bg-surface border-t border-border flex lg:hidden z-50 safe-bottom">
-        <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')} className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium">
+        <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')} className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium font-sans">
           <MessageCircle size={16} /> WhatsApp
         </a>
-        <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')} className="flex-1 flex items-center justify-center gap-1.5 bg-surface text-text-1 text-sm font-medium border-l border-border">
+        <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')} className="flex-1 flex items-center justify-center gap-1.5 bg-surface text-text-1 text-sm font-medium border-l border-border font-sans">
           <Phone size={16} /> Call
         </a>
       </div>
@@ -389,26 +528,34 @@ export default function PublicListingPage() {
         <div className="fixed inset-0 bg-dark/95 z-[100] flex items-center justify-center" onClick={() => setLightbox(null)}>
           <div className="absolute top-4 right-4 z-10">
             <span className="text-surface text-sm mr-4">{lightbox + 1}/{allPhotos.length}</span>
-            <button onClick={() => setLightbox(null)} className="text-surface"><X size={24} /></button>
+            <button type="button" onClick={() => setLightbox(null)} className="text-surface">
+              <X size={24} />
+            </button>
           </div>
           <button
+            type="button"
             className="absolute left-4 top-1/2 -translate-y-1/2 text-surface/80 hover:text-surface z-10"
-            onClick={e => { e.stopPropagation(); setLightbox(Math.max(0, lightbox - 1)); }}
+            onClick={e => {
+              e.stopPropagation();
+              setLightbox(Math.max(0, lightbox - 1));
+            }}
           >
             <ChevronLeft size={32} />
           </button>
           <button
+            type="button"
             className="absolute right-4 top-1/2 -translate-y-1/2 text-surface/80 hover:text-surface z-10"
-            onClick={e => { e.stopPropagation(); setLightbox(Math.min(allPhotos.length - 1, lightbox + 1)); }}
+            onClick={e => {
+              e.stopPropagation();
+              setLightbox(Math.min(allPhotos.length - 1, lightbox + 1));
+            }}
           >
             <ChevronRight size={32} />
           </button>
           <div className="max-w-4xl max-h-[80vh] relative" onClick={e => e.stopPropagation()}>
             <SafeImage src={allPhotos[lightbox]?.url} className="max-w-full max-h-[80vh] object-contain" />
             {allPhotos[lightbox]?.room_tag && allPhotos[lightbox].room_tag !== 'general' && (
-              <div className="absolute bottom-4 left-4 bg-surface/90 text-text-1 text-xs px-2.5 py-1 rounded-md">
-                {allPhotos[lightbox].room_tag}
-              </div>
+              <div className="absolute bottom-4 left-4 bg-surface/90 text-text-1 text-xs px-2.5 py-1 rounded-md font-sans">{allPhotos[lightbox].room_tag}</div>
             )}
           </div>
         </div>

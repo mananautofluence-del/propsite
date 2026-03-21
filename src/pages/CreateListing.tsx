@@ -934,7 +934,7 @@ Return ONLY this JSON (null for unknown):
             <p className="text-sm text-text-2 mb-6">Your property page is live and ready to share</p>
 
             <div className="flex items-center gap-2 mb-6">
-              <input readOnly value={`propsite.app/l/${publishedSlug}`} className="input-base flex-1 text-xs text-center" />
+              <input readOnly value={`propsite.pages.dev/l/${publishedSlug}`} className="input-base flex-1 text-xs text-center" />
               <button className="btn-primary h-9 px-3 flex items-center gap-1"><Copy size={14} /> Copy</button>
             </div>
 

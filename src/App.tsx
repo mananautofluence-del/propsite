@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import DashboardListings from "./pages/DashboardListings";
 import CreateListing from "./pages/CreateListing";
 import PublicListing from "./pages/PublicListing";
+import PublicCollection from "./pages/PublicCollection";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/dashboard/leads" element={<Dashboard />} />
             <Route path="/dashboard/settings" element={<Dashboard />} />
             <Route path="/l/:slug" element={<PublicListing />} />
+            <Route path="/c/:slug" element={<PublicCollection />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
