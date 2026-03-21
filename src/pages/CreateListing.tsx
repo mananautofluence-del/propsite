@@ -76,7 +76,7 @@ export default function CreateListingPage() {
     if (!files) return;
     const newFiles = Array.from(files);
     setPhotoFiles(prev => [...prev, ...newFiles]);
-    const newUrls = newFiles.map(f => URL.createObjectURL(f));
+    const newUrls = (newFiles || []).map(f => URL.createObjectURL(f));
     setPhotoUrls(prev => [...prev, ...newUrls]);
   };
 
@@ -134,7 +134,13 @@ Return ONLY this JSON (null for unknown):
       };
       setListing(prev => ({ ...prev, ...safeData }));
 
-      const missing = (aiData.missing_questions || []).slice(0, 4);
+      const missing = (aiData.missing_questions || [])
+        .slice(0, 4)
+        .map((q: any) => {
+          const fallback = AI_QUESTIONS.find(fq => fq.field === q?.field);
+          return fallback || q;
+        })
+        .filter((q: any) => q && typeof q.question === 'string' && Array.isArray(q.options) && q.options.length > 0);
       const fallbackQuestions = AI_QUESTIONS.filter(q => {
         const val = (aiData as any)[q.field];
         return val === null || val === undefined || val === '';
@@ -229,7 +235,7 @@ Return ONLY this JSON (null for unknown):
 
       // Save photos
       if (uploadedPhotos.length > 0 && saved) {
-        const photoRows = uploadedPhotos.map((photo, index) => ({
+        const photoRows = (uploadedPhotos || []).map((photo, index) => ({
           listing_id: saved.id,
           url: photo.url,
           storage_path: photo.storage_path,
@@ -292,7 +298,7 @@ Return ONLY this JSON (null for unknown):
     return (
       <div className="min-h-screen bg-surface flex flex-col">
         <div className="flex items-center justify-center gap-2 pt-8 pb-4">
-          {missingQuestions.map((_, i) => (
+          {(missingQuestions || []).map((_, i) => (
             <div key={i} className={`w-2 h-2 rounded-full transition-colors ${i <= currentQ ? 'bg-primary' : 'bg-border'}`} />
           ))}
         </div>
@@ -300,9 +306,9 @@ Return ONLY this JSON (null for unknown):
           <div className="w-full max-w-md text-center"
             style={{ animation: 'fade-up 0.4s cubic-bezier(0.16,1,0.3,1) forwards' }}
           >
-            <h2 className="font-display text-2xl font-medium text-text-1 mb-8">{q.question}</h2>
+            <h2 className="font-display text-2xl font-medium text-text-1 mb-8">{q?.question || 'One quick detail to continue'}</h2>
             <div className="space-y-3">
-              {q.options.map((opt) => (
+              {((q?.options) || []).map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => answerQuestion(q.field, opt.value)}
@@ -330,7 +336,7 @@ Return ONLY this JSON (null for unknown):
       {/* Step Indicators */}
       <div className="container py-4">
         <div className="flex items-center gap-2 text-2xs text-text-3">
-          {WIZARD_STEPS.map((s, i) => (
+          {(WIZARD_STEPS || []).map((s, i) => (
             <div key={i} className="flex items-center gap-2">
               <span className={i <= step ? 'text-primary font-medium' : ''}>{s}</span>
               {i < WIZARD_STEPS.length - 1 && <ChevronRight size={12} />}
@@ -356,7 +362,7 @@ Return ONLY this JSON (null for unknown):
                 <div>
                   {/* FIX 7: Photo thumbnails — just the photo */}
                   <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mb-3">
-                    {photoUrls.map((url, i) => (
+                    {(photoUrls || []).map((url, i) => (
                       <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border border-border group">
                         <img src={url} alt="" className="w-full h-full object-cover" />
                         {i === heroIndex && (
@@ -422,7 +428,7 @@ Return ONLY this JSON (null for unknown):
             <div>
               <div className="text-label text-text-3 mb-3">Property Category</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                {PROPERTY_CATEGORIES.map(cat => (
+                {(PROPERTY_CATEGORIES || []).map(cat => (
                   <button
                     key={cat.value}
                     onClick={() => updateField('property_category', cat.value)}
@@ -457,7 +463,7 @@ Return ONLY this JSON (null for unknown):
                 </Field>
                 <Field label="Transaction Type">
                   <div className="flex gap-2">
-                    {['sale', 'rent', 'lease'].map(t => (
+                    {(['sale', 'rent', 'lease'] || []).map(t => (
                       <button key={t} onClick={() => updateField('transaction_type', t)}
                         className={`flex-1 h-9 rounded-md text-xs font-medium transition-all ${listing.transaction_type === t ? 'bg-primary text-primary-foreground' : 'bg-surface border border-border text-text-2'}`}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -476,7 +482,7 @@ Return ONLY this JSON (null for unknown):
                 </Field>
                 <Field label="Negotiable">
                   <div className="flex gap-2">
-                    {[true, false].map(v => (
+                    {([true, false] || []).map(v => (
                       <button key={String(v)} onClick={() => updateField('price_negotiable', v)}
                         className={`flex-1 h-9 rounded-md text-xs font-medium transition-all ${listing.price_negotiable === v ? 'bg-primary text-primary-foreground' : 'bg-surface border border-border text-text-2'}`}>
                         {v ? 'Yes' : 'No'}
@@ -690,7 +696,7 @@ Return ONLY this JSON (null for unknown):
             {/* Amenities */}
             <FieldSection title="AMENITIES">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {AMENITIES.map(a => (
+                {(AMENITIES || []).map(a => (
                   <label key={a} className="flex items-center gap-2 text-xs text-text-2 cursor-pointer h-8">
                     <input
                       type="checkbox"
@@ -772,12 +778,12 @@ Return ONLY this JSON (null for unknown):
               <AddonCard icon={<Tag size={14} />} label="Tag photos by room" expanded={expandedAddons['photo_tags']} onToggle={() => toggleAddon('photo_tags')}>
                 {photoUrls.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {photoUrls.map((url, i) => (
+                    {(photoUrls || []).map((url, i) => (
                       <div key={i} className="flex flex-col gap-1">
                         <img src={url} alt="" className="w-full h-16 rounded object-cover" />
                         <select value={photoTags[i] || 'general'} onChange={e => setPhotoTags(prev => ({ ...prev, [i]: e.target.value }))} className="input-base text-2xs h-7">
                           <option value="general">General</option>
-                          {ROOM_TAGS.map(t => <option key={t} value={t}>{t}</option>)}
+                          {(ROOM_TAGS || []).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
                     ))}
@@ -893,7 +899,7 @@ Return ONLY this JSON (null for unknown):
           <div className="max-w-2xl mx-auto space-y-6">
             <h2 className="text-h3 text-text-1 mb-4">Choose a template</h2>
             <div className="grid grid-cols-5 gap-3">
-              {TEMPLATES.map(t => (
+              {(TEMPLATES || []).map(t => (
                 <button key={t.id} onClick={() => { setSelectedTemplate(t.id); updateField('template', t.id); }}
                   className={`card-base p-3 text-center transition-all ${selectedTemplate === t.id ? 'border-2 border-primary' : ''}`}>
                   <div className="w-full h-24 bg-surface-2 rounded-md mb-2" />
@@ -906,7 +912,7 @@ Return ONLY this JSON (null for unknown):
             <div>
               <div className="text-label text-text-3 mb-3">Accent Colour</div>
               <div className="flex gap-2">
-                {ACCENT_COLORS.map(c => (
+                {(ACCENT_COLORS || []).map(c => (
                   <button key={c} onClick={() => { setSelectedAccent(c); updateField('accent_color', c); }}
                     className={`w-8 h-8 rounded-full border-2 transition-all ${selectedAccent === c ? 'border-text-1 scale-110' : 'border-transparent'}`}
                     style={{ backgroundColor: c }} />
