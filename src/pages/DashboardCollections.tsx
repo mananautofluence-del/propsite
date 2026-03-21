@@ -187,11 +187,11 @@ export default function DashboardCollections() {
           <div className="text-center py-16 text-sm text-text-3">Loading…</div>
         ) : collections.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-4xl mb-3">📂</div>
+            <div className="text-5xl mb-4">📂</div>
             <h3 className="text-h4 text-text-1 mb-1">No collections yet</h3>
-            <p className="text-xs text-text-2 mb-4">Bundle multiple listings under one shareable link</p>
-            <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center text-xs h-8 px-4">
-              Create Collection
+            <p className="text-xs text-text-2 mb-4 max-w-[240px] mx-auto">Bundle multiple listings under one shareable link — perfect for sending to clients</p>
+            <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center text-xs h-9 px-5 gap-1.5">
+              ✨ Create Collection
             </button>
           </div>
         ) : (
@@ -268,23 +268,29 @@ export default function DashboardCollections() {
               onChange={e => setModalDescription(e.target.value)}
             />
             <div className="text-label text-text-3">Select listings</div>
-            <div className="overflow-y-auto flex-1 max-h-[40vh] space-y-1 pr-1 border border-border rounded-md p-2">
+            <div className="overflow-y-auto flex-1 max-h-[40vh] space-y-0.5 pr-1 border border-border rounded-lg p-2 bg-surface">
               {listings.filter(l => l.status === 'live').length === 0 ? (
-                <p className="text-xs text-text-3 py-2">No live listings to add yet.</p>
+                <div className="text-center py-6">
+                  <div className="text-2xl mb-1">📋</div>
+                  <p className="text-xs text-text-3">No live listings yet — publish a listing first</p>
+                </div>
               ) : (
                 listings.filter(l => l.status === 'live').map(l => (
-                  <label key={l.id} className="flex items-start gap-2.5 p-2 rounded-md hover:bg-surface-2 cursor-pointer">
-                    <Checkbox checked={selectedIds.has(l.id)} onCheckedChange={() => toggleId(l.id)} className="mt-0.5" />
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <label key={l.id} className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${selectedIds.has(l.id) ? 'bg-green-light' : 'hover:bg-surface-2'}`}>
+                    <Checkbox checked={selectedIds.has(l.id)} onCheckedChange={() => toggleId(l.id)} />
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {getHeroUrl(l) ? (
-                        <img src={getHeroUrl(l)} alt="" className="w-8 h-6 rounded object-cover shrink-0" />
+                        <img src={getHeroUrl(l)} alt="" className="w-10 h-7 rounded object-cover shrink-0" />
                       ) : (
-                        <div className="w-8 h-6 rounded bg-surface-2 shrink-0" />
+                        <div className="w-10 h-7 rounded bg-surface-2 shrink-0 flex items-center justify-center text-xs">🏠</div>
                       )}
-                      <span className="text-xs text-text-1 min-w-0">
-                        <span className="font-medium block truncate">{l.headline || 'Untitled'}</span>
-                        <span className="text-2xs text-text-3">{l.locality}{l.city ? `, ${l.city}` : ''}</span>
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium text-text-1 truncate">{l.headline || 'Untitled'}</div>
+                        <div className="text-2xs text-text-3 flex items-center gap-1.5">
+                          <span>{l.locality}{l.city ? `, ${l.city}` : ''}</span>
+                          {l.price && <span className="text-primary font-medium">{formatPrice(l.price, l.transaction_type)}</span>}
+                        </div>
+                      </div>
                     </div>
                   </label>
                 ))

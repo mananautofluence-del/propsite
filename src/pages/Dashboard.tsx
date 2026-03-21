@@ -86,9 +86,9 @@ export default function DashboardHome() {
                 <h3 className="text-h4 text-text-1">Recent activity</h3>
               </div>
               {activity.length > 0 ? (
-                activity.map(row => (
+                activity.map((row, ri) => (
                   <div key={row.id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
-                    <div className="w-12 h-9 rounded bg-surface-2 flex items-center justify-center text-xs text-text-3">👁</div>
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${ri === 0 ? 'bg-primary' : 'bg-text-3/40'}`} />
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-medium text-text-1 truncate">{row.listings?.headline || 'Listing view'}</div>
                       <div className="text-2xs text-text-3">
@@ -109,14 +109,29 @@ export default function DashboardHome() {
             <div className="card-base">
               <h3 className="text-h4 text-text-1 mb-3">Quick actions</h3>
               <div className="space-y-1.5">
-                <Link to="/dashboard/listings/new" className="flex items-center justify-between h-9 px-3 bg-surface-2 rounded-md text-xs text-text-1 hover:bg-border/50 transition-colors">
-                  Create Listing <ChevronRight size={14} className="text-text-3" />
+                <Link to="/dashboard/listings/new" className="flex items-center gap-3 h-12 px-3 bg-surface-2 rounded-lg text-text-1 hover:bg-border/50 transition-colors group">
+                  <span className="text-lg">✨</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium">Create Listing</div>
+                    <div className="text-2xs text-text-3">AI-powered listing in 2 mins</div>
+                  </div>
+                  <ChevronRight size={14} className="text-text-3 group-hover:text-text-2 transition-colors" />
                 </Link>
-                <Link to="/dashboard/analytics" className="flex items-center justify-between h-9 px-3 bg-surface-2 rounded-md text-xs text-text-1 hover:bg-border/50 transition-colors">
-                  View Analytics <ChevronRight size={14} className="text-text-3" />
+                <Link to="/dashboard/analytics" className="flex items-center gap-3 h-12 px-3 bg-surface-2 rounded-lg text-text-1 hover:bg-border/50 transition-colors group">
+                  <span className="text-lg">📊</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium">View Analytics</div>
+                    <div className="text-2xs text-text-3">Track views & engagement</div>
+                  </div>
+                  <ChevronRight size={14} className="text-text-3 group-hover:text-text-2 transition-colors" />
                 </Link>
-                <Link to="/dashboard/collections" className="flex items-center justify-between h-9 px-3 bg-surface-2 rounded-md text-xs text-text-1 hover:bg-border/50 transition-colors">
-                  Create Collection <ChevronRight size={14} className="text-text-3" />
+                <Link to="/dashboard/collections" className="flex items-center gap-3 h-12 px-3 bg-surface-2 rounded-lg text-text-1 hover:bg-border/50 transition-colors group">
+                  <span className="text-lg">📂</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium">Create Collection</div>
+                    <div className="text-2xs text-text-3">Bundle listings into one link</div>
+                  </div>
+                  <ChevronRight size={14} className="text-text-3 group-hover:text-text-2 transition-colors" />
                 </Link>
               </div>
             </div>

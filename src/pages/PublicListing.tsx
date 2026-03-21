@@ -4,6 +4,21 @@ import { formatPrice } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2 } from 'lucide-react';
 
+function getAmenityIcon(text: string): string {
+  const t = text.toLowerCase();
+  const map: [RegExp, string][] = [
+    [/lift|elevator/, '🛗'], [/power|backup|generator/, '⚡'], [/pool|swimming/, '🏊'],
+    [/gym|fitness/, '💪'], [/security|cctv|gated/, '🔒'], [/parking|car/, '🚗'],
+    [/garden|park|green|landscape/, '🌿'], [/club\s*house/, '🏛️'], [/play|children|kids/, '🎮'],
+    [/cricket|sport|court/, '🏏'], [/jogging|track|walking/, '🏃'], [/rain\s*water/, '💧'],
+    [/fire/, '🧯'], [/intercom|wifi|internet/, '📶'], [/solar/, '☀️'],
+    [/temple|meditation|yoga/, '🧘'], [/library|reading/, '📚'], [/spa|sauna/, '🧖'],
+    [/cinema|theater|theatre/, '🎬'], [/pet/, '🐾'],
+  ];
+  for (const [re, icon] of map) if (re.test(t)) return icon;
+  return '✓';
+}
+
 function PhotoFallback() {
   return (
     <div className="w-full h-full bg-surface-2 flex items-center justify-center">
@@ -47,8 +62,8 @@ function getHighlightIcon(text: string): string {
 function AboutProperty({ text }: { text: string | null | undefined }) {
   const [expanded, setExpanded] = useState(false);
   const words = useMemo(() => (text || '').trim().split(/\s+/).filter(Boolean), [text]);
-  const isLong = words.length > 120;
-  const preview = words.slice(0, 80).join(' ');
+  const isLong = words.length > 60;
+  const preview = words.slice(0, 60).join(' ');
   const full = words.join(' ');
 
   if (!text?.trim()) return null;
@@ -56,7 +71,7 @@ function AboutProperty({ text }: { text: string | null | undefined }) {
   return (
     <div>
       <div className="text-label text-text-3 mb-2">About This Property</div>
-      <p className="text-sm text-text-2 leading-relaxed font-sans">
+      <p className="text-sm text-text-2 font-sans" style={{ lineHeight: 1.75 }}>
         {isLong && !expanded ? (
           <>
             {preview}
@@ -144,6 +159,7 @@ export default function PublicListingPage() {
   const [notFound, setNotFound] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
+  const lbTouchStartX = useRef(0);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -234,20 +250,20 @@ export default function PublicListingPage() {
   const whatsappUrl = `https://wa.me/91${listing.broker_whatsapp}?text=${encodeURIComponent(`Hi ${listing.broker_name}, I'm interested in ${listing.headline}. Please share more details.`)}`;
 
   const propertyDetails = [
-    ['Type', listing.property_type],
-    ['Config', listing.bhk_config],
-    ['Carpet Area', listing.carpet_area ? `${listing.carpet_area} sq ft` : null],
-    ['Built-up Area', listing.builtup_area ? `${listing.builtup_area} sq ft` : null],
-    ['Floor', listing.floor_number ? `${listing.floor_number} of ${listing.total_floors}` : null],
-    ['Age', listing.property_age],
-    ['Possession', listing.possession_status],
-    ['Furnishing', listing.furnishing_status],
-    ['Facing', listing.facing_direction],
-    ['Parking', listing.parking_car ? `${listing.parking_car} car, ${listing.parking_two_wheeler} 2W` : null],
-    ['Bathrooms', listing.bathroom_count],
-    ['Balconies', listing.balcony_count],
-    ['RERA', listing.rera_number],
-  ].filter(([_, v]) => v != null && v !== '' && v !== 0) as [string, string | number][];
+    ['🏠', 'Type', listing.property_type],
+    ['🛏', 'Config', listing.bhk_config],
+    ['📐', 'Carpet Area', listing.carpet_area ? `${listing.carpet_area} sq ft` : null],
+    ['🏗', 'Built-up Area', listing.builtup_area ? `${listing.builtup_area} sq ft` : null],
+    ['🏙️', 'Floor', listing.floor_number ? `${listing.floor_number} of ${listing.total_floors}` : null],
+    ['📅', 'Age', listing.property_age],
+    ['🔑', 'Possession', listing.possession_status],
+    ['🛋️', 'Furnishing', listing.furnishing_status],
+    ['🧭', 'Facing', listing.facing_direction],
+    ['🚗', 'Parking', listing.parking_car ? `${listing.parking_car} car, ${listing.parking_two_wheeler} 2W` : null],
+    ['🚿', 'Bathrooms', listing.bathroom_count],
+    ['🌅', 'Balconies', listing.balcony_count],
+    ['📋', 'RERA', listing.rera_number],
+  ].filter(([, , v]) => v != null && v !== '' && v !== 0) as [string, string, string | number][];
 
   const amenities = listing.amenities || [];
   const aiHighlights = (listing.ai_highlights || []).filter(Boolean);
@@ -354,14 +370,11 @@ export default function PublicListingPage() {
 
             {aiHighlights.length > 0 && (
               <div>
-                <div className="text-label text-text-3 mb-2">AI Highlights</div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="text-label text-text-3 mb-2">Highlights</div>
+                <div className="space-y-2.5">
                   {aiHighlights.map((h: string, i: number) => (
-                    <div
-                      key={i}
-                      className="flex gap-2 items-start bg-white border border-[#E2E0D8] rounded-[10px] p-3"
-                    >
-                      <span className="text-lg leading-none shrink-0" aria-hidden>
+                    <div key={i} className="flex items-start gap-3">
+                      <span className="text-xl leading-none shrink-0 mt-0.5" aria-hidden>
                         {getHighlightIcon(h)}
                       </span>
                       <p className="text-[13px] text-text-1 leading-snug font-sans">{h}</p>
@@ -376,9 +389,11 @@ export default function PublicListingPage() {
             <div>
               <div className="text-label text-text-3 mb-3">Property Details</div>
               <div className="grid grid-cols-2 gap-x-4">
-                {propertyDetails.map(([label, val], i) => (
+                {propertyDetails.map(([emoji, label, val], i) => (
                   <div key={i} className="py-2.5 border-b border-border">
-                    <div className="text-[11px] text-text-3 mb-0.5">{label}</div>
+                    <div className="text-[11px] text-text-3 mb-0.5 flex items-center gap-1">
+                      <span className="text-sm">{emoji}</span> {label}
+                    </div>
                     <div className="text-[13px] font-medium text-text-1 font-sans">{String(val)}</div>
                   </div>
                 ))}
@@ -388,12 +403,16 @@ export default function PublicListingPage() {
             {amenities.length > 0 && (
               <div>
                 <div className="text-label text-text-3 mb-2.5">Amenities</div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {amenities.map((a: string, i: number) => (
-                    <div key={i} className="flex items-center gap-1.5 text-xs text-text-2 font-sans">
-                      <Check size={14} className="text-primary shrink-0" /> {a}
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {amenities.map((a: string, i: number) => {
+                    const icon = getAmenityIcon(a);
+                    return (
+                      <div key={i} className="flex items-center gap-2 text-[13px] text-text-1 font-sans">
+                        <span className="text-base leading-none shrink-0">{icon === '✓' ? <Check size={14} className="text-primary" /> : icon}</span>
+                        <span>{a}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -525,33 +544,42 @@ export default function PublicListingPage() {
       </div>
 
       {lightbox !== null && (
-        <div className="fixed inset-0 bg-dark/95 z-[100] flex items-center justify-center" onClick={() => setLightbox(null)}>
-          <div className="absolute top-4 right-4 z-10">
-            <span className="text-surface text-sm mr-4">{lightbox + 1}/{allPhotos.length}</span>
+        <div
+          className="fixed inset-0 bg-dark/95 z-[100] flex items-center justify-center"
+          onClick={() => setLightbox(null)}
+          onTouchStart={e => { lbTouchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={e => {
+            const delta = e.changedTouches[0].clientX - lbTouchStartX.current;
+            if (Math.abs(delta) > 50) {
+              if (delta < 0 && lightbox < allPhotos.length - 1) setLightbox(lightbox + 1);
+              else if (delta > 0 && lightbox > 0) setLightbox(lightbox - 1);
+            }
+          }}
+        >
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
+            <span className="text-surface text-sm">{lightbox + 1}/{allPhotos.length}</span>
             <button type="button" onClick={() => setLightbox(null)} className="text-surface">
               <X size={24} />
             </button>
           </div>
-          <button
-            type="button"
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-surface/80 hover:text-surface z-10"
-            onClick={e => {
-              e.stopPropagation();
-              setLightbox(Math.max(0, lightbox - 1));
-            }}
-          >
-            <ChevronLeft size={32} />
-          </button>
-          <button
-            type="button"
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-surface/80 hover:text-surface z-10"
-            onClick={e => {
-              e.stopPropagation();
-              setLightbox(Math.min(allPhotos.length - 1, lightbox + 1));
-            }}
-          >
-            <ChevronRight size={32} />
-          </button>
+          {lightbox > 0 && (
+            <button
+              type="button"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-surface/80 hover:text-surface z-10"
+              onClick={e => { e.stopPropagation(); setLightbox(lightbox - 1); }}
+            >
+              <ChevronLeft size={32} />
+            </button>
+          )}
+          {lightbox < allPhotos.length - 1 && (
+            <button
+              type="button"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-surface/80 hover:text-surface z-10"
+              onClick={e => { e.stopPropagation(); setLightbox(lightbox + 1); }}
+            >
+              <ChevronRight size={32} />
+            </button>
+          )}
           <div className="max-w-4xl max-h-[80vh] relative" onClick={e => e.stopPropagation()}>
             <SafeImage src={allPhotos[lightbox]?.url} className="max-w-full max-h-[80vh] object-contain" />
             {allPhotos[lightbox]?.room_tag && allPhotos[lightbox].room_tag !== 'general' && (
