@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 18% 96%;
+    --foreground: 30 10% 7%;
+    --surface: 0 0% 100%;
+    --surface-2: 43 14% 93%;
+    --card: 0 0% 100%;
+    --card-foreground: 30 10% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 7%;
+    --primary: 150 54% 23%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 150 54% 19%;
+    --secondary: 43 14% 93%;
+    --secondary-foreground: 30 10% 7%;
+    --muted: 43 14% 93%;
+    --muted-foreground: 38 4% 59%;
+    --accent: 43 14% 93%;
+    --accent-foreground: 30 10% 7%;
+    --destructive: 0 57% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --amber: 32 100% 36%;
+    --amber-light: 38 95% 94%;
+    --green-light: 150 38% 93%;
+    --border: 40 12% 87%;
+    --border-mid: 40 8% 77%;
+    --input: 40 12% 87%;
+    --ring: 150 54% 23%;
+    --radius: 0.375rem;
+    --text-1: 30 10% 7%;
+    --text-2: 36 5% 34%;
+    --text-3: 38 4% 59%;
+    --dark: 0 0% 7%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 36 5% 34%;
+    --sidebar-primary: 150 54% 23%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 150 38% 93%;
+    --sidebar-accent-foreground: 150 54% 23%;
+    --sidebar-border: 40 12% 87%;
+    --sidebar-ring: 150 54% 23%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+@layer utilities {
+  .text-display { @apply font-display text-[3.5rem] font-medium leading-[1.1]; }
+  .text-h2 { @apply font-display text-[2.5rem] font-medium leading-[1.15]; }
+  .text-h3 { @apply font-display text-[1.75rem] font-medium; }
+  .text-h4 { @apply font-sans text-base font-medium; }
+  .text-label { @apply font-sans text-[11px] font-medium uppercase tracking-[0.04em]; }
+  .text-stat { @apply font-sans text-4xl font-medium tabular-nums; }
+  .text-price { @apply font-display text-4xl font-medium; }
+  .text-small { @apply font-sans text-xs; }
+  .btn-primary {
+    @apply bg-primary text-primary-foreground font-sans text-[13px] font-medium h-9 px-4 rounded-md
+           hover:bg-[hsl(var(--primary-hover))] active:scale-[0.97] transition-all duration-150;
+  }
+  .btn-secondary {
+    @apply bg-surface text-foreground font-sans text-[13px] font-medium h-9 px-4 rounded-md
+           border border-border hover:border-border-mid active:scale-[0.97] transition-all duration-150;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-muted-foreground font-sans text-[13px] font-medium h-9 px-4 rounded-md
+           hover:text-foreground active:scale-[0.97] transition-all duration-150;
+  }
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground font-sans text-[13px] font-medium h-9 px-4 rounded-md
+           hover:opacity-90 active:scale-[0.97] transition-all duration-150;
+  }
+  .card-base {
+    @apply bg-surface border border-border rounded-[10px] p-4;
+  }
+  .card-floating {
+    @apply card-base shadow-[0_4px_24px_rgba(0,0,0,0.10)];
+  }
+  .input-base {
+    @apply bg-surface border border-border rounded-md h-9 px-3 font-sans text-sm
+           focus:border-primary focus:shadow-[0_0_0_3px_rgba(26,92,58,0.08)] focus:outline-none
+           transition-all duration-150;
+  }
+  .badge-live { @apply bg-[hsl(var(--green-light))] text-primary rounded px-2 py-0.5 text-label; }
+  .badge-draft { @apply bg-[hsl(var(--amber-light))] text-[hsl(var(--amber))] rounded px-2 py-0.5 text-label; }
+  .badge-expired { @apply bg-secondary text-muted-foreground rounded px-2 py-0.5 text-label; }
+  .section-padding { @apply py-16 md:py-24; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .text-2xs { @apply text-[10px] leading-[14px]; }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { scrollbar-width: none; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
