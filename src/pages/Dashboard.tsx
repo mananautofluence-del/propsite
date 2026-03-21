@@ -115,6 +115,9 @@ export default function DashboardHome() {
                 <Link to="/dashboard/analytics" className="flex items-center justify-between h-9 px-3 bg-surface-2 rounded-md text-xs text-text-1 hover:bg-border/50 transition-colors">
                   View Analytics <ChevronRight size={14} className="text-text-3" />
                 </Link>
+                <Link to="/dashboard/collections" className="flex items-center justify-between h-9 px-3 bg-surface-2 rounded-md text-xs text-text-1 hover:bg-border/50 transition-colors">
+                  Create Collection <ChevronRight size={14} className="text-text-3" />
+                </Link>
               </div>
             </div>
           </ScrollReveal>

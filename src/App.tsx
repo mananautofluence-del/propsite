@@ -13,6 +13,7 @@ import DashboardListings from "./pages/DashboardListings";
 import CreateListing from "./pages/CreateListing";
 import PublicListing from "./pages/PublicListing";
 import PublicCollection from "./pages/PublicCollection";
+import DashboardCollections from "./pages/DashboardCollections";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +33,7 @@ const App = () => (
             <Route path="/dashboard/listings" element={<DashboardListings />} />
             <Route path="/dashboard/listings/new" element={<CreateListing />} />
             <Route path="/dashboard/analytics" element={<Dashboard />} />
-            <Route path="/dashboard/collections" element={<Dashboard />} />
+            <Route path="/dashboard/collections" element={<DashboardCollections />} />
             <Route path="/dashboard/projects" element={<Dashboard />} />
             <Route path="/dashboard/brochures" element={<Dashboard />} />
             <Route path="/dashboard/leads" element={<Dashboard />} />

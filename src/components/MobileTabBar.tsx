@@ -66,6 +66,9 @@ export default function MobileTabBar() {
               <Link to="/dashboard/settings" onClick={closeMore} className="flex items-center h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2">
                 Settings
               </Link>
+              <Link to="/dashboard/collections" onClick={closeMore} className="flex items-center h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2">
+                Collections
+              </Link>
               <Link to="/dashboard/settings" onClick={closeMore} className="flex items-center h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2">
                 My Profile
               </Link>
