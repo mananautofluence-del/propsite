@@ -7,15 +7,15 @@ import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Came
 
 const getEmoji = (text: string) => {
   const t = text.toLowerCase();
+  if (/kitchen|cook|pantry|chef/.test(t)) return '🍳';
+  if (/cricket|sport|ground|stadium|pitch/.test(t)) return '🏏';
   if (/bhk|bedroom|room|chalet|studio/.test(t)) return '🛏️';
   if (/sqft|sq ft|carpet|area|space/.test(t)) return '📐';
-  if (/cricket|sport|ground|stadium/.test(t)) return '🏏';
-  if (/kitchen|cook|pantry/.test(t)) return '🍳';
   if (/location|city|prime|central/.test(t)) return '📍';
   if (/parking|car|garage/.test(t)) return '🚗';
   if (/pool|swim/.test(t)) return '🏊';
   if (/gym|fitness|workout/.test(t)) return '💪';
-  if (/garden|park|green|nature/.test(t)) return '🌿';
+  if (/garden|park|green|nature|lawn/.test(t)) return '🌿';
   if (/sea|ocean|view|facing/.test(t)) return '🌊';
   if (/security|gated|cctv|guard/.test(t)) return '🔒';
   if (/furnished|furniture/.test(t)) return '🛋️';
@@ -239,7 +239,7 @@ export default function PublicListingPage() {
     return (
       <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="font-display text-[24px] font-[600] text-[#111111] mb-2">Listing not found</h1>
+          <h1 className="font-sans text-[24px] font-[600] text-[#111111] mb-2">Listing not found</h1>
           <p className="font-sans text-[15px] text-[#888888]">This listing may have been removed or expired.</p>
         </div>
       </div>
@@ -267,7 +267,7 @@ export default function PublicListingPage() {
       : null,
   ].filter(Boolean);
 
-  const whatsappUrl = `https://wa.me/91${listing.broker_whatsapp}?text=${encodeURIComponent(`Hi ${listing.broker_name}, I'm interested in ${listing.headline}. Please share more details.`)}`;
+  const whatsappUrl = `https://wa.me/91${listing.broker_whatsapp}?text=${encodeURIComponent(`Hi ${listing.broker_name}, I'm interested in ${listing.headline}. Please share more details.\n\nLink: ${window.location.href}`)}`;
 
   const propertyDetails = [
     ['Type', listing.property_type],
@@ -320,7 +320,7 @@ export default function PublicListingPage() {
             {(!listing.price && !listing.monthly_rent) ? (
               <span className="font-sans text-[14px] font-[400] text-[#666666]">Price on Request</span>
             ) : (
-              <span className="font-display text-[14px] font-[600] text-[#1A5C3A]">
+              <span className="font-sans text-[14px] font-[600] text-[#1A5C3A]">
                 {listing.price > 0 ? (
                   listing.price >= 10000000 ? `₹${(listing.price / 10000000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} Cr` :
                   listing.price >= 100000 ? `₹${(listing.price / 100000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} L` :
@@ -429,13 +429,13 @@ export default function PublicListingPage() {
                 <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[8px]">
                   📍 {listing.locality}, {listing.city}
                 </div>
-                <h1 className="font-display text-[26px] font-[600] text-[#111111] leading-[1.3] break-words mb-[10px]">{listing.headline}</h1>
+                <h1 className="font-sans text-[26px] font-[600] text-[#111111] leading-[1.3] break-words mb-[10px]">{listing.headline}</h1>
                 
                 <div className="flex items-center flex-wrap gap-[8px]">
                   {(!listing.price && !listing.monthly_rent) ? (
                     <span className="font-sans text-[16px] font-[400] text-[#666666]">Price on Request</span>
                   ) : (
-                    <span className="font-display text-[28px] font-[700] text-[#1A5C3A]">
+                    <span className="font-sans text-[28px] font-[700] text-[#1A5C3A]">
                       {listing.price > 0 ? (
                         listing.price >= 10000000 ? `₹${(listing.price / 10000000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} Cr` :
                         listing.price >= 100000 ? `₹${(listing.price / 100000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} L` :
