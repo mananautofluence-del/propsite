@@ -416,12 +416,11 @@ export default function PublicListingPage() {
             </div>
           )}
         </div>
-        <div style={{height: 1, background: '#F0F0F0'}} />
       </div>
 
       <div className="w-full md:max-w-[1080px] mx-auto overflow-hidden">
         {/* Mobile Wrapper */}
-        <div className="bg-[#FFFFFF] p-[56px_20px_0_20px] md:p-[56px_24px_80px_24px] z-10 relative">
+        <div className="bg-[#FFFFFF] rounded-t-[28px] -mt-[28px] md:mt-[24px] md:rounded-none relative z-10 px-[20px] pt-[24px] pb-[120px] md:px-[24px] md:pt-[24px] md:pb-[80px]">
           
           <div className="md:grid grid-cols-[58%_42%] gap-[40px]">
             <div className="min-w-0">
