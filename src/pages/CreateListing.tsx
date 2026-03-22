@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Listing, PropertyCategory, AIQuestion, PROPERTY_CATEGORIES, AMENITIES, TEMPLATES, ACCENT_COLORS, ROOM_TAGS } from '@/lib/types';
