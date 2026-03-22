@@ -3,7 +3,11 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { formatPrice } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2, Share2, Heart, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2, Share2, Heart, ArrowLeft, Download, UserPlus } from 'lucide-react';
+import { toJpeg } from 'html-to-image';
+import { WhatsAppStoryTemplate } from '@/components/WhatsAppStoryTemplate';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const getEmoji = (text: string) => {
   const t = text.toLowerCase();
@@ -30,7 +34,7 @@ const getEmoji = (text: string) => {
   return '✨';
 };
 
-function SafeImage({ src, alt, className }: { src: string; alt?: string; className?: string }) {
+export function SafeImage({ src, alt, className }: { src: string; alt?: string; className?: string }) {
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   
@@ -129,6 +133,7 @@ function AnalyticsTracker({ listingId }: { listingId: string }) {
 
 export default function PublicListingPage() {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
   const [listing, setListing] = useState<any>(null);
   const [photos, setPhotos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,8 +142,71 @@ export default function PublicListingPage() {
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [heroIdx, setHeroIdx] = useState(0);
   const [showAllHighlights, setShowAllHighlights] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showCobrokeModal, setShowCobrokeModal] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const storyRef = useRef<HTMLDivElement>(null);
   const heroTouchStartX = useRef(0);
   const lbTouchStartX = useRef(0);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }) => setCurrentUser(data));
+      }
+    });
+  }, []);
+
+  const handleDownloadStory = async () => {
+    if (!storyRef.current) return;
+    try {
+      const dataUrl = await toJpeg(storyRef.current, { quality: 0.95 });
+      const link = document.createElement('a');
+      link.download = `story-${listing.slug}.jpg`;
+      link.href = dataUrl;
+      link.click();
+      toast.success('Story downloaded!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to generate story');
+    }
+  };
+
+  const handleGenerateCobroke = async () => {
+    if (!currentUser) {
+      toast.error('Please login to co-broke');
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('generate_cobroke_link' as any, {
+        p_listing_id: listing.id,
+        p_partner_id: currentUser.id
+      });
+
+      if (rpcError) throw rpcError;
+      
+      const result = rpcData as any;
+      if (result.success) {
+        const cobrokeUrl = `${window.location.origin}/l/${listing.slug}?partner=${currentUser.id}`;
+        await navigator.clipboard.writeText(cobrokeUrl);
+        toast.success('Co-broke link copied to clipboard!');
+        setShowCobrokeModal(false);
+      } else {
+        toast.error(result.message || 'Failed to generate link');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error generating link');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -161,7 +229,52 @@ export default function PublicListingPage() {
         .eq('listing_id', data.id)
         .order('order_index');
 
-      setListing(data);
+      // Check for partner masking
+      const partnerId = searchParams.get('partner');
+      let finalBroker = null;
+
+      if (partnerId) {
+        // Verify co-broke link payment
+        const { data: cobrokeLink } = await supabase
+          .from('white_labeled_links' as any)
+          .select('id')
+          .eq('original_listing_id', data.id)
+          .eq('partner_user_id', partnerId)
+          .single();
+
+        if (cobrokeLink) {
+          // Fetch partner details
+          const { data: partnerProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', partnerId)
+            .single();
+
+          if (partnerProfile) {
+            finalBroker = {
+              name: partnerProfile.full_name,
+              phone: partnerProfile.phone,
+              whatsapp: partnerProfile.whatsapp,
+              avatar_url: partnerProfile.avatar_url,
+              agency: partnerProfile.agency_name,
+              rera: partnerProfile.rera_number,
+              is_partner: true
+            };
+          }
+        }
+      }
+
+      setListing({
+        ...data,
+        ...(finalBroker ? {
+          broker_name: finalBroker.name,
+          broker_phone: finalBroker.phone,
+          broker_whatsapp: finalBroker.whatsapp,
+          broker_avatar_url: finalBroker.avatar_url,
+          broker_agency: finalBroker.agency,
+          broker_rera: finalBroker.rera
+        } : {})
+      });
       setPhotos(photoData || []);
       setLoading(false);
     };
@@ -394,18 +507,36 @@ export default function PublicListingPage() {
           <div className="absolute top-[16px] right-[16px] flex gap-[8px] z-10">
             <button
               type="button"
+              onClick={handleDownloadStory}
+              className="w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center shadow-sm"
+              title="Download WhatsApp Story"
+            >
+              <Download size={16} color="#1A5C3A" strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (currentUser?.id === listing.user_id) {
+                  const url = `${window.location.origin}/l/${listing.slug}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success('Link copied!');
+                } else {
+                  setShowCobrokeModal(true);
+                }
+              }}
+              className="w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center shadow-sm"
+              title="Share with Client"
+            >
+              <UserPlus size={16} color="#111111" strokeWidth={2} />
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 if (navigator.share) navigator.share({ url: window.location.href, title: listing.headline });
               }}
               className="w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center shadow-sm"
             >
               <Share2 size={16} color="#111111" strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              className="w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center shadow-sm"
-            >
-              <Heart size={16} color="#111111" strokeWidth={2} />
             </button>
           </div>
 
@@ -644,6 +775,48 @@ export default function PublicListingPage() {
           {/* ═══ DESKTOP SIDEBAR ═══ */}
           <div className="hidden md:block">
             <div className="sticky top-[80px]">
+                  {listing.show_broker_card !== false && (
+                    <div className="mt-[20px] bg-white border border-[#F0F0F0] rounded-[16px] p-[20px] flex flex-col gap-4">
+                      <div className="flex items-center gap-[12px]">
+                        {listing.broker_avatar_url ? (
+                          <img src={listing.broker_avatar_url} className="w-[48px] h-[48px] rounded-full object-cover" alt={listing.broker_name} />
+                        ) : (
+                          <div className="w-[48px] h-[48px] rounded-full bg-[#EAF3ED] flex items-center justify-center text-[#1A5C3A] font-[600]">
+                            {listing.broker_name?.[0]}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-sans text-[15px] font-[600] text-[#111111]">{listing.broker_name}</div>
+                          <div className="font-sans text-[12px] text-[#888888]">{listing.broker_agency}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={handleDownloadStory}
+                          className="flex items-center justify-center gap-2 py-3 bg-[#EAF3ED] text-[#1A5C3A] rounded-xl font-sans text-[13px] font-[600]"
+                        >
+                          <Download size={14} />
+                          Story
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (currentUser?.id === listing.user_id) {
+                              const url = `${window.location.origin}/l/${listing.slug}`;
+                              navigator.clipboard.writeText(url);
+                              toast.success('Link copied!');
+                            } else {
+                              setShowCobrokeModal(true);
+                            }
+                          }}
+                          className="flex items-center justify-center gap-2 py-3 bg-[#F5F5F5] text-[#111111] rounded-xl font-sans text-[13px] font-[600]"
+                        >
+                          <UserPlus size={14} />
+                          Co-Broke
+                        </button>
+                      </div>
+                    </div>
+                  )}
               <div className="bg-white border border-[#EBEBEB] rounded-[16px] p-[24px]">
                 <div className="flex items-center gap-[14px]">
                   <div className="w-[48px] h-[48px] rounded-full bg-[#EAF3ED] flex items-center justify-center text-[#1A5C3A] font-[700] font-sans text-[16px]">
@@ -747,6 +920,52 @@ export default function PublicListingPage() {
             {allPhotos[lightbox]?.room_tag && allPhotos[lightbox].room_tag !== 'general' && (
               <div className="absolute bottom-[16px] left-[16px] bg-white/90 text-[#111111] text-[12px] font-[600] px-[10px] py-[4px] rounded-[8px] font-sans">{allPhotos[lightbox].room_tag}</div>
             )}
+          </div>
+        </div>
+      )}
+      
+      {/* Hidden Story Template */}
+      <WhatsAppStoryTemplate 
+        listing={listing}
+        photos={allPhotos}
+        broker={{
+          name: listing.broker_name,
+          agency: listing.broker_agency,
+          avatar_url: listing.broker_avatar_url,
+          rera_number: listing.broker_rera
+        }}
+        templateRef={storyRef}
+      />
+
+      {/* Co-Broke Modal */}
+      {showCobrokeModal && (
+        <div className="fixed inset-0 bg-black/60 z-[1050] flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold">Share with Client</h3>
+              <button onClick={() => setShowCobrokeModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-gray-500 mb-8 leading-relaxed">
+              Generate a client-ready link with your own contact details for 1 Listing Credit.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleGenerateCobroke}
+                disabled={isGenerating}
+                className="w-full py-4 bg-[#1A5C3A] text-white rounded-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isGenerating ? <Loader2 className="animate-spin" /> : <UserPlus size={20} />}
+                Confirm & Generate
+              </button>
+              <button
+                onClick={() => setShowCobrokeModal(false)}
+                className="w-full py-4 bg-gray-100 text-gray-900 rounded-2xl font-bold"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
