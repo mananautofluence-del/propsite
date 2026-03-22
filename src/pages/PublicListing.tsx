@@ -1,12 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef, useMemo } from 'react';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useParams } from 'react-router-dom';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { formatPrice } from '@/lib/mock-data';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from '@/integrations/supabase/client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2, Share2, Heart, ArrowLeft } from 'lucide-react';
 
 const getEmoji = (text: string) => {
@@ -68,7 +64,7 @@ function AboutProperty({ text }: { text: string | null | undefined }) {
         <button 
           type="button" 
           onClick={() => setExpanded(!expanded)} 
-          className="w-full h-[44px] bg-[#F5F5F5] rounded-[10px] font-sans text-[14px] font-[600] text-[#111111] border-none mt-[12px]"
+          className="w-full h-[40px] bg-[#F5F5F5] rounded-[10px] font-sans text-[14px] font-[600] text-[#111111] border-none mt-[10px]"
         >
           {expanded ? 'Show less' : 'Show more'}
         </button>
@@ -174,39 +170,47 @@ export default function PublicListingPage() {
 
   useEffect(() => {
     if (!listing) return;
-    document.title = listing.headline || 'PropSite Listing';
-
+    
     const setMeta = (property: string, content: string) => {
-      let el = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+      let el = document.querySelector(`meta[property="${property}"]`);
       if (!el) {
         el = document.createElement('meta');
-        if (property.startsWith('og:')) el.setAttribute('property', property);
-        else el.setAttribute('name', property);
+        el.setAttribute('property', property);
         document.head.appendChild(el);
       }
       el.setAttribute('content', content);
     };
-    
-    const heroPhoto = photos.find((p: any) => p.is_hero) || photos[0];
-    const desc = listing.ai_description ? listing.ai_description.slice(0, 120) : '';
 
+    const setNameMeta = (name: string, content: string) => {
+      let el = document.querySelector(`meta[name="${name}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('name', name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    const heroPhoto = photos.find((p: any) => p.is_hero) || photos[0];
+    const description = (listing.ai_description || '').slice(0, 120);
+
+    document.title = listing.headline || 'PropSite';
     setMeta('og:title', listing.headline || '');
-    setMeta('og:description', desc);
+    setMeta('og:description', description);
     setMeta('og:image', heroPhoto?.url || '');
     setMeta('og:image:width', '1200');
     setMeta('og:image:height', '630');
     setMeta('og:type', 'website');
-    setMeta('og:url', `https://propsite.pages.dev/l/${slug}`);
+    setMeta('og:url', `https://propsite.pages.dev/l/${listing.slug}`);
     
-    setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', listing.headline || '');
-    setMeta('twitter:description', desc);
-    setMeta('twitter:image', heroPhoto?.url || '');
-
-  }, [listing, slug, photos]);
+    setNameMeta('twitter:card', 'summary_large_image');
+    setNameMeta('twitter:title', listing.headline || '');
+    setNameMeta('twitter:description', description);
+    setNameMeta('twitter:image', heroPhoto?.url || '');
+  }, [listing, photos]);
 
   useEffect(() => {
-    const handleScroll = () => setShowStickyHeader(window.scrollY > 300);
+    const handleScroll = () => setShowStickyHeader(window.scrollY > 280);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -309,12 +313,24 @@ export default function PublicListingPage() {
 
       {showStickyHeader && (
         <div
-          className="fixed top-0 left-0 right-0 h-[52px] bg-white/95 backdrop-blur-sm border-b border-[#EFEFEF] flex items-center justify-between px-4 z-50 animate-fade-in shadow-sm"
+          className="fixed top-0 left-0 right-0 h-[52px] bg-white border-b border-[#F0F0F0] flex items-center justify-between px-[16px] z-[100]"
         >
-          <div className="font-sans text-[14px] font-[500] text-[#111111] truncate max-w-[45%]">{shortHeadline}</div>
+          <div className="font-sans text-[14px] font-[600] text-[#111111] truncate max-w-[60%]">{shortHeadline}</div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="font-display text-[14px] font-[600] text-[#1A5C3A]">{formatPrice(listing.price, listing.transaction_type)}</span>
-            <a href={whatsappUrl} target="_blank" rel="noopener" onClick={() => trackEvent('whatsapp_click')} className="h-[32px] px-[12px] bg-[#1A5C3A] text-white rounded-[6px] font-sans text-[12px] font-[600] inline-flex items-center justify-center">
+            {(!listing.price && !listing.monthly_rent) ? (
+              <span className="font-sans text-[14px] font-[400] text-[#666666]">Price on Request</span>
+            ) : (
+              <span className="font-display text-[14px] font-[600] text-[#1A5C3A]">
+                {listing.price > 0 ? (
+                  listing.price >= 10000000 ? `₹${(listing.price / 10000000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} Cr` :
+                  listing.price >= 100000 ? `₹${(listing.price / 100000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} L` :
+                  `₹${listing.price.toLocaleString('en-IN')}`
+                ) : listing.monthly_rent > 0 ? (
+                  `₹${listing.monthly_rent.toLocaleString('en-IN')}/mo`
+                ) : ''}
+              </span>
+            )}
+            <a href={whatsappUrl} target="_blank" rel="noopener" onClick={() => trackEvent('whatsapp_click')} className="h-[36px] px-[16px] bg-[#1A5C3A] text-white rounded-[10px] font-sans text-[13px] font-[600] inline-flex items-center justify-center">
               Contact
             </a>
           </div>
@@ -324,7 +340,7 @@ export default function PublicListingPage() {
       {/* ═══ HERO SECTION ═══ */}
       <div className="w-screen bg-[#FFFFFF] md:w-full md:max-w-[1080px] mx-auto md:mt-[24px]">
         {/* Desktop: grid layout */}
-        <div className="hidden md:grid grid-cols-[60%_40%] gap-[10px] h-[480px] rounded-[24px] overflow-hidden">
+        <div className="hidden md:grid grid-cols-[60%_40%] gap-[10px] h-[480px] overflow-hidden">
           {heroPhoto && (
             <div className="cursor-pointer overflow-hidden" onClick={() => setLightbox(0)}>
               <SafeImage src={heroPhoto.url} className="w-full h-full object-cover object-center" />
@@ -345,7 +361,7 @@ export default function PublicListingPage() {
         </div>
 
         {/* Mobile: CSS scroll-snap swipeable flex container */}
-        <div className="md:hidden h-[300px] w-full relative overflow-hidden rounded-[0_0_28px_28px]">
+        <div className="md:hidden h-[280px] w-full relative overflow-hidden">
           <div 
             className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
             onScroll={(e) => {
@@ -360,7 +376,7 @@ export default function PublicListingPage() {
                 className="w-full h-full shrink-0 snap-start cursor-pointer" 
                 onClick={() => setLightbox(i)}
               >
-                <SafeImage src={p.url} className="w-full h-full object-cover" />
+                <SafeImage src={p.url} className="w-full h-full object-cover object-center" />
               </div>
             ))}
           </div>
@@ -400,11 +416,12 @@ export default function PublicListingPage() {
             </div>
           )}
         </div>
+        <div style={{height: 1, background: '#F0F0F0'}} />
       </div>
 
       <div className="w-full md:max-w-[1080px] mx-auto overflow-hidden">
         {/* Mobile Wrapper */}
-        <div className="bg-[#FFFFFF] rounded-[24px_24px_0_0] -mt-[24px] relative z-10 px-[20px] pt-[24px] pb-[120px] md:px-[24px] md:mt-[24px] md:pt-0 md:pb-[80px]">
+        <div className="bg-[#FFFFFF] p-[56px_20px_0_20px] md:p-[56px_24px_80px_24px] z-10 relative">
           
           <div className="md:grid grid-cols-[58%_42%] gap-[40px]">
             <div className="min-w-0">
@@ -416,12 +433,19 @@ export default function PublicListingPage() {
                 <h1 className="font-display text-[26px] font-[600] text-[#111111] leading-[1.3] break-words mb-[10px]">{listing.headline}</h1>
                 
                 <div className="flex items-center flex-wrap gap-[8px]">
-                  {(listing.price == null && listing.monthly_rent == null) ? (
-                    <span className="font-display text-[22px] font-[400] text-[#111111]">Price on Request</span>
+                  {(!listing.price && !listing.monthly_rent) ? (
+                    <span className="font-sans text-[16px] font-[400] text-[#666666]">Price on Request</span>
                   ) : (
-                    <span className="font-display text-[28px] font-[700] text-[#1A5C3A]">{formatPrice(listing.price, listing.transaction_type)}</span>
+                    <span className="font-display text-[28px] font-[700] text-[#1A5C3A]">
+                      {listing.price > 0 ? (
+                        listing.price >= 10000000 ? `₹${(listing.price / 10000000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} Cr` :
+                        listing.price >= 100000 ? `₹${(listing.price / 100000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} L` :
+                        `₹${listing.price.toLocaleString('en-IN')}`
+                      ) : listing.monthly_rent > 0 ? (
+                        `₹${listing.monthly_rent.toLocaleString('en-IN')}/mo`
+                      ) : ''}
+                    </span>
                   )}
-                  {priceLabel && (listing.price != null || listing.monthly_rent != null) && <span className="font-sans text-[15px] text-[#555555] font-[400] self-end mb-1">{priceLabel}</span>}
                   {listing.price_negotiable && <span className="font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full shrink-0">Negotiable</span>}
                   {priceHistoryBadge && (
                     <span className="font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full shrink-0">{priceHistoryBadge}</span>
@@ -434,7 +458,7 @@ export default function PublicListingPage() {
               </div>
 
               {/* ═══ SPECS ROW ═══ */}
-              <div className="mb-[8px] -mx-[20px] px-[20px] md:mx-0 md:px-0">
+              <div className="mb-[4px] -mx-[20px] px-[20px] md:mx-0 md:px-0">
                 <div className="flex gap-[8px] overflow-x-auto pb-2 scrollbar-hide">
                   {specChips.map((s, i) => (
                     <span key={i} className="bg-[#F5F5F5] text-[#333333] text-[13px] font-[500] px-[14px] py-[6px] rounded-full shrink-0 font-sans whitespace-nowrap h-[32px] flex items-center justify-center border-none">
@@ -447,12 +471,12 @@ export default function PublicListingPage() {
 
               {/* ═══ HIGHLIGHTS ═══ */}
               {aiHighlights.length > 0 && (
-                <div className="mt-[24px]">
+                <div className="mt-[16px]">
                   <div className="font-sans text-[11px] font-[700] tracking-[0.08em] text-[#111111] uppercase mb-[14px]">WHAT THIS PROPERTY OFFERS</div>
-                  <div className="grid grid-cols-2 gap-[10px]">
+                  <div className="grid grid-cols-2 gap-[8px]">
                     {visibleHighlights.map((h: string, i: number) => (
-                      <div key={i} className="bg-[#FAFAFA] border border-[#EFEFEF] rounded-[14px] p-[14px_12px] flex flex-col gap-[10px]">
-                        <div className="text-[28px] leading-none">
+                      <div key={i} className="bg-[#FAFAFA] border border-[#EFEFEF] rounded-[12px] p-[12px_10px] flex flex-col gap-[8px]">
+                        <div className="text-[24px] leading-none">
                           {getEmoji(h)}
                         </div>
                         <div className="font-sans text-[13px] font-[600] text-[#111111] leading-[1.4] line-clamp-2">{h}</div>
@@ -491,7 +515,7 @@ export default function PublicListingPage() {
             {amenities.length > 0 && (
               <div className="mt-[24px]">
                 <div className="font-sans text-[11px] font-[700] text-[#111111] tracking-[0.08em] uppercase mb-[12px]">AMENITIES</div>
-                <div className="grid grid-cols-2 gap-[12px_8px]">
+                <div className="grid grid-cols-2 gap-[8px]">
                   {amenities.map((a: string, i: number) => (
                     <div key={i} className="flex items-center gap-[8px] p-[10px_14px] bg-[#F0FDF4] border border-[#BBF7D0] rounded-[10px]">
                       <div className="w-[8px] h-[8px] rounded-full bg-[#16A34A] shrink-0" />
@@ -531,7 +555,7 @@ export default function PublicListingPage() {
                 <div className="font-sans text-[11px] font-[700] text-[#111111] tracking-[0.08em] uppercase mb-[12px]">NEARBY</div>
                 <div className="flex gap-[10px] overflow-x-auto pb-[4px] scrollbar-hide -mx-[20px] px-[20px] md:mx-0 md:px-0">
                   {neighbourhoodHighlights.map((h: string, i: number) => (
-                    <div key={i} className="bg-white border border-[#EFEFEF] rounded-[12px] p-[12px_14px] flex items-center justify-start gap-[10px] shrink-0 min-w-[160px]">
+                    <div key={i} className="bg-white border border-[#EFEFEF] rounded-[12px] p-[10px_12px] flex items-center justify-start gap-[10px] shrink-0 min-w-[140px]">
                       <div className="w-[32px] h-[32px] rounded-full bg-[#FEF2F2] flex items-center justify-center shrink-0 text-[16px]">
                         📍
                       </div>
