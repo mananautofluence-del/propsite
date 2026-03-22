@@ -56,8 +56,8 @@ function AboutProperty({ text }: { text: string | null | undefined }) {
       <div className="font-sans text-[11px] font-[700] text-[#111111] tracking-[0.08em] uppercase mb-[12px]">ABOUT THIS PROPERTY</div>
       <div>
         <div 
-          className="font-sans text-[15px] text-[#111111] leading-[1.75]" 
-          style={!expanded ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}}
+          className="font-sans text-[16px] text-[#050505] leading-[1.7] whitespace-pre-line" 
+          style={!expanded ? { display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}}
         >
           {text}
         </div>
@@ -429,7 +429,7 @@ export default function PublicListingPage() {
                 <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[8px]">
                   📍 {listing.locality}, {listing.city}
                 </div>
-                <h1 className="font-sans text-[26px] font-[600] text-[#111111] leading-[1.3] break-words mb-[10px]">{listing.headline}</h1>
+                <h1 className="font-sans text-[22px] font-[600] text-[#111111] leading-[1.3] break-words mb-[10px]">{listing.headline}</h1>
                 
                 <div className="flex items-center flex-wrap gap-[8px]">
                   {(!listing.price && !listing.monthly_rent) ? (
