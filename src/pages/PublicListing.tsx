@@ -68,40 +68,21 @@ function getHighlightParts(text: string): { title: string; subtitle: string } {
 
 function AboutProperty({ text }: { text: string | null | undefined }) {
   const [expanded, setExpanded] = useState(false);
-  const words = useMemo(() => (text || '').trim().split(/\s+/).filter(Boolean), [text]);
-  const isLong = words.length > 40;
-  const preview = words.slice(0, 40).join(' ');
-  const full = words.join(' ');
-
   if (!text?.trim()) return null;
 
   return (
-    <div>
-      <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">About this property</div>
-      <p className="text-[15px] text-text-2 font-sans" style={{ lineHeight: 1.8 }}>
-        {isLong && !expanded ? (
-          <>
-            {preview}
-            …{' '}
-            <button type="button" onClick={() => setExpanded(true)} className="text-primary font-medium text-sm inline">
-              Show more →
-            </button>
-          </>
-        ) : (
-          <>
-            {full}
-            {isLong && expanded && (
-              <>
-                {' '}
-                <button type="button" onClick={() => setExpanded(false)} className="text-primary font-medium text-sm inline">
-                  Show less
-                </button>
-              </>
-            )}
-          </>
+    <div className="mt-[28px]">
+      <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">ABOUT THIS PROPERTY</div>
+      <div className="relative">
+        <p className={`font-sans text-[16px] text-[#111111] leading-[1.75] ${!expanded ? 'line-clamp-3' : ''}`}>
+          {text}
+        </p>
+        {!expanded && (
+          <button type="button" onClick={() => setExpanded(true)} className="font-sans text-[14px] font-[600] text-[#1A5C3A] mt-[8px]">
+            Show more
+          </button>
         )}
-      </p>
-      <div className="mt-5 border-b border-border" />
+      </div>
     </div>
   );
 }
@@ -293,12 +274,12 @@ export default function PublicListingPage() {
   const visibleHighlights = showAllHighlights ? aiHighlights : aiHighlights.slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-0">
+    <div className="min-h-screen bg-[#FFFFFF] pb-[100px] md:pb-0">
       <AnalyticsTracker listingId={listing.id} />
 
       {listing.urgency_badge && (
         <div className="bg-[hsl(var(--amber-light))] border-b border-[hsl(38_60%_80%)] py-2 text-center">
-          <span className="text-[13px] font-medium text-[hsl(var(--amber))]">⚡ {listing.urgency_badge}</span>
+          <span className="font-sans text-[13px] font-[500] text-[hsl(var(--amber))]">⚡ {listing.urgency_badge}</span>
         </div>
       )}
 
@@ -340,32 +321,37 @@ export default function PublicListingPage() {
           </div>
         </div>
 
-        {/* Mobile: swipeable full-width hero */}
-        <div
-          className="md:hidden h-[300px] w-full relative rounded-b-[20px] overflow-hidden"
-          onTouchStart={e => { heroTouchStartX.current = e.touches[0].clientX; }}
-          onTouchEnd={e => {
-            const delta = e.changedTouches[0].clientX - heroTouchStartX.current;
-            if (Math.abs(delta) > 50) {
-              if (delta < 0 && heroIdx < allPhotos.length - 1) setHeroIdx(heroIdx + 1);
-              else if (delta > 0 && heroIdx > 0) setHeroIdx(heroIdx - 1);
-            }
-          }}
+        {/* Mobile: CSS scroll-snap swipeable flex container */}
+        <div 
+          className="md:hidden h-[260px] w-full relative overflow-hidden"
         >
-          {allPhotos.length > 0 && (
-            <div className="w-full h-full cursor-pointer" onClick={() => setLightbox(heroIdx)}>
-              <SafeImage src={allPhotos[heroIdx]?.url} className="w-full h-full object-cover object-center" />
-            </div>
-          )}
+          <div 
+            className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const idx = Math.round(el.scrollLeft / el.clientWidth);
+              setHeroIdx(idx);
+            }}
+          >
+            {allPhotos.map((p: any, i: number) => (
+              <div 
+                key={p.id} 
+                className="w-full h-full shrink-0 snap-start cursor-pointer" 
+                onClick={() => setLightbox(i)}
+              >
+                <SafeImage src={p.url} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
 
           {/* Back button */}
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center z-10"
-            style={{ boxShadow: 'var(--shadow-md)' }}
+            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white flex items-center justify-center z-10"
+            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
           >
-            <ArrowLeft size={18} className="text-text-1" />
+            <ArrowLeft size={18} className="text-[#111111]" />
           </button>
 
           {/* Share + Save buttons */}
@@ -375,107 +361,87 @@ export default function PublicListingPage() {
               onClick={() => {
                 if (navigator.share) navigator.share({ url: window.location.href, title: listing.headline });
               }}
-              className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center"
-              style={{ boxShadow: 'var(--shadow-md)' }}
+              className="w-10 h-10 rounded-full bg-white flex items-center justify-center"
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
             >
-              <Share2 size={16} className="text-text-1" />
+              <Share2 size={16} className="text-[#111111]" />
             </button>
             <button
               type="button"
-              className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center"
-              style={{ boxShadow: 'var(--shadow-md)' }}
+              className="w-10 h-10 rounded-full bg-white flex items-center justify-center"
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
             >
-              <Heart size={16} className="text-text-1" />
+              <Heart size={16} className="text-[#111111]" />
             </button>
           </div>
 
           {/* Photo counter pill */}
           {allPhotos.length > 1 && (
-            <div className="absolute bottom-3 right-3 bg-black/50 text-white text-[12px] px-2.5 py-1 rounded-full font-sans">
+            <div className="absolute bottom-3 right-3 bg-black/50 text-white font-sans text-[12px] font-[400] px-[10px] py-[4px] rounded-full pointer-events-none">
               {heroIdx + 1} / {allPhotos.length}
             </div>
           )}
         </div>
       </div>
 
-      <div className="px-5 md:px-0 md:container md:max-w-5xl overflow-hidden">
+      <div className="px-[20px] md:px-0 md:max-w-[1080px] mx-auto overflow-hidden">
         {/* ═══ PROPERTY IDENTITY ═══ */}
-        <div className="mt-5">
-          <div className="flex items-center gap-1.5 text-[13px] text-text-3 font-sans mb-1.5">
+        <div className="mt-[20px]">
+          <div className="flex items-center gap-1.5 font-sans text-[12px] text-[#888888] font-[600] tracking-[0.06em] uppercase mb-1.5">
             📍 {listing.locality}, {listing.city}
           </div>
-          <h1 className="font-display text-[26px] font-semibold text-text-1 leading-[1.3] break-words">{listing.headline}</h1>
-          <div className="flex items-center flex-wrap gap-2 mt-3">
-            <span className="font-display text-[30px] font-medium text-primary">{formatPrice(listing.price, listing.transaction_type)}</span>
-            {priceLabel && <span className="text-[14px] text-text-3 font-sans self-end mb-1">{priceLabel}</span>}
-            {listing.price_negotiable && <span className="badge-live text-2xs">Negotiable</span>}
+          <h1 className="font-display text-[28px] font-[600] text-[#111111] leading-[1.25] break-words mt-[6px]">{listing.headline}</h1>
+          <div className="flex items-center flex-wrap gap-2 mt-[8px]">
+            <span className="font-display text-[26px] font-[700] text-[#1A5C3A]">{formatPrice(listing.price, listing.transaction_type)}</span>
+            {priceLabel && <span className="font-sans text-[14px] text-[#888888] font-[400] self-end mb-1">{priceLabel}</span>}
+            {listing.price_negotiable && <span className="font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full shrink-0">Negotiable</span>}
             {priceHistoryBadge && (
-              <span className="text-2xs text-[hsl(var(--amber))] bg-[hsl(var(--amber-light))] px-2.5 py-0.5 rounded-full font-sans">{priceHistoryBadge}</span>
+              <span className="font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full shrink-0">{priceHistoryBadge}</span>
             )}
           </div>
           {aiTagline && aiTagline.length > 10 && (
-            <p className="text-[13px] text-text-2 italic font-sans mt-2">{aiTagline}</p>
+            <p className="font-sans text-[13px] text-[#555555] italic mt-2">{aiTagline}</p>
           )}
         </div>
 
         {/* ═══ SPECS ROW ═══ */}
-        <div className="mt-5 -mx-5 px-5">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="mt-[14px] -mx-[20px] px-[20px] md:mx-0 md:px-0">
+          <div className="flex gap-[8px] overflow-x-auto pb-2 scrollbar-hide">
             {specChips.map((s, i) => (
-              <span key={i} className="bg-surface-2 border border-border text-text-2 text-[12px] px-3.5 py-1.5 rounded-full shrink-0 font-sans whitespace-nowrap">
+              <span key={i} className="bg-[#F8F8F8] border border-[#EBEBEB] text-[#555555] text-[13px] font-[500] px-[14px] py-[6px] rounded-full shrink-0 font-sans whitespace-nowrap">
                 {s}
               </span>
             ))}
           </div>
         </div>
 
-        {/* ═══ PHOTO STRIP ═══ */}
-        {allPhotos.length > 1 && (
-          <div className="mt-4 -mx-5 px-5">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {allPhotos.map((p: any, i: number) => (
-                <div key={p.id} className="shrink-0 w-[100px] h-[72px] rounded-xl overflow-hidden relative cursor-pointer bg-surface-2" onClick={() => setLightbox(i)}>
-                  <SafeImage src={p.url} className="w-full h-full object-cover" />
-                  {p.room_tag && p.room_tag !== 'general' && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-dark/55 text-surface font-sans text-[9px] px-1.5 py-0.5">{p.room_tag}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="grid lg:grid-cols-[65%_35%] gap-6 mt-6">
+        <div className="grid md:grid-cols-[58%_42%] gap-6 mt-[28px]">
           <div className="space-y-6 min-w-0">
-            {/* ═══ HIGHLIGHTS (Airbnb-style) ═══ */}
+            {/* ═══ HIGHLIGHTS ═══ */}
             {aiHighlights.length > 0 && (
-              <div>
-                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-4">What this property offers</div>
+              <div className="mt-[28px]">
+                <div className="font-sans text-[11px] font-[600] tracking-[0.08em] text-[#888888] uppercase mb-[16px]">What this property offers</div>
                 <div className="space-y-0">
                   {visibleHighlights.map((h: string, i: number) => {
                     const { title, subtitle } = getHighlightParts(h);
                     return (
-                      <div key={i}>
-                        <div className="flex items-start gap-4 py-3.5">
-                          <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-[18px] leading-none" aria-hidden>{getHighlightIcon(h)}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[14px] font-semibold text-text-1 font-sans">{title}</div>
-                            {subtitle && <div className="text-[13px] text-text-2 font-sans mt-0.5">{subtitle}</div>}
-                          </div>
+                      <div key={i} className={`flex items-start gap-[16px] py-[16px] ${i < visibleHighlights.length - 1 ? 'border-b border-[#F0F0F0]' : ''}`}>
+                        <div className="w-[44px] h-[44px] rounded-[10px] bg-[#F8F8F8] border border-[#EBEBEB] flex items-center justify-center shrink-0 text-[20px] leading-none">
+                          {getHighlightIcon(h)}
                         </div>
-                        {i < visibleHighlights.length - 1 && <div className="border-b border-border" />}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-sans text-[15px] font-[600] text-[#111111] leading-[1.3]">{title}</div>
+                          {subtitle && <div className="font-sans text-[14px] font-[400] text-[#555555] leading-[1.5] mt-[2px]">{subtitle}</div>}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
                 {aiHighlights.length > 3 && !showAllHighlights && (
-                  <button type="button" onClick={() => setShowAllHighlights(true)} className="text-primary text-[14px] font-medium font-sans mt-2 hover:underline">
+                  <button type="button" onClick={() => setShowAllHighlights(true)} className="font-sans text-[14px] font-[600] text-[#111111] mt-[14px] block underline w-full text-left">
                     Show all {aiHighlights.length} highlights
                   </button>
                 )}
-                <div className="mt-4 border-b border-border" />
               </div>
             )}
 
@@ -483,68 +449,66 @@ export default function PublicListingPage() {
             <AboutProperty text={listing.ai_description} />
 
             {/* ═══ PROPERTY DETAILS TABLE ═══ */}
-            <div>
-              <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Property Details</div>
-              <div className="rounded-xl overflow-hidden" style={{ boxShadow: 'var(--shadow-sm)' }}>
-                {propertyDetails.map(([emoji, label, val], i) => (
-                  <div key={i} className={`flex items-center justify-between px-4 py-3 ${i % 2 === 0 ? 'bg-white' : 'bg-surface-2'}`}>
-                    <span className="text-[13px] text-text-3 font-sans flex items-center gap-1.5">
-                      <span className="text-sm">{emoji}</span> {label}
-                    </span>
-                    <span className="text-[13px] font-medium text-text-1 font-sans">{String(val)}</span>
-                  </div>
-                ))}
+            {propertyDetails.length > 0 && (
+              <div className="mt-[28px]">
+                <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">PROPERTY DETAILS</div>
+                <div className="bg-white border border-[#EBEBEB] rounded-[12px] overflow-hidden">
+                  {propertyDetails.map(([emoji, label, val], i) => (
+                    <div key={i} className={`flex items-center justify-between px-[16px] py-[14px] ${i < propertyDetails.length - 1 ? 'border-b border-[#F5F5F5]' : ''} ${i % 2 === 0 ? 'bg-white' : 'bg-[#FAFAFA]'}`}>
+                      <span className="font-sans text-[13px] font-[400] text-[#888888] flex items-center gap-[4px]">
+                        <span className="text-[14px]">{emoji}</span> {label}
+                      </span>
+                      <span className="font-sans text-[14px] font-[600] text-[#111111]">{String(val)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* ═══ AMENITIES ═══ */}
             {amenities.length > 0 && (
-              <div>
-                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Amenities</div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {amenities.map((a: string, i: number) => {
-                    const icon = getAmenityIcon(a);
-                    return (
-                      <div key={i} className="flex items-center gap-2.5 text-[13px] text-text-2 font-sans">
-                        <span className="text-primary text-base leading-none shrink-0">
-                          {icon === '✓' ? <Check size={14} className="text-primary" /> : <span className="text-primary">✓</span>}
-                        </span>
-                        <span>{a}</span>
+              <div className="mt-[28px]">
+                <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">AMENITIES</div>
+                <div className="grid grid-cols-2 gap-x-[16px] gap-y-[12px]">
+                  {amenities.map((a: string, i: number) => (
+                    <div key={i} className="flex items-center gap-[10px]">
+                      <div className="w-[18px] h-[18px] rounded-full bg-[#EAF3ED] flex items-center justify-center shrink-0 text-[#1A5C3A] [&>svg]:w-[12px] [&>svg]:h-[12px] [&>svg]:stroke-[1.5px]">
+                        <Check />
                       </div>
-                    );
-                  })}
+                      <span className="font-sans text-[15px] font-[400] text-[#111111]">{a}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
             {listing.floor_plan_url && (
-              <div>
-                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Floor Plan</div>
+              <div className="mt-[28px]">
+                <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">FLOOR PLAN</div>
                 <SafeImage
                   src={listing.floor_plan_url}
                   alt="Floor plan"
-                  className="w-full rounded-2xl border border-border"
+                  className="w-full rounded-[12px] border border-[#EBEBEB]"
                 />
               </div>
             )}
 
             {listing.virtual_tour_url && (
-              <div>
-                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Virtual Tour</div>
+              <div className="mt-[28px]">
+                <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">VIRTUAL TOUR</div>
                 <VirtualTourEmbed url={listing.virtual_tour_url} />
               </div>
             )}
 
             {neighbourhoodHighlights.length > 0 && (
-              <div>
-                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Nearby</div>
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+              <div className="mt-[28px]">
+                <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">NEARBY</div>
+                <div className="flex gap-[8px] flex-wrap">
                   {neighbourhoodHighlights.map((h: string, i: number) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1.5 shrink-0 text-[12px] text-text-1 font-sans bg-surface-2 border border-border rounded-full px-3 py-1.5"
+                      className="font-sans text-[13px] font-[500] text-[#555555] bg-[#F8F8F8] border border-[#EBEBEB] rounded-full px-[14px] py-[6px]"
                     >
-                      <span aria-hidden>📍</span>
                       {h}
                     </span>
                   ))}
@@ -586,63 +550,67 @@ export default function PublicListingPage() {
 
             {/* ═══ BROKER CARD (mobile) ═══ */}
             {listing.show_broker_card && (
-              <div className="lg:hidden rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-md)' }}>
-                <div className="flex items-center gap-3.5 mb-4">
-                  <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium font-display text-lg">
+              <div className="lg:hidden mt-[28px] bg-white border border-[#EBEBEB] rounded-[14px] p-[20px]">
+                <div className="flex items-center gap-[14px]">
+                  <div className="w-[48px] h-[48px] rounded-full bg-[#EAF3ED] flex items-center justify-center text-[#1A5C3A] font-[700] font-sans text-[16px]">
                     {listing.broker_name?.[0]}
                   </div>
                   <div>
-                    <div className="text-[16px] font-semibold text-text-1 font-sans">{listing.broker_name}</div>
-                    <div className="text-[13px] text-text-2 font-sans">{listing.broker_agency}</div>
+                    <div className="font-sans text-[16px] font-[700] text-[#111111]">{listing.broker_name}</div>
+                    <div className="font-sans text-[13px] text-[#888888]">{listing.broker_agency}</div>
                     {listing.broker_rera && (
-                      <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-medium text-primary bg-[hsl(var(--green-light))] px-2 py-0.5 rounded-full">
-                        ✓ Verified Broker
+                      <span className="inline-flex items-center gap-1 mt-[4px] font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full">
+                        RERA Verified
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="space-y-2.5">
+                <div className="border-t border-[#EBEBEB] my-[16px]" />
+                <div className="flex flex-col gap-[10px]">
                   <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')}
-                    className="w-full h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-1.5 text-sm font-medium font-sans">
-                    <MessageCircle size={16} /> WhatsApp
+                    className="w-full h-[50px] rounded-[12px] bg-[#1A5C3A] text-white flex items-center justify-center gap-[6px] font-sans text-[15px] font-[700]">
+                    <MessageCircle size={18} /> WhatsApp
                   </a>
                   <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')}
-                    className="w-full h-11 rounded-xl bg-surface border border-border text-text-1 flex items-center justify-center gap-1.5 text-sm font-medium font-sans">
-                    <Phone size={16} /> Call
+                    className="w-full h-[50px] rounded-[12px] bg-white border-[1.5px] border-[#EBEBEB] text-[#111111] flex items-center justify-center gap-[6px] font-sans text-[15px] font-[500]">
+                    <Phone size={18} /> Call
                   </a>
                 </div>
-                {listing.broker_rera && <div className="text-[11px] text-text-3 font-sans mt-3">RERA: {listing.broker_rera}</div>}
               </div>
             )}
           </div>
 
           {/* ═══ DESKTOP SIDEBAR ═══ */}
-          <div className="hidden lg:block">
-            <div className="sticky top-20 space-y-4">
-              <div className="rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-md)' }}>
-                <div className="flex items-center gap-3.5 mb-4">
-                  <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-lg font-medium font-display">
+          <div className="hidden md:block">
+            <div className="sticky top-[80px]">
+              <div className="bg-white border border-[#EBEBEB] rounded-[16px] p-[24px]">
+                <div className="flex items-center gap-[14px]">
+                  <div className="w-[48px] h-[48px] rounded-full bg-[#EAF3ED] flex items-center justify-center text-[#1A5C3A] font-[700] font-sans text-[16px]">
                     {listing.broker_name?.[0]}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-text-1 font-sans">{listing.broker_name}</div>
-                    <div className="text-[12px] text-text-2 font-sans">{listing.broker_agency}</div>
+                    <div className="font-sans text-[16px] font-[700] text-[#111111]">{listing.broker_name}</div>
+                    <div className="font-sans text-[13px] text-[#888888]">{listing.broker_agency}</div>
                     {listing.broker_rera && (
-                      <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-medium text-primary bg-[hsl(var(--green-light))] px-2 py-0.5 rounded-full">
-                        ✓ Verified
+                      <span className="inline-flex items-center gap-1 mt-[4px] font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full">
+                        RERA Verified
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="font-display text-2xl font-medium text-primary mb-4">{formatPrice(listing.price, listing.transaction_type)}</div>
-                <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')}
-                  className="w-full h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-1.5 text-sm font-medium font-sans mb-2.5">
-                  <MessageCircle size={16} /> WhatsApp Broker
-                </a>
-                <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')}
-                  className="w-full h-11 rounded-xl bg-surface border border-border text-text-1 flex items-center justify-center gap-1.5 text-sm font-medium font-sans mb-4">
-                  <Phone size={16} /> Call Broker
-                </a>
+                <div className="border-t border-[#EBEBEB] my-[16px]" />
+                <div className="font-display text-[26px] font-[700] text-[#1A5C3A] mb-[12px]">{formatPrice(listing.price, listing.transaction_type)}</div>
+                {listing.price_negotiable && <div className="font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full inline-block mb-[16px]">Negotiable</div>}
+                <div className="flex flex-col gap-[10px]">
+                  <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')}
+                    className="w-full h-[50px] rounded-[12px] bg-[#1A5C3A] text-white flex items-center justify-center gap-[6px] font-sans text-[15px] font-[700]">
+                    <MessageCircle size={18} /> WhatsApp
+                  </a>
+                  <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')}
+                    className="w-full h-[50px] rounded-[12px] bg-white border-[1.5px] border-[#EBEBEB] text-[#111111] flex items-center justify-center gap-[6px] font-sans text-[15px] font-[500]">
+                    <Phone size={18} /> Call
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -651,26 +619,26 @@ export default function PublicListingPage() {
 
       {/* ═══ FIXED BOTTOM BAR (mobile) ═══ */}
       <div
-        className="fixed bottom-0 left-0 right-0 h-20 bg-surface flex items-center px-4 lg:hidden z-50 safe-bottom"
-        style={{ boxShadow: 'var(--shadow-lg)' }}
+        className="fixed bottom-0 left-0 right-0 h-[72px] bg-white flex items-center px-[20px] md:hidden z-50 safe-bottom border-t border-[#EBEBEB]"
+        style={{ boxShadow: '0 -2px 16px rgba(0,0,0,0.08)' }}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium font-display shrink-0">
+        <div className="flex items-center gap-[10px] flex-1 min-w-0">
+          <div className="w-[36px] h-[36px] rounded-full bg-[#EAF3ED] flex items-center justify-center text-[#1A5C3A] text-[15px] font-[700] font-sans shrink-0">
             {listing.broker_name?.[0]}
           </div>
-          <div className="min-w-0">
-            <div className="text-[13px] font-medium text-text-1 truncate font-sans">{listing.broker_name}</div>
-            <div className="text-[11px] text-text-3 truncate font-sans">{listing.broker_agency}</div>
+          <div className="min-w-0 pr-[10px]">
+            <div className="font-sans text-[13px] font-[600] text-[#111111] truncate">{listing.broker_name}</div>
+            <div className="font-sans text-[11px] text-[#888888] truncate">{listing.broker_agency}</div>
           </div>
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-[10px] shrink-0">
           <a href={whatsappUrl} target="_blank" rel="noopener" onClick={() => trackEvent('whatsapp_click')}
-            className="h-11 px-5 rounded-xl bg-primary text-primary-foreground text-sm font-medium font-sans flex items-center gap-1.5">
-            <MessageCircle size={16} /> WhatsApp
+            className="h-[46px] w-[130px] rounded-[12px] bg-[#1A5C3A] text-white font-sans text-[14px] font-[700] flex items-center justify-center gap-[6px]">
+            WhatsApp
           </a>
           <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')}
-            className="h-11 px-4 rounded-xl bg-surface border border-border text-text-1 text-sm font-medium font-sans flex items-center gap-1.5">
-            <Phone size={16} /> Call
+            className="h-[46px] w-[52px] rounded-[12px] bg-white border border-[#EBEBEB] text-[#111111] flex items-center justify-center">
+            <Phone size={20} strokeWidth={1.8} />
           </a>
         </div>
       </div>
