@@ -13,7 +13,7 @@ export default {
     extend: {
       fontFamily: {
         display: ['"Playfair Display"', "Georgia", "serif"],
-        sans: ['"DM Sans"', "system-ui", "sans-serif"],
+        sans: ['"Inter"', "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -72,6 +72,11 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -107,6 +112,14 @@ export default {
           "0%": { opacity: "0", transform: "scale(0.95)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        "pulse-ring": {
+          "0%": { transform: "scale(1)", opacity: "0.8" },
+          "100%": { transform: "scale(1.5)", opacity: "0" },
+        },
+        "checkmark-draw": {
+          "0%": { strokeDashoffset: "48" },
+          "100%": { strokeDashoffset: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -117,6 +130,8 @@ export default {
         "slide-right": "slide-right 0.6s cubic-bezier(0.16,1,0.3,1) forwards",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         "scale-in": "scale-in 0.4s cubic-bezier(0.16,1,0.3,1) forwards",
+        "pulse-ring": "pulse-ring 1.2s ease-out infinite",
+        "checkmark-draw": "checkmark-draw 0.6s ease-out forwards",
       },
     },
   },

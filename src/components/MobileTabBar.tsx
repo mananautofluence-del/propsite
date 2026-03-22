@@ -1,95 +1,77 @@
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Building2, Plus, BarChart3, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, List, PlusCircle, BarChart3, MoreHorizontal } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
 
-const tabs = [
-  { to: '/dashboard', icon: Home, label: 'Home' },
-  { to: '/dashboard/listings', icon: List, label: 'Listings' },
-  { to: '/dashboard/listings/new', icon: PlusCircle, label: 'Create', isCreate: true },
-  { to: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
-  { label: 'More', icon: MoreHorizontal, isMore: true },
+const TABS = [
+  { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { to: '/dashboard/listings', label: 'Listings', icon: Building2 },
+  { to: '/create', label: 'Create', icon: Plus, isAction: true },
+  { to: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+];
+
+const MORE_ITEMS = [
+  { to: '/dashboard/collections', label: 'Collections' },
+  { to: '/dashboard/settings', label: 'Settings' },
 ];
 
 export default function MobileTabBar() {
   const loc = useLocation();
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const [moreOpen, setMoreOpen] = useState(false);
-
-  const closeMore = () => setMoreOpen(false);
-
-  const moreActive = loc.pathname.startsWith('/dashboard/settings') || moreOpen;
+  const [showMore, setShowMore] = useState(false);
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 h-14 bg-surface border-t border-border flex items-center justify-around z-50 safe-bottom md:hidden">
-        {tabs.map((t) => {
-          if (t.isCreate) {
+      <div
+        className="fixed bottom-0 left-0 right-0 lg:hidden bg-surface z-50 safe-bottom"
+        style={{ borderRadius: '20px 20px 0 0', boxShadow: 'var(--shadow-lg)' }}
+      >
+        <div className="flex items-center justify-around h-16">
+          {TABS.map(tab => {
+            const active = tab.to === '/dashboard'
+              ? loc.pathname === '/dashboard'
+              : loc.pathname.startsWith(tab.to);
+
+            if (tab.isAction) {
+              return (
+                <Link key={tab.to} to={tab.to} className="flex flex-col items-center justify-center -mt-2">
+                  <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center" style={{ boxShadow: 'var(--shadow-md)' }}>
+                    <Plus size={20} className="text-primary-foreground" />
+                  </div>
+                </Link>
+              );
+            }
+
             return (
-              <Link key={t.to} to={t.to!} className="flex flex-col items-center -mt-3">
-                <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center">
-                  <PlusCircle size={22} className="text-primary-foreground" />
-                </div>
+              <Link key={tab.to} to={tab.to} className="flex flex-col items-center justify-center gap-0.5 min-w-[56px]">
+                <tab.icon size={20} className={active ? 'text-primary' : 'text-text-3'} />
+                <span className={`text-[10px] ${active ? 'text-primary font-medium' : 'text-text-3'}`}>{tab.label}</span>
               </Link>
             );
-          }
-          if (t.isMore) {
-            return (
-              <button
-                key="more"
-                type="button"
-                onClick={() => setMoreOpen(true)}
-                className="flex flex-col items-center gap-0.5"
-              >
-                <MoreHorizontal size={20} className={moreActive ? 'text-primary' : 'text-text-3'} />
-                <span className={`text-2xs ${moreActive ? 'text-primary font-medium' : 'text-text-3'}`}>{t.label}</span>
-              </button>
-            );
-          }
-          const active = loc.pathname === t.to || (t.to !== '/dashboard' && loc.pathname.startsWith(t.to!));
-          return (
-            <Link key={t.to} to={t.to!} className="flex flex-col items-center gap-0.5">
-              <t.icon size={20} className={active ? 'text-primary' : 'text-text-3'} />
-              <span className={`text-2xs ${active ? 'text-primary font-medium' : 'text-text-3'}`}>{t.label}</span>
-            </Link>
-          );
-        })}
+          })}
+          <button onClick={() => setShowMore(!showMore)} className="flex flex-col items-center justify-center gap-0.5 min-w-[56px]">
+            <MoreHorizontal size={20} className={showMore ? 'text-primary' : 'text-text-3'} />
+            <span className={`text-[10px] ${showMore ? 'text-primary font-medium' : 'text-text-3'}`}>More</span>
+          </button>
+        </div>
       </div>
 
-      {moreOpen && (
+      {/* More menu modal */}
+      {showMore && (
         <>
-          <button type="button" className="fixed inset-0 z-[60] bg-black/50 md:hidden" aria-label="Close menu" onClick={closeMore} />
-          <div className="fixed bottom-0 left-0 right-0 z-[70] bg-surface rounded-t-2xl border-t border-border shadow-lg md:hidden animate-in slide-in-from-bottom duration-200 safe-bottom">
-            <div className="w-10 h-1 bg-border rounded-full mx-auto mt-2 mb-1" />
-            <nav className="px-4 pb-6 pt-2 space-y-0.5">
-              <Link to="/dashboard/settings" onClick={closeMore} className="flex items-center h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2">
-                Settings
-              </Link>
-              <Link to="/dashboard/collections" onClick={closeMore} className="flex items-center h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2">
-                Collections
-              </Link>
-              <Link to="/dashboard/settings" onClick={closeMore} className="flex items-center h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2">
-                My Profile
-              </Link>
-              <Link to="/dashboard/settings" onClick={closeMore} className="flex items-center h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2">
-                Billing & Credits
-              </Link>
-              <Link to="/" onClick={closeMore} className="flex items-center h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2">
-                Help
-              </Link>
-              <button
-                type="button"
-                onClick={async () => {
-                  closeMore();
-                  await signOut();
-                  navigate('/login');
-                }}
-                className="flex items-center w-full h-11 px-3 rounded-md text-sm text-text-1 hover:bg-surface-2 text-left"
+          <div className="fixed inset-0 bg-dark/30 z-40 lg:hidden" onClick={() => setShowMore(false)} />
+          <div
+            className="fixed bottom-20 left-4 right-4 bg-surface rounded-2xl z-50 p-2 lg:hidden"
+            style={{ boxShadow: 'var(--shadow-lg)' }}
+          >
+            {MORE_ITEMS.map(item => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setShowMore(false)}
+                className="flex items-center h-11 px-4 rounded-xl text-[13px] font-medium text-text-1 hover:bg-surface-2 transition-colors"
               >
-                Sign Out
-              </button>
-            </nav>
+                {item.label}
+              </Link>
+            ))}
           </div>
         </>
       )}

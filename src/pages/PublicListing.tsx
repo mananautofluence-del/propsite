@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { formatPrice } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2, Share2, Heart, ArrowLeft } from 'lucide-react';
 
 function getAmenityIcon(text: string): string {
   const t = text.toLowerCase();
@@ -59,25 +59,32 @@ function getHighlightIcon(text: string): string {
   return '✨';
 }
 
+function getHighlightParts(text: string): { title: string; subtitle: string } {
+  const words = text.split(/\s+/);
+  const title = words.slice(0, 4).join(' ');
+  const subtitle = words.slice(4).join(' ');
+  return { title, subtitle };
+}
+
 function AboutProperty({ text }: { text: string | null | undefined }) {
   const [expanded, setExpanded] = useState(false);
   const words = useMemo(() => (text || '').trim().split(/\s+/).filter(Boolean), [text]);
-  const isLong = words.length > 60;
-  const preview = words.slice(0, 60).join(' ');
+  const isLong = words.length > 40;
+  const preview = words.slice(0, 40).join(' ');
   const full = words.join(' ');
 
   if (!text?.trim()) return null;
 
   return (
     <div>
-      <div className="text-label text-text-3 mb-2">About This Property</div>
-      <p className="text-sm text-text-2 font-sans" style={{ lineHeight: 1.75 }}>
+      <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">About this property</div>
+      <p className="text-[15px] text-text-2 font-sans" style={{ lineHeight: 1.8 }}>
         {isLong && !expanded ? (
           <>
             {preview}
             …{' '}
             <button type="button" onClick={() => setExpanded(true)} className="text-primary font-medium text-sm inline">
-              Read more
+              Show more →
             </button>
           </>
         ) : (
@@ -87,13 +94,14 @@ function AboutProperty({ text }: { text: string | null | undefined }) {
               <>
                 {' '}
                 <button type="button" onClick={() => setExpanded(false)} className="text-primary font-medium text-sm inline">
-                  Read less
+                  Show less
                 </button>
               </>
             )}
           </>
         )}
       </p>
+      <div className="mt-5 border-b border-border" />
     </div>
   );
 }
@@ -102,7 +110,7 @@ function VirtualTourEmbed({ url }: { url: string }) {
   const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=))([\w-]+)/);
   if (yt) {
     return (
-      <div className="aspect-video w-full rounded-lg overflow-hidden border border-[#E2E0D8]">
+      <div className="aspect-video w-full rounded-2xl overflow-hidden border border-border">
         <iframe title="Virtual tour" className="w-full h-full" src={`https://www.youtube.com/embed/${yt[1]}`} allowFullScreen />
       </div>
     );
@@ -159,6 +167,9 @@ export default function PublicListingPage() {
   const [notFound, setNotFound] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
+  const [heroIdx, setHeroIdx] = useState(0);
+  const [showAllHighlights, setShowAllHighlights] = useState(false);
+  const heroTouchStartX = useRef(0);
   const lbTouchStartX = useRef(0);
 
   useEffect(() => {
@@ -276,8 +287,13 @@ export default function PublicListingPage() {
       ? rawPriceNote
       : `↓ Reduced from ${rawPriceNote}`);
 
+  const aiTagline = listing.ai_description?.trim()?.split(/[.!?]/)?.[0]?.trim();
+  const priceLabel = listing.transaction_type === 'rent' ? '/month' : listing.transaction_type === 'lease' ? '/lease' : '';
+
+  const visibleHighlights = showAllHighlights ? aiHighlights : aiHighlights.slice(0, 3);
+
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
       <AnalyticsTracker listingId={listing.id} />
 
       {listing.urgency_badge && (
@@ -288,7 +304,8 @@ export default function PublicListingPage() {
 
       {showStickyHeader && (
         <div
-          className="fixed top-0 left-0 right-0 h-[52px] bg-white border-b border-[#E2E0D8] flex items-center justify-between px-4 z-50 animate-fade-in"
+          className="fixed top-0 left-0 right-0 h-[52px] bg-white/95 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 z-50 animate-fade-in"
+          style={{ boxShadow: 'var(--shadow-sm)' }}
         >
           <div className="text-sm font-medium text-text-1 truncate max-w-[45%] font-sans">{shortHeadline}</div>
           <div className="flex items-center gap-2 shrink-0">
@@ -300,10 +317,12 @@ export default function PublicListingPage() {
         </div>
       )}
 
+      {/* ═══ HERO SECTION ═══ */}
       <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] overflow-hidden">
-        <div className="hidden md:grid grid-cols-[60%_40%] gap-1.5 h-[460px]">
+        {/* Desktop: grid layout */}
+        <div className="hidden md:grid grid-cols-[60%_40%] gap-1.5 h-[480px]">
           {heroPhoto && (
-            <div className="cursor-pointer overflow-hidden" onClick={() => setLightbox(0)}>
+            <div className="cursor-pointer overflow-hidden rounded-bl-[20px]" onClick={() => setLightbox(0)}>
               <SafeImage src={heroPhoto.url} className="w-full h-full object-cover object-center" />
             </div>
           )}
@@ -321,94 +340,175 @@ export default function PublicListingPage() {
           </div>
         </div>
 
-        <div className="md:hidden h-[260px] w-full">
-          {heroPhoto && (
-            <div className="w-full h-full cursor-pointer" onClick={() => setLightbox(0)}>
-              <SafeImage src={heroPhoto.url} className="w-full h-full object-cover object-center" />
+        {/* Mobile: swipeable full-width hero */}
+        <div
+          className="md:hidden h-[300px] w-full relative rounded-b-[20px] overflow-hidden"
+          onTouchStart={e => { heroTouchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={e => {
+            const delta = e.changedTouches[0].clientX - heroTouchStartX.current;
+            if (Math.abs(delta) > 50) {
+              if (delta < 0 && heroIdx < allPhotos.length - 1) setHeroIdx(heroIdx + 1);
+              else if (delta > 0 && heroIdx > 0) setHeroIdx(heroIdx - 1);
+            }
+          }}
+        >
+          {allPhotos.length > 0 && (
+            <div className="w-full h-full cursor-pointer" onClick={() => setLightbox(heroIdx)}>
+              <SafeImage src={allPhotos[heroIdx]?.url} className="w-full h-full object-cover object-center" />
+            </div>
+          )}
+
+          {/* Back button */}
+          <button
+            type="button"
+            onClick={() => window.history.back()}
+            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center z-10"
+            style={{ boxShadow: 'var(--shadow-md)' }}
+          >
+            <ArrowLeft size={18} className="text-text-1" />
+          </button>
+
+          {/* Share + Save buttons */}
+          <div className="absolute top-4 right-4 flex gap-2 z-10">
+            <button
+              type="button"
+              onClick={() => {
+                if (navigator.share) navigator.share({ url: window.location.href, title: listing.headline });
+              }}
+              className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center"
+              style={{ boxShadow: 'var(--shadow-md)' }}
+            >
+              <Share2 size={16} className="text-text-1" />
+            </button>
+            <button
+              type="button"
+              className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center"
+              style={{ boxShadow: 'var(--shadow-md)' }}
+            >
+              <Heart size={16} className="text-text-1" />
+            </button>
+          </div>
+
+          {/* Photo counter pill */}
+          {allPhotos.length > 1 && (
+            <div className="absolute bottom-3 right-3 bg-black/50 text-white text-[12px] px-2.5 py-1 rounded-full font-sans">
+              {heroIdx + 1} / {allPhotos.length}
             </div>
           )}
         </div>
       </div>
 
-      <div className="px-4 md:px-0 md:container md:max-w-5xl overflow-hidden">
-        <div className="md:hidden mt-3 -mx-4 px-4">
+      <div className="px-5 md:px-0 md:container md:max-w-5xl overflow-hidden">
+        {/* ═══ PROPERTY IDENTITY ═══ */}
+        <div className="mt-5">
+          <div className="flex items-center gap-1.5 text-[13px] text-text-3 font-sans mb-1.5">
+            📍 {listing.locality}, {listing.city}
+          </div>
+          <h1 className="font-display text-[26px] font-semibold text-text-1 leading-[1.3] break-words">{listing.headline}</h1>
+          <div className="flex items-center flex-wrap gap-2 mt-3">
+            <span className="font-display text-[30px] font-medium text-primary">{formatPrice(listing.price, listing.transaction_type)}</span>
+            {priceLabel && <span className="text-[14px] text-text-3 font-sans self-end mb-1">{priceLabel}</span>}
+            {listing.price_negotiable && <span className="badge-live text-2xs">Negotiable</span>}
+            {priceHistoryBadge && (
+              <span className="text-2xs text-[hsl(var(--amber))] bg-[hsl(var(--amber-light))] px-2.5 py-0.5 rounded-full font-sans">{priceHistoryBadge}</span>
+            )}
+          </div>
+          {aiTagline && aiTagline.length > 10 && (
+            <p className="text-[13px] text-text-2 italic font-sans mt-2">{aiTagline}</p>
+          )}
+        </div>
+
+        {/* ═══ SPECS ROW ═══ */}
+        <div className="mt-5 -mx-5 px-5">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {allPhotos.map((p: any, i: number) => (
-              <div key={p.id} className="shrink-0 w-[150px] h-[100px] rounded-md overflow-hidden relative cursor-pointer bg-surface-2" onClick={() => setLightbox(i)}>
-                <SafeImage src={p.url} className="w-full h-full object-cover" />
-                {p.room_tag && p.room_tag !== 'general' && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-dark/55 text-surface font-sans text-[9px] px-1.5 py-0.5 rounded-b-md">{p.room_tag}</div>
-                )}
-              </div>
+            {specChips.map((s, i) => (
+              <span key={i} className="bg-surface-2 border border-border text-text-2 text-[12px] px-3.5 py-1.5 rounded-full shrink-0 font-sans whitespace-nowrap">
+                {s}
+              </span>
             ))}
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[65%_35%] gap-6 mt-6">
-          <div className="space-y-6 min-w-0">
-            <div>
-              <h1 className="font-display text-2xl md:text-[32px] font-medium text-text-1 leading-tight break-words">{listing.headline}</h1>
-              <div className="flex items-center gap-1.5 mt-1.5 text-sm text-text-2 font-sans">
-                <MapPin size={14} /> {listing.locality}, {listing.city}
-              </div>
-              <div className="flex items-center flex-wrap gap-2 mt-3">
-                <span className="text-price text-primary font-display">{formatPrice(listing.price, listing.transaction_type)}</span>
-                {listing.price_negotiable && <span className="badge-live text-2xs">Negotiable</span>}
-                {priceHistoryBadge && (
-                  <span className="text-2xs text-[hsl(var(--amber))] bg-[hsl(var(--amber-light))] px-2 py-0.5 rounded font-sans">{priceHistoryBadge}</span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 overflow-x-auto">
-              {specChips.map((s, i) => (
-                <span key={i} className="bg-surface-2 text-text-1 text-xs px-2.5 py-1 rounded shrink-0 font-sans">
-                  {s}
-                </span>
+        {/* ═══ PHOTO STRIP ═══ */}
+        {allPhotos.length > 1 && (
+          <div className="mt-4 -mx-5 px-5">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {allPhotos.map((p: any, i: number) => (
+                <div key={p.id} className="shrink-0 w-[100px] h-[72px] rounded-xl overflow-hidden relative cursor-pointer bg-surface-2" onClick={() => setLightbox(i)}>
+                  <SafeImage src={p.url} className="w-full h-full object-cover" />
+                  {p.room_tag && p.room_tag !== 'general' && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-dark/55 text-surface font-sans text-[9px] px-1.5 py-0.5">{p.room_tag}</div>
+                  )}
+                </div>
               ))}
             </div>
+          </div>
+        )}
 
+        <div className="grid lg:grid-cols-[65%_35%] gap-6 mt-6">
+          <div className="space-y-6 min-w-0">
+            {/* ═══ HIGHLIGHTS (Airbnb-style) ═══ */}
             {aiHighlights.length > 0 && (
               <div>
-                <div className="text-label text-text-3 mb-2">Highlights</div>
-                <div className="space-y-2.5">
-                  {aiHighlights.map((h: string, i: number) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <span className="text-xl leading-none shrink-0 mt-0.5" aria-hidden>
-                        {getHighlightIcon(h)}
-                      </span>
-                      <p className="text-[13px] text-text-1 leading-snug font-sans">{h}</p>
-                    </div>
-                  ))}
+                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-4">What this property offers</div>
+                <div className="space-y-0">
+                  {visibleHighlights.map((h: string, i: number) => {
+                    const { title, subtitle } = getHighlightParts(h);
+                    return (
+                      <div key={i}>
+                        <div className="flex items-start gap-4 py-3.5">
+                          <div className="w-8 h-8 rounded-full bg-surface-2 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-[18px] leading-none" aria-hidden>{getHighlightIcon(h)}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[14px] font-semibold text-text-1 font-sans">{title}</div>
+                            {subtitle && <div className="text-[13px] text-text-2 font-sans mt-0.5">{subtitle}</div>}
+                          </div>
+                        </div>
+                        {i < visibleHighlights.length - 1 && <div className="border-b border-border" />}
+                      </div>
+                    );
+                  })}
                 </div>
+                {aiHighlights.length > 3 && !showAllHighlights && (
+                  <button type="button" onClick={() => setShowAllHighlights(true)} className="text-primary text-[14px] font-medium font-sans mt-2 hover:underline">
+                    Show all {aiHighlights.length} highlights
+                  </button>
+                )}
+                <div className="mt-4 border-b border-border" />
               </div>
             )}
 
+            {/* ═══ ABOUT ═══ */}
             <AboutProperty text={listing.ai_description} />
 
+            {/* ═══ PROPERTY DETAILS TABLE ═══ */}
             <div>
-              <div className="text-label text-text-3 mb-3">Property Details</div>
-              <div className="grid grid-cols-2 gap-x-4">
+              <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Property Details</div>
+              <div className="rounded-xl overflow-hidden" style={{ boxShadow: 'var(--shadow-sm)' }}>
                 {propertyDetails.map(([emoji, label, val], i) => (
-                  <div key={i} className="py-2.5 border-b border-border">
-                    <div className="text-[11px] text-text-3 mb-0.5 flex items-center gap-1">
+                  <div key={i} className={`flex items-center justify-between px-4 py-3 ${i % 2 === 0 ? 'bg-white' : 'bg-surface-2'}`}>
+                    <span className="text-[13px] text-text-3 font-sans flex items-center gap-1.5">
                       <span className="text-sm">{emoji}</span> {label}
-                    </div>
-                    <div className="text-[13px] font-medium text-text-1 font-sans">{String(val)}</div>
+                    </span>
+                    <span className="text-[13px] font-medium text-text-1 font-sans">{String(val)}</span>
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* ═══ AMENITIES ═══ */}
             {amenities.length > 0 && (
               <div>
-                <div className="text-label text-text-3 mb-2.5">Amenities</div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Amenities</div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {amenities.map((a: string, i: number) => {
                     const icon = getAmenityIcon(a);
                     return (
-                      <div key={i} className="flex items-center gap-2 text-[13px] text-text-1 font-sans">
-                        <span className="text-base leading-none shrink-0">{icon === '✓' ? <Check size={14} className="text-primary" /> : icon}</span>
+                      <div key={i} className="flex items-center gap-2.5 text-[13px] text-text-2 font-sans">
+                        <span className="text-primary text-base leading-none shrink-0">
+                          {icon === '✓' ? <Check size={14} className="text-primary" /> : <span className="text-primary">✓</span>}
+                        </span>
                         <span>{a}</span>
                       </div>
                     );
@@ -419,30 +519,30 @@ export default function PublicListingPage() {
 
             {listing.floor_plan_url && (
               <div>
-                <div className="text-label text-text-3 mb-2">FLOOR PLAN</div>
+                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Floor Plan</div>
                 <SafeImage
                   src={listing.floor_plan_url}
                   alt="Floor plan"
-                  className="w-full rounded-lg border border-[#E2E0D8]"
+                  className="w-full rounded-2xl border border-border"
                 />
               </div>
             )}
 
             {listing.virtual_tour_url && (
               <div>
-                <div className="text-label text-text-3 mb-2">VIRTUAL TOUR</div>
+                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Virtual Tour</div>
                 <VirtualTourEmbed url={listing.virtual_tour_url} />
               </div>
             )}
 
             {neighbourhoodHighlights.length > 0 && (
               <div>
-                <div className="text-label text-text-3 mb-2">NEARBY</div>
+                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Nearby</div>
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
                   {neighbourhoodHighlights.map((h: string, i: number) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1.5 shrink-0 text-[12px] text-text-1 font-sans bg-[#F0EFE9] border border-[#E2E0D8] rounded-[20px] px-3 py-1.5"
+                      className="inline-flex items-center gap-1.5 shrink-0 text-[12px] text-text-1 font-sans bg-surface-2 border border-border rounded-full px-3 py-1.5"
                     >
                       <span aria-hidden>📍</span>
                       {h}
@@ -454,15 +554,15 @@ export default function PublicListingPage() {
 
             {listing.google_maps_url && (
               <div>
-                <div className="text-label text-text-3 mb-3">Location</div>
-                <a href={listing.google_maps_url} target="_blank" rel="noopener" className="text-xs text-primary hover:underline flex items-center gap-1 font-sans">
+                <div className="text-[13px] uppercase tracking-wide text-text-3 font-sans font-medium mb-3">Location</div>
+                <a href={listing.google_maps_url} target="_blank" rel="noopener" className="text-xs text-primary hover:underline flex items-center gap-1.5 font-sans">
                   <MapPin size={14} /> Open in Google Maps
                 </a>
               </div>
             )}
 
             {listing.broker_personal_note && (
-              <div className="bg-surface-2/80 rounded-lg p-3 border border-border/60">
+              <div className="bg-surface-2/80 rounded-2xl p-4 border border-border/60">
                 <p className="text-xs text-text-2 italic font-sans leading-relaxed">
                   &ldquo;{listing.broker_personal_note}&rdquo;
                 </p>
@@ -470,7 +570,7 @@ export default function PublicListingPage() {
             )}
 
             {listing.open_house_date && (
-              <div className="rounded-lg p-3 bg-[hsl(var(--green-light))] border border-primary/15">
+              <div className="rounded-2xl p-4 bg-[hsl(var(--green-light))] border border-primary/15">
                 <div className="text-sm font-medium text-text-1 font-sans">
                   🗓 Open House: {listing.open_house_date}
                   {listing.open_house_time_start && (
@@ -484,49 +584,64 @@ export default function PublicListingPage() {
               </div>
             )}
 
+            {/* ═══ BROKER CARD (mobile) ═══ */}
             {listing.show_broker_card && (
-              <div className="card-base p-4">
-                <div className="text-label text-text-3 mb-3">Presented By</div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium font-display">
+              <div className="lg:hidden rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-md)' }}>
+                <div className="flex items-center gap-3.5 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium font-display text-lg">
                     {listing.broker_name?.[0]}
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-text-1 font-sans">{listing.broker_name}</div>
-                    <div className="text-xs text-text-2 font-sans">{listing.broker_agency}</div>
-                    {listing.broker_rera && <div className="text-2xs text-text-3 font-sans">RERA: {listing.broker_rera}</div>}
+                    <div className="text-[16px] font-semibold text-text-1 font-sans">{listing.broker_name}</div>
+                    <div className="text-[13px] text-text-2 font-sans">{listing.broker_agency}</div>
+                    {listing.broker_rera && (
+                      <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-medium text-primary bg-[hsl(var(--green-light))] px-2 py-0.5 rounded-full">
+                        ✓ Verified Broker
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')} className="btn-secondary flex-1 flex items-center justify-center gap-1.5 text-xs">
-                    <MessageCircle size={14} /> WhatsApp
+                <div className="space-y-2.5">
+                  <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')}
+                    className="w-full h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-1.5 text-sm font-medium font-sans">
+                    <MessageCircle size={16} /> WhatsApp
                   </a>
-                  <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')} className="btn-secondary flex-1 flex items-center justify-center gap-1.5 text-xs">
-                    <Phone size={14} /> Call
+                  <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')}
+                    className="w-full h-11 rounded-xl bg-surface border border-border text-text-1 flex items-center justify-center gap-1.5 text-sm font-medium font-sans">
+                    <Phone size={16} /> Call
                   </a>
                 </div>
+                {listing.broker_rera && <div className="text-[11px] text-text-3 font-sans mt-3">RERA: {listing.broker_rera}</div>}
               </div>
             )}
           </div>
 
+          {/* ═══ DESKTOP SIDEBAR ═══ */}
           <div className="hidden lg:block">
             <div className="sticky top-20 space-y-4">
-              <div className="card-base p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-medium font-display">
+              <div className="rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-md)' }}>
+                <div className="flex items-center gap-3.5 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-lg font-medium font-display">
                     {listing.broker_name?.[0]}
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-text-1 font-sans">{listing.broker_name}</div>
-                    <div className="text-2xs text-text-3 font-sans">{listing.broker_agency}</div>
+                    <div className="text-sm font-semibold text-text-1 font-sans">{listing.broker_name}</div>
+                    <div className="text-[12px] text-text-2 font-sans">{listing.broker_agency}</div>
+                    {listing.broker_rera && (
+                      <span className="inline-flex items-center gap-1 mt-1 text-[11px] font-medium text-primary bg-[hsl(var(--green-light))] px-2 py-0.5 rounded-full">
+                        ✓ Verified
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="font-display text-2xl font-medium text-primary mb-4">{formatPrice(listing.price, listing.transaction_type)}</div>
-                <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')} className="btn-primary w-full flex items-center justify-center gap-1.5 mb-2">
-                  <MessageCircle size={14} /> WhatsApp Broker
+                <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')}
+                  className="w-full h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-1.5 text-sm font-medium font-sans mb-2.5">
+                  <MessageCircle size={16} /> WhatsApp Broker
                 </a>
-                <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')} className="btn-secondary w-full flex items-center justify-center gap-1.5 mb-4">
-                  <Phone size={14} /> Call Broker
+                <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')}
+                  className="w-full h-11 rounded-xl bg-surface border border-border text-text-1 flex items-center justify-center gap-1.5 text-sm font-medium font-sans mb-4">
+                  <Phone size={16} /> Call Broker
                 </a>
               </div>
             </div>
@@ -534,15 +649,33 @@ export default function PublicListingPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 h-14 bg-surface border-t border-border flex lg:hidden z-50 safe-bottom">
-        <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')} className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground text-sm font-medium font-sans">
-          <MessageCircle size={16} /> WhatsApp
-        </a>
-        <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')} className="flex-1 flex items-center justify-center gap-1.5 bg-surface text-text-1 text-sm font-medium border-l border-border font-sans">
-          <Phone size={16} /> Call
-        </a>
+      {/* ═══ FIXED BOTTOM BAR (mobile) ═══ */}
+      <div
+        className="fixed bottom-0 left-0 right-0 h-20 bg-surface flex items-center px-4 lg:hidden z-50 safe-bottom"
+        style={{ boxShadow: 'var(--shadow-lg)' }}
+      >
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium font-display shrink-0">
+            {listing.broker_name?.[0]}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[13px] font-medium text-text-1 truncate font-sans">{listing.broker_name}</div>
+            <div className="text-[11px] text-text-3 truncate font-sans">{listing.broker_agency}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <a href={whatsappUrl} target="_blank" rel="noopener" onClick={() => trackEvent('whatsapp_click')}
+            className="h-11 px-5 rounded-xl bg-primary text-primary-foreground text-sm font-medium font-sans flex items-center gap-1.5">
+            <MessageCircle size={16} /> WhatsApp
+          </a>
+          <a href={`tel:+91${listing.broker_phone}`} onClick={() => trackEvent('call_click')}
+            className="h-11 px-4 rounded-xl bg-surface border border-border text-text-1 text-sm font-medium font-sans flex items-center gap-1.5">
+            <Phone size={16} /> Call
+          </a>
+        </div>
       </div>
 
+      {/* ═══ LIGHTBOX ═══ */}
       {lightbox !== null && (
         <div
           className="fixed inset-0 bg-dark/95 z-[100] flex items-center justify-center"
@@ -557,33 +690,33 @@ export default function PublicListingPage() {
           }}
         >
           <div className="absolute top-4 right-4 z-10 flex items-center gap-3">
-            <span className="text-surface text-sm">{lightbox + 1}/{allPhotos.length}</span>
-            <button type="button" onClick={() => setLightbox(null)} className="text-surface">
-              <X size={24} />
+            <span className="text-surface text-sm bg-black/40 px-2.5 py-1 rounded-full">{lightbox + 1}/{allPhotos.length}</span>
+            <button type="button" onClick={() => setLightbox(null)} className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-surface">
+              <X size={20} />
             </button>
           </div>
           {lightbox > 0 && (
             <button
               type="button"
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-surface/80 hover:text-surface z-10"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-surface/80 hover:text-surface z-10"
               onClick={e => { e.stopPropagation(); setLightbox(lightbox - 1); }}
             >
-              <ChevronLeft size={32} />
+              <ChevronLeft size={24} />
             </button>
           )}
           {lightbox < allPhotos.length - 1 && (
             <button
               type="button"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-surface/80 hover:text-surface z-10"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-surface/80 hover:text-surface z-10"
               onClick={e => { e.stopPropagation(); setLightbox(lightbox + 1); }}
             >
-              <ChevronRight size={32} />
+              <ChevronRight size={24} />
             </button>
           )}
           <div className="max-w-4xl max-h-[80vh] relative" onClick={e => e.stopPropagation()}>
-            <SafeImage src={allPhotos[lightbox]?.url} className="max-w-full max-h-[80vh] object-contain" />
+            <SafeImage src={allPhotos[lightbox]?.url} className="max-w-full max-h-[80vh] object-contain rounded-2xl" />
             {allPhotos[lightbox]?.room_tag && allPhotos[lightbox].room_tag !== 'general' && (
-              <div className="absolute bottom-4 left-4 bg-surface/90 text-text-1 text-xs px-2.5 py-1 rounded-md font-sans">{allPhotos[lightbox].room_tag}</div>
+              <div className="absolute bottom-4 left-4 bg-white/90 text-text-1 text-xs px-2.5 py-1 rounded-lg font-sans">{allPhotos[lightbox].room_tag}</div>
             )}
           </div>
         </div>

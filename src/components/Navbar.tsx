@@ -16,15 +16,18 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="h-[52px] bg-surface border-b border-border sticky top-0 z-50">
+    <nav className="h-[56px] bg-surface/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
       <div className="container h-full flex items-center justify-between">
-        <Link to="/" className="font-display text-lg font-medium text-text-1">PropSite</Link>
-        
+        <Link to="/" className="flex items-center gap-1">
+          <span className="font-display text-[18px] font-medium text-text-1">PropSite</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+        </Link>
+
         {isLanding && (
           <div className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-text-2 hover:text-text-1 transition-colors">Features</a>
-            <a href="#pricing" className="text-sm text-text-2 hover:text-text-1 transition-colors">Pricing</a>
-            <a href="#agencies" className="text-sm text-text-2 hover:text-text-1 transition-colors">For Agencies</a>
+            <a href="#features" className="text-[13px] text-text-2 hover:text-text-1 transition-colors font-sans">Features</a>
+            <a href="#pricing" className="text-[13px] text-text-2 hover:text-text-1 transition-colors font-sans">Pricing</a>
+            <a href="#agencies" className="text-[13px] text-text-2 hover:text-text-1 transition-colors font-sans">For Agencies</a>
           </div>
         )}
 
@@ -51,18 +54,18 @@ export default function Navbar() {
         <div className="md:hidden bg-surface border-b border-border p-4 space-y-3">
           {isLanding && (
             <>
-              <a href="#features" className="block text-sm text-text-2" onClick={() => setOpen(false)}>Features</a>
-              <a href="#pricing" className="block text-sm text-text-2" onClick={() => setOpen(false)}>Pricing</a>
+              <a href="#features" className="block text-[13px] text-text-2 font-sans" onClick={() => setOpen(false)}>Features</a>
+              <a href="#pricing" className="block text-[13px] text-text-2 font-sans" onClick={() => setOpen(false)}>Pricing</a>
             </>
           )}
           {user ? (
             <>
-              <Link to="/dashboard" className="block text-sm text-text-2" onClick={() => setOpen(false)}>Dashboard</Link>
-              <button onClick={() => { handleSignOut(); setOpen(false); }} className="block text-sm text-text-2">Sign Out</button>
+              <Link to="/dashboard" className="block text-[13px] text-text-2 font-sans" onClick={() => setOpen(false)}>Dashboard</Link>
+              <button onClick={() => { handleSignOut(); setOpen(false); }} className="block text-[13px] text-text-2 font-sans">Sign Out</button>
             </>
           ) : (
             <>
-              <Link to="/login" className="block text-sm text-text-2" onClick={() => setOpen(false)}>Sign In</Link>
+              <Link to="/login" className="block text-[13px] text-text-2 font-sans" onClick={() => setOpen(false)}>Sign In</Link>
               <Link to="/create" className="btn-primary inline-flex items-center w-full justify-center" onClick={() => setOpen(false)}>Get Started Free</Link>
             </>
           )}

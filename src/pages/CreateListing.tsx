@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Listing, PropertyCategory, AIQuestion, PROPERTY_CATEGORIES, AMENITIES, TEMPLATES, ACCENT_COLORS, ROOM_TAGS } from '@/lib/types';
 import { calculateQualityScore, formatPrice, formatPricePreview } from '@/lib/mock-data';
-import { Upload, X, Star, GripVertical, ChevronRight, ChevronLeft, Check, Copy, MessageCircle, ExternalLink, Plus, Sparkles, Image, Tag, Video, MapPin, CalendarDays, TrendingDown, FileText } from 'lucide-react';
+import { Upload, X, Star, GripVertical, ChevronRight, ChevronLeft, Check, Copy, MessageCircle, ExternalLink, Plus, Sparkles, Image, Tag, Video, MapPin, CalendarDays, TrendingDown, FileText, Mic, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { toast } from 'sonner';
@@ -68,6 +68,48 @@ export default function CreateListingPage() {
   const [expandedAddons, setExpandedAddons] = useState<Record<string, boolean>>({});
   const [urgencyEnabled, setUrgencyEnabled] = useState(false);
   const [expiryEnabled, setExpiryEnabled] = useState(false);
+
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const timerRef = useRef<any>(null);
+
+  const startVoiceRecording = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) { toast.error('Voice not supported in this browser'); return; }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-IN';
+    let finalTranscript = '';
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
+        else interim += event.results[i][0].transcript;
+      }
+      setBrokerNotes(prev => {
+        const base = prev.endsWith(' ') ? prev : prev + ' ';
+        return (base + finalTranscript + interim).trim();
+      });
+    };
+    recognition.onerror = () => { stopVoiceRecording(); };
+    recognition.onend = () => { stopVoiceRecording(); };
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsRecording(true);
+    setRecordingTime(0);
+    timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+  };
+
+  const stopVoiceRecording = () => {
+    recognitionRef.current?.stop();
+    clearInterval(timerRef.current);
+    setIsRecording(false);
+    setIsTranscribing(false);
+  };
 
   const qualityScore = calculateQualityScore(listing, photoUrls.length);
 
@@ -348,38 +390,37 @@ Return ONLY this JSON (null for unknown):
       <div className="container pb-20">
         {/* STEP 0: Photos & Notes */}
         {step === 0 && (
-          <div className="grid lg:grid-cols-[60%_40%] gap-6">
+          <div className="grid lg:grid-cols-[55%_45%] gap-8">
             <div>
               <h2 className="text-h3 text-text-1 mb-4">Add photos</h2>
               {photoUrls.length === 0 ? (
-                <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-[hsl(var(--green-light))]/30 transition-colors">
-                  <Upload size={24} className="text-text-3 mb-2" />
-                  <span className="text-sm text-text-2">Tap to add photos</span>
-                  <span className="text-2xs text-text-3 mt-1">JPG, PNG up to 10MB each</span>
+                <label className="flex flex-col items-center justify-center h-[200px] border-2 border-dashed border-border rounded-2xl cursor-pointer hover:border-primary hover:bg-[hsl(var(--green-light))]/30 transition-colors">
+                  <Camera size={32} className="text-text-3 mb-3" />
+                  <span className="text-[16px] font-medium text-text-1 font-sans">Add property photos</span>
+                  <span className="text-[13px] text-text-3 mt-1.5 font-sans">JPG, PNG up to 10MB · Drag or tap to upload</span>
                   <input type="file" multiple accept="image/*" onChange={handlePhotos} className="hidden" />
                 </label>
               ) : (
                 <div>
-                  {/* FIX 7: Photo thumbnails — just the photo */}
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mb-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 mb-3">
                     {(photoUrls || []).map((url, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border border-border group">
+                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden group">
                         <img src={url} alt="" className="w-full h-full object-cover" />
                         {i === heroIndex && (
-                          <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[9px] font-medium px-1.5 py-0.5 rounded">Hero</div>
+                          <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-medium px-2 py-0.5 rounded-full">Hero</div>
                         )}
-                        <div className="absolute top-1 right-1 flex gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setHeroIndex(i)} className="w-5 h-5 bg-surface rounded flex items-center justify-center">
-                            <Star size={10} className={i === heroIndex ? 'text-primary fill-primary' : 'text-text-2'} />
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => setHeroIndex(i)} className="w-7 h-7 bg-white/90 rounded-full flex items-center justify-center" style={{ boxShadow: 'var(--shadow-sm)' }}>
+                            <Star size={12} className={i === heroIndex ? 'text-primary fill-primary' : 'text-text-2'} />
                           </button>
-                          <button onClick={() => removePhoto(i)} className="w-5 h-5 bg-surface rounded flex items-center justify-center">
-                            <X size={10} className="text-destructive" />
+                          <button onClick={() => removePhoto(i)} className="w-7 h-7 bg-white/90 rounded-full flex items-center justify-center" style={{ boxShadow: 'var(--shadow-sm)' }}>
+                            <X size={12} className="text-destructive" />
                           </button>
                         </div>
                       </div>
                     ))}
-                    <label className="w-20 h-20 rounded-md border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary transition-colors">
-                      <Plus size={20} className="text-text-3" />
+                    <label className="aspect-square rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary transition-colors">
+                      <Plus size={24} className="text-text-3" />
                       <input type="file" multiple accept="image/*" onChange={handlePhotos} className="hidden" />
                     </label>
                   </div>
@@ -387,19 +428,46 @@ Return ONLY this JSON (null for unknown):
               )}
             </div>
             <div>
-              <h2 className="text-h3 text-text-1 mb-4">Describe the property</h2>
-              <textarea
-                value={brokerNotes}
-                onChange={e => {
-                  setBrokerNotes(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = e.target.scrollHeight + 'px';
-                }}
-                className="input-base w-full min-h-[120px] py-3"
-                style={{ resize: 'vertical' }}
-                placeholder="3BHK Worli 14th floor sea view ₹3.2cr 2 parking ready possession. Or paste your WhatsApp message."
-              />
-              <p className="text-2xs text-text-3 mt-1">Write in English, Hindi, or Hinglish</p>
+              <div className="rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-sm)' }}>
+                <h2 className="text-[16px] font-semibold text-text-1 font-sans mb-1">Describe your property</h2>
+                <p className="text-[13px] text-text-3 font-sans mb-4">The more detail you give, the better your listing</p>
+                <textarea
+                  value={brokerNotes}
+                  onChange={e => {
+                    setBrokerNotes(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                  }}
+                  className="input-base w-full min-h-[140px] py-3 text-[14px]"
+                  style={{ resize: 'vertical', lineHeight: 1.7 }}
+                  placeholder={"Tell us everything about this property:\n· Location, floor, facing direction\n· BHK configuration and carpet area\n· Price and if it's negotiable\n· Furnishing, parking, possession\n· Standout features — sea view, terrace, etc.\n· Amenities — gym, pool, security\n\nExample: 3BHK sea-facing flat, Worli, 14th floor,\n1240 sqft carpet, ₹3.2Cr negotiable, 2 parking,\nsemi-furnished, ready possession, OC received"}
+                />
+                <div className="flex gap-2.5 mt-4">
+                  <button
+                    type="button"
+                    onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                    className={`w-11 h-11 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                      isRecording ? 'bg-destructive border-destructive text-white' : 'border-border hover:border-primary'
+                    }`}
+                  >
+                    {isRecording ? (
+                      <div className="relative">
+                        <div className="absolute inset-0 rounded-full animate-pulse-ring bg-destructive/30" />
+                        <Mic size={18} />
+                      </div>
+                    ) : (
+                      <Mic size={18} className="text-text-2" />
+                    )}
+                  </button>
+                  {isRecording && (
+                    <span className="text-[13px] text-destructive font-medium font-sans self-center">
+                      {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+                    </span>
+                  )}
+                  {isTranscribing && <span className="text-[13px] text-text-3 font-sans self-center">Transcribing...</span>}
+                </div>
+                <p className="text-[11px] text-text-3 font-sans mt-3">✦ AI will extract all details automatically</p>
+              </div>
             </div>
           </div>
         )}
@@ -408,20 +476,22 @@ Return ONLY this JSON (null for unknown):
         {step === 1 && (
           <div className="space-y-6">
             {/* AI Banner */}
-            <div className="bg-[hsl(var(--green-light))] border border-primary/20 rounded-lg px-4 py-3 flex items-center gap-2">
+            <div className="rounded-2xl px-4 py-3 flex items-center gap-2" style={{ background: 'linear-gradient(135deg, hsl(var(--green-light)), hsl(150 30% 95%))' }}>
               <Sparkles size={16} className="text-primary" />
               <span className="text-xs font-medium text-primary">✦ AI filled 18 fields — review below</span>
             </div>
 
             {/* Quality Score */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <div className="h-1 bg-border rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${qualityScore}%` }} />
+            <div className="rounded-2xl p-5" style={{ boxShadow: 'var(--shadow-sm)' }}>
+              <div className="flex items-center gap-4">
+                <span className="text-[24px] font-bold text-text-1 font-sans tabular-nums">{qualityScore}%</span>
+                <div className="flex-1">
+                  <div className="h-2 bg-border rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${qualityScore}%` }} />
+                  </div>
+                  {qualityScore < 90 && <p className="text-[13px] text-text-3 mt-1.5">Add carpet area to reach {Math.min(100, qualityScore + 15)}%</p>}
                 </div>
               </div>
-              <span className="text-xs font-medium text-text-1 shrink-0">Listing strength: {qualityScore}%</span>
-              {qualityScore < 90 && <span className="text-2xs text-text-3 shrink-0 hidden sm:block">Add a floor plan to reach {Math.min(100, qualityScore + 15)}%</span>}
             </div>
 
             {/* FIX 8: Property Category — clear selection state */}
@@ -898,13 +968,18 @@ Return ONLY this JSON (null for unknown):
         {step === 2 && (
           <div className="max-w-2xl mx-auto space-y-6">
             <h2 className="text-h3 text-text-1 mb-4">Choose a template</h2>
-            <div className="grid grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {(TEMPLATES || []).map(t => (
                 <button key={t.id} onClick={() => { setSelectedTemplate(t.id); updateField('template', t.id); }}
-                  className={`card-base p-3 text-center transition-all ${selectedTemplate === t.id ? 'border-2 border-primary' : ''}`}>
-                  <div className="w-full h-24 bg-surface-2 rounded-md mb-2" />
-                  <div className="text-xs font-medium text-text-1">{t.name}</div>
-                  <div className="text-2xs text-text-3">{t.desc}</div>
+                  className={`rounded-2xl p-4 text-center transition-all relative ${selectedTemplate === t.id ? 'border-2 border-primary' : 'border border-border'}`} style={{ boxShadow: 'var(--shadow-sm)' }}>
+                  {selectedTemplate === t.id && (
+                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                      <Check size={12} className="text-white" />
+                    </div>
+                  )}
+                  <div className="w-full h-[120px] bg-surface-2 rounded-xl mb-3" />
+                  <div className="text-sm font-medium text-text-1">{t.name}</div>
+                  <div className="text-2xs text-text-3 mt-0.5">{t.desc}</div>
                 </button>
               ))}
             </div>
@@ -927,25 +1002,28 @@ Return ONLY this JSON (null for unknown):
         {/* STEP 3: Published */}
         {step === 3 && (
           <div className="max-w-md mx-auto text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[hsl(var(--green-light))] flex items-center justify-center">
-              <Check size={32} className="text-primary" />
+            {/* Animated checkmark */}
+            <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-[hsl(var(--green-light))] flex items-center justify-center">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M12 20L18 26L28 14" stroke="hsl(var(--primary))" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="48" className="animate-checkmark-draw" />
+              </svg>
             </div>
-            <h2 className="font-display text-[28px] font-medium text-text-1 mb-2">Listing published!</h2>
-            <p className="text-sm text-text-2 mb-6">Your property page is live and ready to share</p>
+            <h2 className="font-display text-[28px] font-medium text-text-1 mb-2">Your listing is live!</h2>
+            <p className="text-sm text-text-2 mb-6">Your property page is ready to share with clients</p>
 
             <div className="flex items-center gap-2 mb-6">
               <input readOnly value={`propsite.pages.dev/l/${publishedSlug}`} className="input-base flex-1 text-xs text-center" />
-              <button className="btn-primary h-9 px-3 flex items-center gap-1"><Copy size={14} /> Copy</button>
+              <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/l/${publishedSlug}`); toast.success('Copied!'); }} className="btn-primary h-9 px-3 flex items-center gap-1"><Copy size={14} /> Copy</button>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              <button className="btn-primary flex items-center gap-1.5"><MessageCircle size={14} /> Share on WhatsApp</button>
-              <button className="btn-secondary flex items-center gap-1.5"><Copy size={14} /> Copy Link</button>
-              <button onClick={() => navigate(`/l/${publishedSlug}`)} className="btn-ghost flex items-center gap-1.5"><ExternalLink size={14} /> View Listing</button>
+            <div className="flex flex-col gap-2.5 mb-8">
+              <a href={`https://wa.me/?text=${encodeURIComponent(`${window.location.origin}/l/${publishedSlug}`)}`} target="_blank" rel="noopener" className="btn-primary w-full flex items-center justify-center gap-1.5 h-11"><MessageCircle size={16} /> Share on WhatsApp</a>
+              <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/l/${publishedSlug}`); toast.success('Copied!'); }} className="btn-secondary w-full flex items-center justify-center gap-1.5 h-11"><Copy size={16} /> Copy Link</button>
+              <button onClick={() => navigate(`/l/${publishedSlug}`)} className="btn-ghost w-full flex items-center justify-center gap-1.5 h-11"><ExternalLink size={16} /> View Listing</button>
             </div>
 
             {!isDashboard && (
-              <div className="card-base bg-[hsl(var(--green-light))] border-primary/20 p-4 text-left">
+              <div className="rounded-2xl bg-[hsl(var(--green-light))] p-5 text-left">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-sm font-medium text-text-1 mb-1">Save this listing permanently</div>
@@ -990,8 +1068,8 @@ Return ONLY this JSON (null for unknown):
 // Helper Components
 function FieldSection({ title, children, highlight }: { title: string; children: React.ReactNode; highlight?: boolean }) {
   return (
-    <div className={`${highlight ? 'bg-[hsl(var(--green-light))]/50 -mx-4 px-4 py-5 rounded-lg' : ''}`}>
-      <div className="text-label text-text-3 mb-4">{title}</div>
+    <div className={`rounded-2xl p-5 ${highlight ? 'bg-[hsl(var(--green-light))]/50' : ''}`} style={{ boxShadow: 'var(--shadow-sm)' }}>
+      <div className="text-[12px] uppercase tracking-wide text-text-3 font-sans font-medium mb-4">{title}</div>
       <div className="space-y-3">{children}</div>
     </div>
   );
@@ -1033,15 +1111,15 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
 
 function AddonCard({ icon, label, expanded, onToggle, children }: { icon: React.ReactNode; label: string; expanded?: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      <button onClick={onToggle} className="w-full h-11 px-3 flex items-center gap-2.5 hover:bg-surface-2/50 transition-colors">
+    <div className="border border-border rounded-2xl overflow-hidden">
+      <button onClick={onToggle} className="w-full h-12 px-4 flex items-center gap-2.5 hover:bg-surface-2/50 transition-colors">
         <span className="text-primary">{icon}</span>
         <span className="text-[13px] font-medium text-text-1 flex-1 text-left">{label}</span>
         <span className="text-2xs text-text-3">Optional</span>
         <ChevronRight size={14} className={`text-text-3 transition-transform ${expanded ? 'rotate-90' : ''}`} />
       </button>
       {expanded && (
-        <div className="px-3 pb-3 pt-1 bg-background border-t border-border">
+        <div className="px-4 pb-4 pt-2 bg-background border-t border-border">
           {children}
         </div>
       )}

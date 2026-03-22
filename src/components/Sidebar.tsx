@@ -1,80 +1,50 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, List, Layers, FolderOpen, FileText, BarChart3, Users, Settings, LogOut, CreditCard } from 'lucide-react';
-import { demoProfile } from '@/lib/mock-data';
+import { LayoutDashboard, Building2, FolderOpen, BarChart3, Settings } from 'lucide-react';
 
-const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/dashboard/listings', icon: List, label: 'My Listings' },
-  { to: '/dashboard/collections', icon: Layers, label: 'Collections' },
-  { to: '/dashboard/projects', icon: FolderOpen, label: 'Projects' },
-  { to: '/dashboard/brochures', icon: FileText, label: 'Brochures' },
-  { to: '/dashboard/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/dashboard/leads', icon: Users, label: 'Leads' },
-  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
+const NAV = [
+  { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { to: '/dashboard/listings', label: 'Listings', icon: Building2 },
+  { to: '/dashboard/collections', label: 'Collections', icon: FolderOpen },
+  { to: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function Sidebar() {
   const loc = useLocation();
-  const p = demoProfile;
 
   return (
-    <aside className="hidden md:flex flex-col w-[220px] bg-surface border-r border-border h-screen sticky top-0">
-      <div className="h-[52px] flex items-center px-4 border-b border-border">
-        <Link to="/" className="font-sans text-[15px] font-medium text-text-1">PropSite</Link>
-        <span className="ml-1.5 text-2xs text-text-3 bg-surface-2 px-1.5 py-0.5 rounded">Beta</span>
-      </div>
+    <aside className="hidden lg:flex flex-col w-[240px] h-screen bg-surface border-r border-border sticky top-0 py-6 px-4">
+      {/* Logo */}
+      <Link to="/" className="flex items-center gap-1 mb-8 px-2">
+        <span className="font-display text-[20px] font-medium text-text-1">PropSite</span>
+        <span className="w-2 h-2 rounded-full bg-primary" />
+      </Link>
 
-      <div className="px-3 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
-            {p.full_name[0]}
-          </div>
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-text-1 truncate">{p.full_name}</div>
-            <span className="badge-live text-2xs">{p.plan}</span>
-          </div>
-        </div>
-      </div>
-
-      <nav className="flex-1 py-2 px-2 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => {
+      {/* Nav */}
+      <nav className="flex-1 space-y-1">
+        {NAV.map(item => {
           const active = loc.pathname === item.to || (item.to !== '/dashboard' && loc.pathname.startsWith(item.to));
           return (
             <Link
               key={item.to}
               to={item.to}
-              className={`flex items-center gap-2.5 h-9 px-2.5 rounded-md text-[13px] transition-colors ${
+              className={`flex items-center gap-3 px-3 h-10 rounded-xl text-[13px] font-medium font-sans transition-all duration-150 ${
                 active
-                  ? 'bg-green-light text-primary font-medium border-l-2 border-primary'
+                  ? 'bg-[hsl(var(--green-light))] text-primary'
                   : 'text-text-2 hover:text-text-1 hover:bg-surface-2'
               }`}
             >
-              <item.icon size={16} />
+              <item.icon size={18} className={active ? 'text-primary' : ''} />
               {item.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-3 border-t border-border space-y-2">
-        <div className="bg-surface-2 rounded-md p-2.5">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-2xs text-text-3">Credits</span>
-            <span className="text-2xs font-medium text-text-1">{p.credits_remaining}</span>
-          </div>
-          <div className="h-1 bg-border rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(100, (p.credits_remaining / 50) * 100)}%` }} />
-          </div>
-        </div>
-        {p.plan === 'free' && (
-          <Link to="/upgrade" className="flex items-center gap-2 text-xs text-primary font-medium hover:underline">
-            <CreditCard size={14} /> Upgrade Plan
-          </Link>
-        )}
-        <button className="flex items-center gap-2 text-xs text-text-3 hover:text-text-1 w-full">
-          <LogOut size={14} /> Sign Out
-        </button>
-      </div>
+      {/* Create listing button */}
+      <Link to="/create" className="btn-primary w-full flex items-center justify-center gap-1.5 mt-4">
+        + New Listing
+      </Link>
     </aside>
   );
 }
