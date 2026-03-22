@@ -361,7 +361,7 @@ export default function PublicListingPage() {
         </div>
 
         {/* Mobile: CSS scroll-snap swipeable flex container */}
-        <div className="md:hidden h-[280px] w-full relative overflow-hidden">
+        <div className="md:hidden h-[340px] w-full relative overflow-hidden">
           <div 
             className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
             onScroll={(e) => {
@@ -411,7 +411,7 @@ export default function PublicListingPage() {
 
           {/* Photo counter pill */}
           {allPhotos.length > 1 && (
-            <div className="absolute bottom-[16px] right-[16px] bg-[#000000]/55 text-white font-sans text-[12px] font-[500] px-[10px] py-[4px] rounded-full pointer-events-none">
+            <div className="absolute bottom-[40px] right-[16px] bg-[#000000]/55 text-white font-sans text-[12px] font-[500] px-[10px] py-[4px] rounded-full pointer-events-none">
               {heroIdx + 1} / {allPhotos.length}
             </div>
           )}
@@ -420,7 +420,7 @@ export default function PublicListingPage() {
 
       <div className="w-full md:max-w-[1080px] mx-auto">
         {/* Mobile Wrapper */}
-        <div className="bg-[#FFFFFF] rounded-t-[28px] -mt-[28px] md:mt-[24px] md:rounded-none relative z-10 px-[20px] pt-[24px] pb-[120px] md:px-[24px] md:pt-[24px] md:pb-[80px]">
+        <div className="bg-[#FFFFFF] rounded-t-[24px] -mt-[24px] md:mt-[24px] md:rounded-none relative z-10 px-[20px] pt-[20px] pb-[120px] md:px-[24px] md:pt-[24px] md:pb-[80px]">
           
           <div className="md:grid grid-cols-[58%_42%] gap-[40px]">
             <div className="min-w-0">
