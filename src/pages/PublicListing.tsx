@@ -418,7 +418,7 @@ export default function PublicListingPage() {
         </div>
       </div>
 
-      <div className="w-full md:max-w-[1080px] mx-auto overflow-hidden">
+      <div className="w-full md:max-w-[1080px] mx-auto">
         {/* Mobile Wrapper */}
         <div className="bg-[#FFFFFF] rounded-t-[28px] -mt-[28px] md:mt-[24px] md:rounded-none relative z-10 px-[20px] pt-[24px] pb-[120px] md:px-[24px] md:pt-[24px] md:pb-[80px]">
           
