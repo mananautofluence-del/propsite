@@ -1,0 +1,12 @@
+
+C:\Users\manan\Downloads\propsite-74d23134-main\propsite-74d23134-main\src\pages\PublicListing.tsx
+  131:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  185:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  240:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  241:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  329:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  352:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 7 problems (7 errors, 0 warnings)
+
