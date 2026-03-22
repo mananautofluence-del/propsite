@@ -33,37 +33,38 @@ function SafeImage({ src, alt = '', className = '', onError }: { src: string; al
   return <img src={src} alt={alt} className={className} onError={() => { setError(true); onError?.(); }} loading="lazy" />;
 }
 
-function getHighlightIcon(text: string): string {
+function renderHighlightIcon(text: string) {
   const t = text.toLowerCase();
-  const rules: [RegExp, string][] = [
-    [/area|sqft|carpet|sq\.?\s*ft/, '📐'],
-    [/sea|ocean|water\s*view|seaface/, '🌊'],
-    [/floor|view|high/, '🏙️'],
-    [/parking|car/, '🚗'],
-    [/furnished|furniture/, '🛋️'],
-    [/pool|swimming/, '🏊'],
-    [/gym|gymnasium/, '💪'],
-    [/garden|park|green/, '🌿'],
-    [/school|education/, '🎓'],
-    [/hospital|medical/, '🏥'],
-    [/metro|station|transport/, '🚇'],
-    [/cricket|sport|ground/, '🏏'],
-    [/security|cctv|gated/, '🔒'],
-    [/lift|elevator/, '🛗'],
-    [/power|backup/, '⚡'],
-    [/vastu/, '🕉️'],
-  ];
-  for (const [re, icon] of rules) {
-    if (re.test(t)) return icon;
+  
+  if (/bhk|bedroom|chalet|layout|room/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
   }
-  return '✨';
-}
+  if (/area|sqft|carpet/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>;
+  }
+  if (/cricket|sport|ground|facility/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M5.2 5.2l13.6 13.6M18.8 5.2L5.2 18.8"/></svg>;
+  }
+  if (/kitchen|cooking|pantry/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 3v6"/></svg>;
+  }
+  if (/location|city|nearby|prime/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>;
+  }
+  if (/parking|car/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="22" height="14" rx="2"/><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="8.5" cy="13.5" r="1.5"/><circle cx="15.5" cy="13.5" r="1.5"/></svg>;
+  }
+  if (/pool|gym|fitness/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>;
+  }
+  if (/security|gated|cctv/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
+  }
+  if (/view|floor|sea|high/.test(t)) {
+    return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>;
+  }
 
-function getHighlightParts(text: string): { title: string; subtitle: string } {
-  const words = text.split(/\s+/);
-  const title = words.slice(0, 4).join(' ');
-  const subtitle = words.slice(4).join(' ');
-  return { title, subtitle };
+  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A5C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>;
 }
 
 function AboutProperty({ text }: { text: string | null | undefined }) {
@@ -71,7 +72,7 @@ function AboutProperty({ text }: { text: string | null | undefined }) {
   if (!text?.trim()) return null;
 
   return (
-    <div className="mt-[28px]">
+    <div className="mt-[32px]">
       <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">ABOUT THIS PROPERTY</div>
       <div className="relative">
         <p className={`font-sans text-[16px] text-[#111111] leading-[1.75] ${!expanded ? 'line-clamp-3' : ''}`}>
@@ -323,7 +324,7 @@ export default function PublicListingPage() {
 
         {/* Mobile: CSS scroll-snap swipeable flex container */}
         <div 
-          className="md:hidden h-[260px] w-full relative overflow-hidden"
+          className="md:hidden h-[340px] w-full relative overflow-hidden"
         >
           <div 
             className="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
@@ -392,8 +393,8 @@ export default function PublicListingPage() {
           </div>
           <h1 className="font-display text-[28px] font-[600] text-[#111111] leading-[1.25] break-words mt-[6px]">{listing.headline}</h1>
           <div className="flex items-center flex-wrap gap-2 mt-[8px]">
-            <span className="font-display text-[26px] font-[700] text-[#1A5C3A]">{formatPrice(listing.price, listing.transaction_type)}</span>
-            {priceLabel && <span className="font-sans text-[14px] text-[#888888] font-[400] self-end mb-1">{priceLabel}</span>}
+            <span className="font-display text-[26px] font-[700] text-[#1A5C3A]">{(listing.price == null && listing.monthly_rent == null) ? <span className="font-display text-[24px] text-[#111111]">Price on Request</span> : formatPrice(listing.price, listing.transaction_type)}</span>
+            {priceLabel && (listing.price != null || listing.monthly_rent != null) && <span className="font-sans text-[14px] text-[#888888] font-[400] self-end mb-1">{priceLabel}</span>}
             {listing.price_negotiable && <span className="font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full shrink-0">Negotiable</span>}
             {priceHistoryBadge && (
               <span className="font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full shrink-0">{priceHistoryBadge}</span>
@@ -419,29 +420,18 @@ export default function PublicListingPage() {
           <div className="space-y-6 min-w-0">
             {/* ═══ HIGHLIGHTS ═══ */}
             {aiHighlights.length > 0 && (
-              <div className="mt-[28px]">
-                <div className="font-sans text-[11px] font-[600] tracking-[0.08em] text-[#888888] uppercase mb-[16px]">What this property offers</div>
-                <div className="space-y-0">
-                  {visibleHighlights.map((h: string, i: number) => {
-                    const { title, subtitle } = getHighlightParts(h);
-                    return (
-                      <div key={i} className={`flex items-start gap-[16px] py-[16px] ${i < visibleHighlights.length - 1 ? 'border-b border-[#F0F0F0]' : ''}`}>
-                        <div className="w-[44px] h-[44px] rounded-[10px] bg-[#F8F8F8] border border-[#EBEBEB] flex items-center justify-center shrink-0 text-[20px] leading-none">
-                          {getHighlightIcon(h)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-sans text-[15px] font-[600] text-[#111111] leading-[1.3]">{title}</div>
-                          {subtitle && <div className="font-sans text-[14px] font-[400] text-[#555555] leading-[1.5] mt-[2px]">{subtitle}</div>}
-                        </div>
+              <div className="mt-[32px]">
+                <div className="font-sans text-[11px] font-[600] tracking-[0.08em] text-[#888888] uppercase mb-[16px]">WHAT THIS PROPERTY OFFERS</div>
+                <div className="grid grid-cols-2 gap-[10px] mt-[12px]">
+                  {aiHighlights.map((h: string, i: number) => (
+                    <div key={i} className="bg-white border border-[#EBEBEB] rounded-[16px] p-[16px_14px] flex flex-col gap-[10px]" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                      <div className="w-[40px] h-[40px] rounded-full bg-[#EAF3ED] flex items-center justify-center shrink-0 leading-none">
+                        {renderHighlightIcon(h)}
                       </div>
-                    );
-                  })}
+                      <div className="font-sans text-[14px] font-[600] text-[#111111] leading-[1.4]">{h}</div>
+                    </div>
+                  ))}
                 </div>
-                {aiHighlights.length > 3 && !showAllHighlights && (
-                  <button type="button" onClick={() => setShowAllHighlights(true)} className="font-sans text-[14px] font-[600] text-[#111111] mt-[14px] block underline w-full text-left">
-                    Show all {aiHighlights.length} highlights
-                  </button>
-                )}
               </div>
             )}
 
@@ -450,7 +440,7 @@ export default function PublicListingPage() {
 
             {/* ═══ PROPERTY DETAILS TABLE ═══ */}
             {propertyDetails.length > 0 && (
-              <div className="mt-[28px]">
+              <div className="mt-[32px]">
                 <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">PROPERTY DETAILS</div>
                 <div className="bg-white border border-[#EBEBEB] rounded-[12px] overflow-hidden">
                   {propertyDetails.map(([emoji, label, val], i) => (
@@ -467,15 +457,13 @@ export default function PublicListingPage() {
 
             {/* ═══ AMENITIES ═══ */}
             {amenities.length > 0 && (
-              <div className="mt-[28px]">
+              <div className="mt-[32px]">
                 <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">AMENITIES</div>
-                <div className="grid grid-cols-2 gap-x-[16px] gap-y-[12px]">
+                <div className="flex flex-wrap gap-[8px]">
                   {amenities.map((a: string, i: number) => (
-                    <div key={i} className="flex items-center gap-[10px]">
-                      <div className="w-[18px] h-[18px] rounded-full bg-[#EAF3ED] flex items-center justify-center shrink-0 text-[#1A5C3A] [&>svg]:w-[12px] [&>svg]:h-[12px] [&>svg]:stroke-[1.5px]">
-                        <Check />
-                      </div>
-                      <span className="font-sans text-[15px] font-[400] text-[#111111]">{a}</span>
+                    <div key={i} className="inline-flex items-center gap-[8px] bg-[#F0FDF4] border border-[#BBF7D0] rounded-full px-[16px] py-[8px]">
+                      <div className="w-[6px] h-[6px] rounded-full bg-[#16A34A] shrink-0" />
+                      <span className="font-sans text-[14px] font-[500] text-[#166534]">{a}</span>
                     </div>
                   ))}
                 </div>
@@ -483,7 +471,7 @@ export default function PublicListingPage() {
             )}
 
             {listing.floor_plan_url && (
-              <div className="mt-[28px]">
+              <div className="mt-[32px]">
                 <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">FLOOR PLAN</div>
                 <SafeImage
                   src={listing.floor_plan_url}
@@ -494,23 +482,23 @@ export default function PublicListingPage() {
             )}
 
             {listing.virtual_tour_url && (
-              <div className="mt-[28px]">
+              <div className="mt-[32px]">
                 <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">VIRTUAL TOUR</div>
                 <VirtualTourEmbed url={listing.virtual_tour_url} />
               </div>
             )}
 
             {neighbourhoodHighlights.length > 0 && (
-              <div className="mt-[28px]">
+              <div className="mt-[32px]">
                 <div className="font-sans text-[11px] font-[600] text-[#888888] tracking-[0.08em] uppercase mb-[16px]">NEARBY</div>
-                <div className="flex gap-[8px] flex-wrap">
+                <div className="flex gap-[10px] overflow-x-auto pb-[4px] scrollbar-hide">
                   {neighbourhoodHighlights.map((h: string, i: number) => (
-                    <span
-                      key={i}
-                      className="font-sans text-[13px] font-[500] text-[#555555] bg-[#F8F8F8] border border-[#EBEBEB] rounded-full px-[14px] py-[6px]"
-                    >
-                      {h}
-                    </span>
+                    <div key={i} className="bg-white border border-[#EBEBEB] rounded-[12px] py-[12px] px-[16px] flex items-center justify-center gap-[10px] shrink-0" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                      <div className="w-[32px] h-[32px] rounded-full bg-[#FEF2F2] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      </div>
+                      <span className="font-sans text-[14px] font-[500] text-[#111111]">{h}</span>
+                    </div>
                   ))}
                 </div>
               </div>
