@@ -69,48 +69,6 @@ export default function CreateListingPage() {
   const [urgencyEnabled, setUrgencyEnabled] = useState(false);
   const [expiryEnabled, setExpiryEnabled] = useState(false);
 
-  // Voice recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const recognitionRef = useRef<any>(null);
-  const timerRef = useRef<any>(null);
-
-  const startVoiceRecording = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) { toast.error('Voice not supported in this browser'); return; }
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-IN';
-    let finalTranscript = '';
-    recognition.onresult = (event: any) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
-        else interim += event.results[i][0].transcript;
-      }
-      setBrokerNotes(prev => {
-        const base = prev.endsWith(' ') ? prev : prev + ' ';
-        return (base + finalTranscript + interim).trim();
-      });
-    };
-    recognition.onerror = () => { stopVoiceRecording(); };
-    recognition.onend = () => { stopVoiceRecording(); };
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsRecording(true);
-    setRecordingTime(0);
-    timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
-  };
-
-  const stopVoiceRecording = () => {
-    recognitionRef.current?.stop();
-    clearInterval(timerRef.current);
-    setIsRecording(false);
-    setIsTranscribing(false);
-  };
-
   const qualityScore = calculateQualityScore(listing, photoUrls.length);
 
   const handlePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -442,30 +400,6 @@ Return ONLY this JSON (null for unknown):
                   style={{ resize: 'vertical', lineHeight: 1.7 }}
                   placeholder={"Tell us everything about this property:\n· Location, floor, facing direction\n· BHK configuration and carpet area\n· Price and if it's negotiable\n· Furnishing, parking, possession\n· Standout features — sea view, terrace, etc.\n· Amenities — gym, pool, security\n\nExample: 3BHK sea-facing flat, Worli, 14th floor,\n1240 sqft carpet, ₹3.2Cr negotiable, 2 parking,\nsemi-furnished, ready possession, OC received"}
                 />
-                <div className="flex gap-2.5 mt-4">
-                  <button
-                    type="button"
-                    onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
-                    className={`w-11 h-11 rounded-full border flex items-center justify-center shrink-0 transition-all ${
-                      isRecording ? 'bg-destructive border-destructive text-white' : 'border-border hover:border-primary'
-                    }`}
-                  >
-                    {isRecording ? (
-                      <div className="relative">
-                        <div className="absolute inset-0 rounded-full animate-pulse-ring bg-destructive/30" />
-                        <Mic size={18} />
-                      </div>
-                    ) : (
-                      <Mic size={18} className="text-text-2" />
-                    )}
-                  </button>
-                  {isRecording && (
-                    <span className="text-[13px] text-destructive font-medium font-sans self-center">
-                      {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-                    </span>
-                  )}
-                  {isTranscribing && <span className="text-[13px] text-text-3 font-sans self-center">Transcribing...</span>}
-                </div>
                 <p className="text-[11px] text-text-3 font-sans mt-3">✦ AI will extract all details automatically</p>
               </div>
             </div>
