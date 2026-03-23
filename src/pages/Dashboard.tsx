@@ -55,10 +55,10 @@ export default function Dashboard() {
   };
 
   const statCards = [
-    { label: 'Active', value: stats.liveListings, icon: Building2 },
-    { label: 'Views', value: stats.totalViews, icon: Eye },
-    { label: 'Leads', value: stats.leads, icon: Flame },
-    { label: 'Collections', value: stats.collections, icon: FolderOpen },
+    { label: 'Active', value: stats.liveListings, icon: Building2, path: '/dashboard/listings' },
+    { label: 'Views', value: stats.totalViews, icon: Eye, path: '/dashboard/analytics' },
+    { label: 'Leads', value: stats.leads, icon: Flame, path: '/dashboard/leads' },
+    { label: 'Collections', value: stats.collections, icon: FolderOpen, path: '/dashboard/collections' },
   ];
 
   if (loading) {
@@ -84,9 +84,9 @@ export default function Dashboard() {
           <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary">
             <Zap size={12} className="fill-current" />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-row items-center gap-3">
             <span className="text-[11px] font-semibold leading-none">{profile?.credits_remaining || 0} Credits</span>
-            <button className="text-[10px] text-primary font-medium hover:underline text-left mt-0.5">Upgrade</button>
+            <button className="text-[10px] text-primary font-medium hover:underline text-left">Upgrade</button>
           </div>
         </div>
       </div>
@@ -102,11 +102,11 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-4 gap-2">
         {statCards.map((card) => (
-          <div key={card.label} className="bg-white border border-[#EBEBEB] rounded-xl p-3 shadow-sm flex flex-col items-center text-center">
+          <Link key={card.label} to={card.path} className="bg-white border border-[#EBEBEB] rounded-xl p-3 shadow-sm flex flex-col items-center text-center hover:bg-surface-2 transition-colors cursor-pointer block">
             <card.icon size={16} className="text-text-3 mb-1.5" />
             <div className="font-display text-[22px] font-bold text-text-1 leading-none tabular-nums">{card.value}</div>
             <span className="text-[10px] text-text-3 font-medium mt-1">{card.label}</span>
-          </div>
+          </Link>
         ))}
       </div>
 

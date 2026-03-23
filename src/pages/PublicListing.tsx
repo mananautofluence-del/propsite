@@ -143,6 +143,11 @@ export default function PublicListingPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showCobrokeModal, setShowCobrokeModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Phase 2: Guest Viral Loop State
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [guestNameInput, setGuestNameInput] = useState('');
+  const [guestPhoneInput, setGuestPhoneInput] = useState('');
 
   const heroTouchStartX = useRef(0);
   const lbTouchStartX = useRef(0);
@@ -160,14 +165,31 @@ export default function PublicListingPage() {
     });
   }, []);
 
-  // Phase 5B: Smart Share Broker Trap
+  // Phase 2 & 5B: Broker Link Trap -> Guest Viral Loop
   useEffect(() => {
-    if (!listing || !currentUser) return;
+    if (!listing) return;
     const shareMode = searchParams.get('share');
-    if (shareMode === 'broker' && currentUser.id !== listing.user_id) {
-      setShowCobrokeModal(true);
+    if (shareMode === 'broker') {
+      // If logged in user is the owner, do not show trap
+      if (currentUser && currentUser.id === listing.user_id) return;
+      setShowGuestModal(true);
     }
   }, [listing, currentUser, searchParams]);
+
+  const handleGenerateGuestLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guestNameInput.trim() || !guestPhoneInput.trim()) {
+      toast.error('Please fill in both fields');
+      return;
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.delete('share');
+    url.searchParams.set('guest_name', guestNameInput.trim());
+    url.searchParams.set('guest_phone', guestPhoneInput.trim());
+    navigator.clipboard.writeText(url.toString());
+    toast.success('Your dedicated link has been copied!');
+    setShowGuestModal(false);
+  };
 
 
   const handleGenerateCobroke = async () => {
@@ -255,6 +277,21 @@ export default function PublicListingPage() {
             };
           }
         }
+      }
+
+      // Phase 2: Guest Viral Loop Override
+      const gName = searchParams.get('guest_name');
+      const gPhone = searchParams.get('guest_phone');
+      if (gName && gPhone) {
+        finalBroker = {
+          name: gName,
+          phone: gPhone,
+          whatsapp: gPhone,
+          avatar_url: null,
+          agency: 'Independent Broker',
+          rera: null,
+          is_partner: true
+        };
       }
 
       setListing({
@@ -936,6 +973,53 @@ export default function PublicListingPage() {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Guest Viral Loop Modal */}
+      {showGuestModal && (
+        <div className="fixed inset-0 bg-black/60 z-[1050] flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 animate-in slide-in-from-bottom duration-300 shadow-2xl border border-gray-100">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold font-sans text-text-1">Share with clients</h3>
+              <button type="button" onClick={() => setShowGuestModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-text-2 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-text-2 mb-6 leading-relaxed font-sans text-[14px]">
+              Enter your details to generate a personalized link that masks the original broker.
+            </p>
+            <form onSubmit={handleGenerateGuestLink} className="flex flex-col gap-5">
+              <div>
+                <label className="block text-[13px] font-bold text-text-1 mb-2 font-sans">Your Name</label>
+                <input
+                  type="text"
+                  required
+                  value={guestNameInput}
+                  onChange={e => setGuestNameInput(e.target.value)}
+                  placeholder="e.g. John Doe"
+                  className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] transition-all bg-surface hover:bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-text-1 mb-2 font-sans">Your WhatsApp / Phone</label>
+                <input
+                  type="tel"
+                  required
+                  value={guestPhoneInput}
+                  onChange={e => setGuestPhoneInput(e.target.value)}
+                  placeholder="e.g. 9876543210"
+                  className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] transition-all bg-surface hover:bg-white"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full h-12 mt-2 bg-primary text-primary-foreground rounded-xl font-bold font-sans text-[15px] flex items-center justify-center gap-2 hover:bg-primary-hover shadow-lg transition-transform active:scale-[0.98]"
+              >
+                Generate My Link
+              </button>
+            </form>
           </div>
         </div>
       )}

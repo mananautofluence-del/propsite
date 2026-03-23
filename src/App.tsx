@@ -15,6 +15,8 @@ import PublicListing from "./pages/PublicListing";
 import PublicCollection from "./pages/PublicCollection";
 import DashboardCollections from "./pages/DashboardCollections";
 import DashboardLayout from "./components/DashboardLayout";
+import DashboardLeads from "./pages/DashboardLeads";
+import DashboardSettings from "./pages/DashboardSettings";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -38,8 +40,8 @@ const App = () => (
               <Route path="collections" element={<DashboardCollections />} />
               <Route path="projects" element={<Dashboard />} />
               <Route path="brochures" element={<Dashboard />} />
-              <Route path="leads" element={<Dashboard />} />
-              <Route path="settings" element={<Dashboard />} />
+              <Route path="leads" element={<DashboardLeads />} />
+              <Route path="settings" element={<DashboardSettings />} />
             </Route>
             <Route path="/l/:slug" element={<PublicListing />} />
             <Route path="/c/:slug" element={<PublicCollection />} />

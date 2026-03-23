@@ -252,20 +252,26 @@ export default function DashboardCollections() {
           <DialogHeader>
             <DialogTitle className="font-display">{editingId ? 'Edit collection' : 'New collection'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 flex-1 min-h-0 flex flex-col">
-            <input
-              className="input-base w-full"
-              placeholder="Collection title"
-              value={modalTitle}
-              onChange={e => setModalTitle(e.target.value)}
-            />
-            <textarea
-              className="input-base w-full resize-none"
-              rows={2}
-              placeholder="Description (optional)"
-              value={modalDescription}
-              onChange={e => setModalDescription(e.target.value)}
-            />
+          <div className="space-y-4 flex-1 min-h-0 flex flex-col mt-2">
+            <div>
+              <label className="block text-[13px] font-bold text-text-1 mb-1.5 font-sans">Collection Title</label>
+              <input
+                className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-surface focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] transition-all"
+                placeholder="e.g. Luxury Villas in Goa"
+                value={modalTitle}
+                onChange={e => setModalTitle(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-[13px] font-bold text-text-1 mb-1.5 font-sans">Description (Optional)</label>
+              <textarea
+                className="w-full p-4 rounded-xl border border-gray-200 bg-surface focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] transition-all resize-none"
+                rows={3}
+                placeholder="Write a short subheadline..."
+                value={modalDescription}
+                onChange={e => setModalDescription(e.target.value)}
+              />
+            </div>
             <div className="text-label text-text-3">Select listings</div>
             <div className="overflow-y-auto flex-1 max-h-[40vh] space-y-0.5 pr-1 border border-border rounded-lg p-2 bg-surface">
               {listings.filter(l => l.status === 'live').length === 0 ? (
@@ -299,12 +305,21 @@ export default function DashboardCollections() {
               <div className="text-2xs text-primary font-medium">{selectedIds.size} listing{selectedIds.size !== 1 ? 's' : ''} selected</div>
             )}
           </div>
-          <DialogFooter>
-            <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>
-              Cancel
+          <DialogFooter className="flex-col gap-2 sm:gap-0 mt-4">
+            <button 
+              type="button" 
+              className="w-full h-12 bg-[#1A5C3A] hover:bg-[#154a2f] text-white rounded-xl font-bold font-sans text-[15px] flex items-center justify-center transition-colors disabled:opacity-50" 
+              disabled={saving} 
+              onClick={handleSave}
+            >
+              {saving ? 'Saving…' : editingId ? 'Update Collection' : 'Save Collection'}
             </button>
-            <button type="button" className="btn-primary" disabled={saving} onClick={handleSave}>
-              {saving ? 'Saving…' : editingId ? 'Update' : 'Create'}
+            <button 
+              type="button" 
+              className="w-full h-12 bg-transparent text-text-3 hover:text-text-1 font-semibold rounded-xl text-[14px] transition-colors" 
+              onClick={() => setModalOpen(false)}
+            >
+              Cancel
             </button>
           </DialogFooter>
         </DialogContent>
