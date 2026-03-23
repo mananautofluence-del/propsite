@@ -56,7 +56,6 @@ export default function Dashboard() {
 
   const statCards = [
     { label: 'Active', value: stats.liveListings, icon: Building2, path: '/dashboard/listings' },
-    { label: 'Views', value: stats.totalViews, icon: Eye, path: '/dashboard/analytics' },
     { label: 'Leads', value: stats.leads, icon: Flame, path: '/dashboard/leads' },
     { label: 'Collections', value: stats.collections, icon: FolderOpen, path: '/dashboard/collections' },
   ];
@@ -100,7 +99,7 @@ export default function Dashboard() {
       </Link>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         {statCards.map((card) => (
           <Link key={card.label} to={card.path} className="bg-white border border-[#EBEBEB] rounded-xl p-3 shadow-sm flex flex-col items-center text-center hover:bg-surface-2 transition-colors cursor-pointer block">
             <card.icon size={16} className="text-text-3 mb-1.5" />

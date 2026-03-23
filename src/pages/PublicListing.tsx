@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { formatPrice } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
 import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2, Share2, Heart, ArrowLeft, UserPlus } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const getEmoji = (text: string) => {
@@ -147,7 +147,9 @@ export default function PublicListingPage() {
   // Phase 2: Guest Viral Loop State
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [guestNameInput, setGuestNameInput] = useState('');
+  const [guestAgencyInput, setGuestAgencyInput] = useState('');
   const [guestPhoneInput, setGuestPhoneInput] = useState('');
+  const [generatedLink, setGeneratedLink] = useState('');
 
   const heroTouchStartX = useRef(0);
   const lbTouchStartX = useRef(0);
@@ -186,9 +188,9 @@ export default function PublicListingPage() {
     url.searchParams.delete('share');
     url.searchParams.set('guest_name', guestNameInput.trim());
     url.searchParams.set('guest_phone', guestPhoneInput.trim());
-    navigator.clipboard.writeText(url.toString());
-    toast.success('Your dedicated link has been copied!');
-    setShowGuestModal(false);
+    if (guestAgencyInput.trim()) url.searchParams.set('guest_agency', guestAgencyInput.trim());
+    setGeneratedLink(url.toString());
+    toast.success('Your dedicated link has been generated!');
   };
 
 
@@ -282,13 +284,14 @@ export default function PublicListingPage() {
       // Phase 2: Guest Viral Loop Override
       const gName = searchParams.get('guest_name');
       const gPhone = searchParams.get('guest_phone');
+      const gAgency = searchParams.get('guest_agency');
       if (gName && gPhone) {
         finalBroker = {
           name: gName,
           phone: gPhone,
           whatsapp: gPhone,
           avatar_url: null,
-          agency: 'Independent Broker',
+          agency: gAgency || 'Independent Broker',
           rera: null,
           is_partner: true
         };
@@ -527,7 +530,7 @@ export default function PublicListingPage() {
           {/* Back button */}
           <button
             type="button"
-            onClick={() => window.history.back()}
+            onClick={(e) => { e.stopPropagation(); window.history.back(); }}
             className="absolute top-[16px] left-[16px] w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center z-10 shadow-sm"
           >
             <ArrowLeft size={16} color="#111111" strokeWidth={2} />
@@ -589,7 +592,7 @@ export default function PublicListingPage() {
                   {(!listing.price && !listing.monthly_rent) ? (
                     <span className="font-sans text-[16px] font-[400] text-[#666666]">Price on Request</span>
                   ) : (
-                    <span className="font-sans text-[28px] font-[700] text-[#1A5C3A]">
+                    <span className="font-sans text-3xl font-bold text-[#1A5C3A]">
                       {listing.price > 0 ? (
                         listing.price >= 10000000 ? `₹${(listing.price / 10000000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} Cr` :
                         listing.price >= 100000 ? `₹${(listing.price / 100000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '')} L` :
@@ -815,21 +818,23 @@ export default function PublicListingPage() {
                       </div>
                       
                       <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => {
-                            if (currentUser?.id === listing.user_id) {
-                              const url = `${window.location.origin}/l/${listing.slug}`;
-                              navigator.clipboard.writeText(url);
-                              toast.success('Link copied!');
-                            } else {
-                              setShowCobrokeModal(true);
-                            }
-                          }}
-                          className="flex items-center justify-center gap-2 py-3 bg-[#F5F5F5] text-[#111111] rounded-xl font-sans text-[13px] font-[600]"
-                        >
-                          <UserPlus size={14} />
-                          Co-Broke
-                        </button>
+                        {(currentUser?.id === listing.user_id || searchParams.get('share') === 'broker') && (
+                          <button
+                            onClick={() => {
+                              if (currentUser?.id === listing.user_id) {
+                                const url = `${window.location.origin}/l/${listing.slug}`;
+                                navigator.clipboard.writeText(url);
+                                toast.success('Link copied!');
+                              } else {
+                                setShowCobrokeModal(true);
+                              }
+                            }}
+                            className="flex items-center justify-center gap-2 py-3 bg-[#F5F5F5] text-[#111111] rounded-xl font-sans text-[13px] font-[600]"
+                          >
+                            <UserPlus size={14} />
+                            Co-Broke
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -849,7 +854,7 @@ export default function PublicListingPage() {
                   </div>
                 </div>
                 <div className="border-t border-[#EBEBEB] my-[16px]" />
-                <div className="font-display text-[26px] font-[700] text-[#1A5C3A] mb-[12px]">{formatPrice(listing.price, listing.transaction_type)}</div>
+                <div className="font-sans text-3xl font-bold text-[#1A5C3A] mb-[12px]">{formatPrice(listing.price, listing.transaction_type)}</div>
                 {listing.price_negotiable && <div className="font-sans text-[11px] font-[600] text-[#1A5C3A] bg-[#EAF3ED] px-[10px] py-[3px] rounded-full inline-block mb-[16px]">Negotiable</div>}
                 <div className="flex flex-col gap-[10px]">
                   <a href={whatsappUrl} target="_blank" onClick={() => trackEvent('whatsapp_click')}
@@ -982,44 +987,53 @@ export default function PublicListingPage() {
         <div className="fixed inset-0 bg-black/60 z-[1050] flex items-end sm:items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 animate-in slide-in-from-bottom duration-300 shadow-2xl border border-gray-100">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold font-sans text-text-1">Share with clients</h3>
-              <button type="button" onClick={() => setShowGuestModal(false)} className="p-2 hover:bg-gray-100 rounded-full text-text-2 transition-colors">
+              <h3 className="text-2xl font-bold font-sans text-text-1">Share this property with your clients</h3>
+              <button type="button" onClick={() => { setShowGuestModal(false); setGeneratedLink(''); }} className="p-2 hover:bg-gray-100 rounded-full text-text-2 transition-colors">
                 <X size={20} />
               </button>
             </div>
-            <p className="text-text-2 mb-6 leading-relaxed font-sans text-[14px]">
-              Enter your details to generate a personalized link that masks the original broker.
-            </p>
-            <form onSubmit={handleGenerateGuestLink} className="flex flex-col gap-5">
-              <div>
-                <label className="block text-[13px] font-bold text-text-1 mb-2 font-sans">Your Name</label>
-                <input
-                  type="text"
-                  required
-                  value={guestNameInput}
-                  onChange={e => setGuestNameInput(e.target.value)}
-                  placeholder="e.g. John Doe"
-                  className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] transition-all bg-surface hover:bg-white"
-                />
+            
+            {!generatedLink ? (
+              <>
+                <p className="text-text-2 mb-6 leading-relaxed font-sans text-[14px]">
+                  Enter your details below to generate a personalized link with your own branding.
+                </p>
+                <form onSubmit={handleGenerateGuestLink} className="flex flex-col gap-4">
+                  <div>
+                    <label className="block text-[13px] font-bold text-text-1 mb-1 font-sans">Your Name</label>
+                    <input type="text" required value={guestNameInput} onChange={e => setGuestNameInput(e.target.value)} placeholder="e.g. John Doe" className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] bg-surface hover:bg-white transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-bold text-text-1 mb-1 font-sans">Agency Name (Optional)</label>
+                    <input type="text" value={guestAgencyInput} onChange={e => setGuestAgencyInput(e.target.value)} placeholder="e.g. Elite Realty" className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] bg-surface hover:bg-white transition-colors" />
+                  </div>
+                  <div>
+                    <label className="block text-[13px] font-bold text-text-1 mb-1 font-sans">Your WhatsApp / Phone</label>
+                    <input type="tel" required value={guestPhoneInput} onChange={e => setGuestPhoneInput(e.target.value)} placeholder="e.g. 9876543210" className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] bg-surface hover:bg-white transition-colors" />
+                  </div>
+                  <button type="submit" className="w-full h-12 mt-2 bg-primary text-primary-foreground rounded-xl font-bold font-sans text-[15px] flex items-center justify-center gap-2 hover:bg-primary-hover shadow-lg transition-transform active:scale-[0.98]">
+                    Generate My Link
+                  </button>
+                </form>
+                <div className="mt-5 text-center">
+                  <Link to="/login" className="text-primary font-semibold text-[13px] hover:underline font-sans">Already have an account? Log in to use your saved profile</Link>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div className="bg-[#DDF3E4] border border-[#1A5C3A]/20 rounded-xl p-4 flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-[#1A5C3A] text-white rounded-full flex items-center justify-center mb-3">
+                    <Check size={24} />
+                  </div>
+                  <h4 className="text-[18px] font-bold text-[#1A5C3A] mb-1">Link Generated!</h4>
+                  <p className="text-[13px] text-[#1A5C3A]">Your personalized property link is ready to share.</p>
+                </div>
+                <div className="flex gap-2">
+                  <input readOnly value={generatedLink} className="flex-1 h-12 bg-surface text-text-1 border border-gray-200 rounded-xl px-4 text-[13px] font-mono focus:outline-none" />
+                  <button onClick={() => { navigator.clipboard.writeText(generatedLink); toast.success('Link copied to clipboard!'); }} className="h-12 px-4 bg-primary text-primary-foreground font-bold rounded-xl text-[14px] shadow-sm hover:opacity-90 transition-opacity whitespace-nowrap">Copy Link</button>
+                </div>
               </div>
-              <div>
-                <label className="block text-[13px] font-bold text-text-1 mb-2 font-sans">Your WhatsApp / Phone</label>
-                <input
-                  type="tel"
-                  required
-                  value={guestPhoneInput}
-                  onChange={e => setGuestPhoneInput(e.target.value)}
-                  placeholder="e.g. 9876543210"
-                  className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none font-sans text-[15px] transition-all bg-surface hover:bg-white"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full h-12 mt-2 bg-primary text-primary-foreground rounded-xl font-bold font-sans text-[15px] flex items-center justify-center gap-2 hover:bg-primary-hover shadow-lg transition-transform active:scale-[0.98]"
-              >
-                Generate My Link
-              </button>
-            </form>
+            )}
           </div>
         </div>
       )}

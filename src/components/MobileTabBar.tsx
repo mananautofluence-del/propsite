@@ -6,7 +6,6 @@ const TABS = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { to: '/dashboard/listings', label: 'Listings', icon: Building2 },
   { to: '/create', label: 'Create', icon: Plus, isAction: true },
-  { to: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
 ];
 
 const MORE_ITEMS = [

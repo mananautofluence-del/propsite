@@ -4,10 +4,8 @@ import { LayoutDashboard, Building2, FolderOpen, BarChart3, Settings, Search, Fl
 const NAV = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { to: '/dashboard/listings', label: 'My Listings', icon: Building2 },
-  { to: '/dashboard/marketplace', label: 'Marketplace', icon: Search },
   { to: '/dashboard/collections', label: 'Collections', icon: FolderOpen },
   { to: '/dashboard/leads', label: 'Leads', icon: Flame },
-  { to: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 

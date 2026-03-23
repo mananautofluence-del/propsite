@@ -14,10 +14,6 @@ export default function DashboardLayout() {
             <span className="font-display text-[18px] font-medium text-text-1">PropSite</span>
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           </Link>
-          <button className="w-9 h-9 rounded-full flex items-center justify-center bg-surface-2 text-text-2 hover:text-text-1 relative">
-            <Bell size={16} />
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full border border-surface"></span>
-          </button>
         </header>
 
         {/* Main Content */}

@@ -199,8 +199,16 @@ export default function DashboardCollections() {
               const names = getListingNames(c.listing_ids || []);
               const total = (c.listing_ids || []).length;
               return (
-                <div key={c.id} className="card-base p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div key={c.id} className="card-base p-4 relative">
+                  <button
+                    type="button"
+                    onClick={() => setDeleteId(c.id)}
+                    className="absolute top-3 right-3 p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                    title="Delete Collection"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pr-8">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-0.5">
                         <Layers size={14} className="text-primary shrink-0" />
@@ -229,13 +237,6 @@ export default function DashboardCollections() {
                       </button>
                       <button type="button" onClick={() => openEdit(c)} className="btn-secondary text-2xs h-7 px-2.5 flex items-center gap-1">
                         <Pencil size={11} /> Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteId(c.id)}
-                        className="h-7 px-2.5 rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-2xs flex items-center gap-1 transition-colors"
-                      >
-                        <Trash2 size={11} /> Delete
                       </button>
                     </div>
                   </div>
