@@ -1,12 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/mock-data';
-import { Plus, Search, ExternalLink, MoreVertical, Eye, Building2, Download, UserPlus, Share2, Loader2, X } from 'lucide-react';
-import { toJpeg } from 'html-to-image';
+import { Plus, Search, Eye, Building2, UserPlus, Share2, Loader2, X, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { WhatsAppStoryTemplate } from '@/components/WhatsAppStoryTemplate';
 
 const STATUS_TABS = ['all', 'live', 'draft', 'marketplace'] as const;
 
@@ -25,29 +23,31 @@ export default function DashboardListings() {
   });
   const [profile, setProfile] = useState<any>(null);
 
-  const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [showCobrokeModal, setShowCobrokeModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
-  const storyRef = useRef<HTMLDivElement>(null);
 
-  const handleCopyLink = async (listing: any) => {
+  const handleCopyClientLink = async (listing: any) => {
     const url = `${window.location.origin}/l/${listing.slug}`;
     await navigator.clipboard.writeText(url);
-    toast.success('Link copied to clipboard!');
+    toast.success('Client link copied!');
+  };
+
+  const handleCopyBrokerLink = async (listing: any) => {
+    const url = `${window.location.origin}/l/${listing.slug}?share=broker`;
+    await navigator.clipboard.writeText(url);
+    toast.success('Broker link copied!');
   };
 
   useEffect(() => {
     if (!user) return;
     const run = async () => {
-      // 1. Fetch Profile
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile(prof);
 
-      // 2. Fetch Listings
       let query = supabase.from('listings').select('*, listing_photos(url, is_hero)');
-      
+
       if (activeTab === 'marketplace') {
         query = query.eq('status', 'live').neq('user_id', user.id);
       } else {
@@ -63,28 +63,6 @@ export default function DashboardListings() {
     };
     run();
   }, [user, activeTab]);
-
-  const handleDownloadStory = async (listing: any) => {
-    if (!storyRef.current) return;
-    setGeneratingId(listing.id);
-    setSelectedListing(listing);
-    
-    // Small delay to ensure template renders with correct data
-    setTimeout(async () => {
-      try {
-        const dataUrl = await toJpeg(storyRef.current!, { quality: 0.95, pixelRatio: 2 });
-        const link = document.createElement('a');
-        link.download = `story-${listing.slug}.jpg`;
-        link.href = dataUrl;
-        link.click();
-        toast.success('Story downloaded!');
-      } catch (err) {
-        toast.error('Failed to generate story');
-      } finally {
-        setGeneratingId(null);
-      }
-    }, 100);
-  };
 
   const handleGenerateCobroke = async () => {
     if (!selectedListing || !user) return;
@@ -114,7 +92,7 @@ export default function DashboardListings() {
   };
 
   const filtered = listings.filter(l => {
-    if (activeTab !== 'all' && l.status !== activeTab) return false;
+    if (activeTab !== 'all' && activeTab !== 'marketplace' && l.status !== activeTab) return false;
     if (search && !(l.headline || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -125,32 +103,31 @@ export default function DashboardListings() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 max-w-md mx-auto md:max-w-none w-full font-sans">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-[26px] font-semibold text-text-1">My Listings</h1>
-        <Link to="/create" className="btn-primary flex items-center justify-center w-10 h-10 rounded-full md:w-auto md:px-4 md:rounded-xl">
-          <Plus size={20} className="md:mr-1" />
-          <span className="hidden md:inline font-medium">New Listing</span>
+    <div className="p-4 md:p-6 font-sans">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="font-display text-[20px] font-semibold text-text-1">My Listings</h1>
+        <Link to="/create" className="btn-primary flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg text-[13px]">
+          <Plus size={16} /> <span className="hidden sm:inline">New Listing</span>
         </Link>
       </div>
 
       {/* Search + Tabs */}
-      <div className="flex flex-col gap-4 mb-6">
+      <div className="flex flex-col gap-3 mb-4">
         <div className="relative">
-          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-3" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search your properties..."
-            className="w-full h-12 pl-10 pr-4 bg-white border border-[#EBEBEB] rounded-xl text-[14px] text-text-1 shadow-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow placeholder:text-text-3"
+            placeholder="Search properties..."
+            className="w-full h-10 pl-9 pr-4 bg-white border border-[#EBEBEB] rounded-lg text-[13px] text-text-1 shadow-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow placeholder:text-text-3"
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
           {STATUS_TABS.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`text-[13px] px-4 py-2 rounded-full font-medium whitespace-nowrap transition-all ${
+              className={`text-[12px] px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-all ${
                 activeTab === tab
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'bg-white border border-[#EBEBEB] text-text-2 hover:bg-surface-2'
@@ -164,168 +141,132 @@ export default function DashboardListings() {
 
       {/* Listing List */}
       {loading ? (
-        <div className="text-center text-text-3 py-12">Loading…</div>
+        <div className="text-center text-text-3 py-10 text-[13px]">Loading…</div>
       ) : listings.length === 0 ? (
-        <div className="bg-white border border-[#EBEBEB] rounded-2xl p-8 text-center shadow-sm mt-8 mx-auto max-w-sm">
-          <div className="w-16 h-16 bg-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building2 size={32} className="text-text-3" />
+        <div className="bg-white border border-[#EBEBEB] rounded-xl p-6 text-center shadow-sm mt-4 mx-auto max-w-sm">
+          <div className="w-14 h-14 bg-surface-2 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Building2 size={24} className="text-text-3" />
           </div>
-          <h3 className="text-[18px] font-semibold text-text-1 mb-2">No listings yet</h3>
-          <p className="text-[13px] text-text-2 mb-6">Create your first property listing to get started and share it with potential buyers.</p>
-          <Link to="/create" className="btn-primary inline-flex items-center justify-center gap-2 h-12 px-8 w-full">
-            <Plus size={18} /> Create Listing
+          <h3 className="text-[15px] font-semibold text-text-1 mb-1">No listings yet</h3>
+          <p className="text-[12px] text-text-2 mb-4">Create your first property listing to get started.</p>
+          <Link to="/create" className="btn-primary inline-flex items-center justify-center gap-2 h-10 px-6 w-full text-[13px]">
+            <Plus size={16} /> Create Listing
           </Link>
         </div>
       ) : filtered.length === 0 ? (
-         <div className="text-center py-12 text-text-3 text-[14px]">No listings found matching your search.</div>
+        <div className="text-center py-10 text-text-3 text-[13px]">No listings match your search.</div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2.5">
           {filtered.map((l) => (
-             <div
-               key={l.id}
-               className="bg-white border border-[#EBEBEB] rounded-2xl p-3 shadow-sm transition-all hover:shadow-md cursor-pointer"
-               onClick={() => navigate(`/l/${l.slug}`)}
-             >
-               <div className="flex gap-3 items-center">
-                 <div className="w-20 h-20 rounded-xl bg-surface-2 overflow-hidden shrink-0 relative">
-                   {getHeroPhoto(l) ? (
-                     <img src={getHeroPhoto(l)} alt="" className="w-full h-full object-cover" />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center text-2xl">🏠</div>
-                   )}
-                 </div>
-                 
-                 <div className="flex-1 min-w-0 py-1 flex flex-col justify-center">
-                   <div className="flex items-center justify-between gap-2 mb-1">
-                     <div className="font-display text-[16px] font-bold text-primary truncate">
-                       {l.price ? formatPrice(l.price, l.transaction_type) : 'Price on Request'}
-                     </div>
-                     <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wide ${
-                         l.status === 'live' ? 'bg-[#DDF3E4] text-[#1A5C3A]' : 
-                         l.status === 'draft' ? 'bg-gray-100 text-gray-600' : 
-                         'bg-red-100 text-red-700'
-                     }`}>
-                         {l.status}
-                     </span>
-                   </div>
-                   <div className="text-[14px] font-medium text-text-1 font-sans line-clamp-1 mb-0.5">
-                     {l.headline || 'Untitled Listing'}
-                   </div>
-                   <div className="text-[12px] text-text-3 font-sans truncate flex items-center gap-1.5">
-                     <span>{[l.locality, l.city].filter(Boolean).join(', ')}</span>
-                     {l.bhk_config && <span>· {l.bhk_config}</span>}
-                   </div>
-                 </div>
-               </div>
-               
-               {/* Action Buttons Row */}
-               <div className="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-border">
-                  {activeTab === 'marketplace' ? (
-                     <button
-                        onClick={e => { e.stopPropagation(); setSelectedListing(l); setShowCobrokeModal(true); }}
-                        className="flex flex-col items-center justify-center py-1.5 rounded-lg text-primary hover:bg-[hsl(var(--green-light))] transition-colors"
-                     >
-                        <UserPlus size={16} className="mb-1" />
-                        <span className="text-[10px] font-medium">Co-Broke</span>
-                     </button>
+            <div
+              key={l.id}
+              className="bg-white border border-[#EBEBEB] rounded-xl p-2.5 shadow-sm transition-all hover:shadow-md cursor-pointer"
+              onClick={() => navigate(`/l/${l.slug}`)}
+            >
+              <div className="flex gap-3 items-center">
+                <div className="w-16 h-16 rounded-lg bg-surface-2 overflow-hidden shrink-0">
+                  {getHeroPhoto(l) ? (
+                    <img src={getHeroPhoto(l)} alt="" className="w-full h-full object-cover" />
                   ) : (
-                     <button
-                        onClick={e => { e.stopPropagation(); setSelectedListing(l); setShowShareModal(true); }}
-                        className="flex flex-col items-center justify-center py-1.5 rounded-lg text-primary hover:bg-[hsl(var(--green-light))] transition-colors"
-                     >
-                        <Share2 size={16} className="mb-1" />
-                        <span className="text-[10px] font-medium">Share</span>
-                     </button>
+                    <div className="w-full h-full flex items-center justify-center text-xl">🏠</div>
                   )}
-                  
-                  <button
-                     onClick={e => { e.stopPropagation(); handleDownloadStory(l); }}
-                     disabled={generatingId === l.id}
-                     className={`flex flex-col items-center justify-center py-1.5 rounded-lg text-text-2 hover:text-primary hover:bg-surface-2 transition-colors ${generatingId === l.id ? 'opacity-70' : ''}`}
-                  >
-                     <Download size={16} className="mb-1" />
-                     <span className="text-[10px] font-medium">{generatingId === l.id ? 'Wait...' : 'Story'}</span>
-                  </button>
+                </div>
 
-                  <button
-                     onClick={e => { e.stopPropagation(); navigate(`/dashboard/analytics`); }}
-                     className="flex flex-col items-center justify-center py-1.5 rounded-lg text-text-2 hover:text-text-1 hover:bg-surface-2 transition-colors"
-                  >
-                     <Eye size={16} className="mb-1" />
-                     <span className="text-[10px] font-medium">{l.total_views || 0}</span>
-                  </button>
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                    <div className="font-display text-[14px] font-bold text-primary truncate">
+                      {l.price ? formatPrice(l.price, l.transaction_type) : 'Price on Request'}
+                    </div>
+                    <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${
+                      l.status === 'live' ? 'bg-[#DDF3E4] text-[#1A5C3A]' :
+                      l.status === 'draft' ? 'bg-gray-100 text-gray-600' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {l.status}
+                    </span>
+                  </div>
+                  <div className="text-[13px] font-medium text-text-1 font-sans line-clamp-1 mb-0.5">
+                    {l.headline || 'Untitled Listing'}
+                  </div>
+                  <div className="text-[11px] text-text-3 font-sans truncate flex items-center gap-1">
+                    <span>{[l.locality, l.city].filter(Boolean).join(', ')}</span>
+                    {l.bhk_config && <span>· {l.bhk_config}</span>}
+                    <span className="ml-auto flex items-center gap-0.5"><Eye size={10} /> {l.total_views || 0}</span>
+                  </div>
+                </div>
+              </div>
 
+              {/* Action Buttons Row */}
+              <div className="flex gap-2 mt-2.5 pt-2.5 border-t border-border">
+                {activeTab === 'marketplace' ? (
                   <button
-                     onClick={e => { e.stopPropagation(); navigate(`/dashboard/listings/${l.id}/edit`); }}
-                     className="flex flex-col items-center justify-center py-1.5 rounded-lg text-text-2 hover:text-text-1 hover:bg-surface-2 transition-colors"
+                    onClick={e => { e.stopPropagation(); setSelectedListing(l); setShowCobrokeModal(true); }}
+                    className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-primary bg-[hsl(var(--green-light))] hover:bg-[#DDF3E4] transition-colors text-[11px] font-medium"
                   >
-                     <MoreVertical size={16} className="mb-1" />
-                     <span className="text-[10px] font-medium">More</span>
+                    <UserPlus size={13} /> Co-Broke
                   </button>
-               </div>
-             </div>
+                ) : (
+                  <button
+                    onClick={e => { e.stopPropagation(); setSelectedListing(l); setShowShareModal(true); }}
+                    className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg text-primary bg-[hsl(var(--green-light))] hover:bg-[#DDF3E4] transition-colors text-[11px] font-medium"
+                  >
+                    <Share2 size={13} /> Share
+                  </button>
+                )}
+                <button
+                  onClick={e => { e.stopPropagation(); navigate(`/l/${l.slug}`); }}
+                  className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg bg-surface-2 text-text-2 hover:text-text-1 hover:bg-[#EBEBEB] transition-colors text-[11px] font-medium"
+                >
+                  <ExternalLink size={13} /> View
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Hidden Story Template */}
-      {selectedListing && (
-        <WhatsAppStoryTemplate 
-          listing={selectedListing}
-          photos={selectedListing.listing_photos || []}
-          broker={{
-            name: profile?.full_name || 'Expert Broker',
-            agency: profile?.agency_name || 'PropSite Partner',
-            avatar_url: profile?.avatar_url,
-            rera_number: profile?.rera_number
-          }}
-          templateRef={storyRef}
-        />
-      )}
-
-      {/* Listing Share Modal */}
+      {/* Share Modal (Phase 5: Client Link + Broker Link) */}
       {showShareModal && selectedListing && (
         <div className="fixed inset-0 bg-black/60 z-[1000] flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 animate-in slide-in-from-bottom duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold">Share Listing</h3>
-              <button onClick={() => setShowShareModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
-                <X size={20} />
+          <div className="bg-white w-full max-w-md rounded-t-[24px] sm:rounded-[20px] p-6 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[16px] font-bold text-text-1">Share Listing</h3>
+              <button onClick={() => setShowShareModal(false)} className="p-1.5 hover:bg-gray-100 rounded-full">
+                <X size={18} />
               </button>
             </div>
-            
-            <div className="grid grid-cols-1 gap-3">
+
+            <div className="flex flex-col gap-2.5">
               <button
-                onClick={() => handleCopyLink(selectedListing)}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-surface-2 hover:bg-surface-3 transition-colors text-left"
+                onClick={() => { handleCopyClientLink(selectedListing); setShowShareModal(false); }}
+                className="flex items-center gap-3 p-3 rounded-xl bg-surface-2 hover:bg-[#EBEBEB] transition-colors text-left"
               >
-                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                  <Share2 size={20} className="text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                  <LinkIcon size={18} className="text-primary" />
                 </div>
                 <div>
-                  <div className="font-bold text-text-1 text-[15px]">Copy Public Link</div>
-                  <div className="text-text-3 text-[13px]">Standard shareable URL</div>
+                  <div className="font-semibold text-text-1 text-[13px]">Copy Client Link</div>
+                  <div className="text-text-3 text-[11px]">Standard public URL for buyers</div>
                 </div>
               </button>
 
               <button
-                onClick={() => { setShowShareModal(false); handleDownloadStory(selectedListing); }}
-                disabled={generatingId === selectedListing.id}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-surface-2 hover:bg-surface-3 transition-colors text-left"
+                onClick={() => { handleCopyBrokerLink(selectedListing); setShowShareModal(false); }}
+                className="flex items-center gap-3 p-3 rounded-xl bg-surface-2 hover:bg-[#EBEBEB] transition-colors text-left"
               >
-                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                  {generatingId === selectedListing.id ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} className="text-primary" />}
+                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                  <UserPlus size={18} className="text-primary" />
                 </div>
                 <div>
-                  <div className="font-bold text-text-1 text-[15px]">Download WhatsApp Story</div>
-                  <div className="text-text-3 text-[13px]">9:16 high-res status image</div>
+                  <div className="font-semibold text-text-1 text-[13px]">Copy Broker Link</div>
+                  <div className="text-text-3 text-[11px]">Opens co-broke prompt for other brokers</div>
                 </div>
               </button>
             </div>
 
             <button
               onClick={() => setShowShareModal(false)}
-              className="w-full mt-6 py-4 bg-gray-100 text-gray-900 rounded-2xl font-bold"
+              className="w-full mt-4 py-3 bg-gray-100 text-gray-900 rounded-xl font-semibold text-[13px]"
             >
               Close
             </button>
@@ -336,28 +277,28 @@ export default function DashboardListings() {
       {/* Co-Broke Modal */}
       {showCobrokeModal && selectedListing && (
         <div className="fixed inset-0 bg-black/60 z-[1000] flex items-end sm:items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-8 animate-in slide-in-from-bottom duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold">Co-Broke Listing</h3>
-              <button onClick={() => setShowCobrokeModal(false)} className="p-2 hover:bg-gray-100 rounded-full">
-                <X size={20} />
+          <div className="bg-white w-full max-w-md rounded-t-[24px] sm:rounded-[20px] p-6 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[16px] font-bold text-text-1">Co-Broke Listing</h3>
+              <button onClick={() => setShowCobrokeModal(false)} className="p-1.5 hover:bg-gray-100 rounded-full">
+                <X size={18} />
               </button>
             </div>
-            <p className="text-gray-500 mb-8 leading-relaxed">
+            <p className="text-[13px] text-gray-500 mb-5 leading-relaxed">
               Generate a client-ready link for this listing for 1 credit.
             </p>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               <button
                 onClick={handleGenerateCobroke}
                 disabled={isGeneratingLink}
-                className="w-full py-4 bg-[#1A5C3A] text-white rounded-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 bg-[#1A5C3A] text-white rounded-xl font-bold text-[14px] flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isGeneratingLink ? <Loader2 className="animate-spin" /> : <UserPlus size={20} />}
+                {isGeneratingLink ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />}
                 Confirm & Generate
               </button>
               <button
                 onClick={() => setShowCobrokeModal(false)}
-                className="w-full py-4 bg-gray-100 text-gray-900 rounded-2xl font-bold"
+                className="w-full py-3 bg-gray-100 text-gray-900 rounded-xl font-semibold text-[13px]"
               >
                 Cancel
               </button>

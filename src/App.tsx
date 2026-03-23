@@ -40,7 +40,8 @@ const App = () => (
               <Route path="brochures" element={<Dashboard />} />
               <Route path="leads" element={<Dashboard />} />
               <Route path="settings" element={<Dashboard />} />
-            </Route>            <Route path="/l/:slug" element={<PublicListing />} />
+            </Route>
+            <Route path="/l/:slug" element={<PublicListing />} />
             <Route path="/c/:slug" element={<PublicCollection />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

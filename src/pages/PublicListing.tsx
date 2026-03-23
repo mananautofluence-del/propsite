@@ -160,6 +160,14 @@ export default function PublicListingPage() {
     });
   }, []);
 
+  // Phase 5B: Smart Share Broker Trap
+  useEffect(() => {
+    if (!listing || !currentUser) return;
+    const shareMode = searchParams.get('share');
+    if (shareMode === 'broker' && currentUser.id !== listing.user_id) {
+      setShowCobrokeModal(true);
+    }
+  }, [listing, currentUser, searchParams]);
 
 
   const handleGenerateCobroke = async () => {

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { formatPrice } from '@/lib/mock-data';
 import { Copy, MessageCircle, Pencil, Trash2, Layers } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -169,7 +168,7 @@ export default function DashboardCollections() {
   };
 
   return (
-    <DashboardLayout title="Collections">
+    <div className="p-4 md:p-6 font-sans">
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -333,6 +332,6 @@ export default function DashboardCollections() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </div>
   );
 }
