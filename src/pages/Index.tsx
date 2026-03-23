@@ -42,7 +42,9 @@ export default function Index() {
             <Link to="/create" className="btn-primary h-12 px-8 text-[15px] flex items-center gap-2">
               Create Free Listing <ArrowRight size={18} />
             </Link>
-            <a href="#how-it-works" className="btn-ghost h-12 px-6 text-[15px]">See how it works</a>
+            <Link to="/create-presentation" className="bg-[#1A1A1A] hover:bg-black text-white h-12 px-8 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 shadow-md transition-transform hover:scale-[1.01] active:scale-[0.98]">
+              Create Free Presentation <Sparkles size={18} />
+            </Link>
           </div>
           <p className="text-[13px] text-text-3 font-sans">No signup required · Free forever for 3 listings</p>
         </div>
@@ -162,9 +164,14 @@ export default function Index() {
         <div className="container max-w-lg text-center">
           <h2 className="font-display text-[clamp(1.8rem,4vw,2.5rem)] font-medium text-text-1 mb-4">Ready to impress your clients?</h2>
           <p className="text-[15px] text-text-2 font-sans mb-8">Create your first listing in under 60 seconds.</p>
-          <Link to="/create" className="btn-primary h-12 px-8 text-[15px] inline-flex items-center gap-2">
-            Create Free Listing <ArrowRight size={18} />
-          </Link>
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
+            <Link to="/create" className="btn-primary h-12 px-8 text-[15px] inline-flex items-center gap-2">
+              Create Free Listing <ArrowRight size={18} />
+            </Link>
+            <Link to="/create-presentation" className="bg-[#1A1A1A] hover:bg-black text-white h-12 px-8 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 shadow-md transition-transform hover:scale-[1.01] active:scale-[0.98]">
+              Create Free Presentation <Sparkles size={18} />
+            </Link>
+          </div>
         </div>
       </section>
 

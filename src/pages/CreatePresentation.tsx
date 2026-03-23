@@ -59,20 +59,22 @@ export default function CreatePresentation() {
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // 1. Check credits
+      // 1. Check credits (TEMPORARILY BYPASSED FOR TESTING)
+      /*
       const { data: profile } = await supabase.from('profiles').select('credits_remaining').eq('id', user?.id).single();
       if ((profile?.credits_remaining || 0) < 5) {
         toast.error('Insufficient credits. Need 5 credits to generate.');
         setIsGenerating(false);
         return;
       }
+      */
 
       // 2. Call AI API (Mocked for Vite environment, replace with strict JSON API route later)
       // await fetch('/api/generate-deck', { method: 'POST', body: JSON.stringify({...}) })
       await new Promise(res => setTimeout(res, 2500)); // Simulate AI generation
 
-      // 3. Deduct credits
-      await supabase.rpc('deduct_credits' as any, { amount: 5 });
+      // 3. Deduct credits (TEMPORARILY BYPASSED FOR TESTING)
+      // await supabase.rpc('deduct_credits' as any, { amount: 5 });
 
       // 4. Initialize Editor Data
       const mockData: PresentationData = {
@@ -288,11 +290,11 @@ export default function CreatePresentation() {
               {isGenerating ? (
                 <span className="animate-pulse">Crafting Presentation...</span>
               ) : (
-                <>Generate Presentation <span className="opacity-50 text-xs ml-1">• 5 Credits</span></>
+                <>Generate Presentation <span className="opacity-50 text-xs ml-1">• Free (Testing)</span></>
               )}
             </button>
             <div className="flex items-center gap-1 mt-4 text-[10px] opacity-50 font-medium">
-              <Wallet size={12} /> Credits will be deducted upon generation
+              <Wallet size={12} /> Credit system bypassed for testing
             </div>
           </div>
         </div>
