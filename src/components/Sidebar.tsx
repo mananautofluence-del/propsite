@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, FolderOpen, BarChart3, Settings, Search } from 'lucide-react';
+import { LayoutDashboard, Building2, FolderOpen, BarChart3, Settings, Search, Flame } from 'lucide-react';
 
 const NAV = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { to: '/dashboard/listings', label: 'My Listings', icon: Building2 },
   { to: '/dashboard/marketplace', label: 'Marketplace', icon: Search },
   { to: '/dashboard/collections', label: 'Collections', icon: FolderOpen },
+  { to: '/dashboard/leads', label: 'Leads', icon: Flame },
   { to: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
@@ -14,9 +15,9 @@ export default function Sidebar() {
   const loc = useLocation();
 
   return (
-    <aside className="hidden lg:flex flex-col w-[240px] h-screen bg-surface border-r border-border sticky top-0 py-6 px-4">
+    <aside className="hidden md:flex flex-col w-[240px] h-screen bg-surface border-r border-border sticky top-0 py-6 px-4">
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-1 mb-8 px-2">
+      <Link to="/dashboard" className="flex items-center gap-1 mb-8 px-2">
         <span className="font-display text-[20px] font-medium text-text-1">PropSite</span>
         <span className="w-2 h-2 rounded-full bg-primary" />
       </Link>

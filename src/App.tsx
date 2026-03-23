@@ -14,7 +14,7 @@ import CreateListing from "./pages/CreateListing";
 import PublicListing from "./pages/PublicListing";
 import PublicCollection from "./pages/PublicCollection";
 import DashboardCollections from "./pages/DashboardCollections";
-
+import DashboardLayout from "./components/DashboardLayout";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -29,17 +29,18 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/create" element={<CreateListing />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/listings" element={<DashboardListings />} />
-            <Route path="/dashboard/marketplace" element={<DashboardListings />} />
-            <Route path="/dashboard/listings/new" element={<CreateListing />} />
-            <Route path="/dashboard/analytics" element={<Dashboard />} />
-            <Route path="/dashboard/collections" element={<DashboardCollections />} />
-            <Route path="/dashboard/projects" element={<Dashboard />} />
-            <Route path="/dashboard/brochures" element={<Dashboard />} />
-            <Route path="/dashboard/leads" element={<Dashboard />} />
-            <Route path="/dashboard/settings" element={<Dashboard />} />
-            <Route path="/l/:slug" element={<PublicListing />} />
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="listings" element={<DashboardListings />} />
+              <Route path="marketplace" element={<DashboardListings />} />
+              <Route path="listings/new" element={<CreateListing />} />
+              <Route path="analytics" element={<Dashboard />} />
+              <Route path="collections" element={<DashboardCollections />} />
+              <Route path="projects" element={<Dashboard />} />
+              <Route path="brochures" element={<Dashboard />} />
+              <Route path="leads" element={<Dashboard />} />
+              <Route path="settings" element={<Dashboard />} />
+            </Route>            <Route path="/l/:slug" element={<PublicListing />} />
             <Route path="/c/:slug" element={<PublicCollection />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

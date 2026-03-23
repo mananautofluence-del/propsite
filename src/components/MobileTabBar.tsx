@@ -11,6 +11,7 @@ const TABS = [
 
 const MORE_ITEMS = [
   { to: '/dashboard/collections', label: 'Collections' },
+  { to: '/dashboard/leads', label: 'Leads' },
   { to: '/dashboard/settings', label: 'Settings' },
 ];
 
@@ -21,7 +22,7 @@ export default function MobileTabBar() {
   return (
     <>
       <div
-        className="fixed bottom-0 left-0 right-0 lg:hidden bg-surface z-50 safe-bottom"
+        className="fixed bottom-0 left-0 right-0 md:hidden bg-surface z-50 safe-bottom"
         style={{ borderRadius: '20px 20px 0 0', boxShadow: 'var(--shadow-lg)' }}
       >
         <div className="flex items-center justify-around h-16">
@@ -33,7 +34,7 @@ export default function MobileTabBar() {
             if (tab.isAction) {
               return (
                 <Link key={tab.to} to={tab.to} className="flex flex-col items-center justify-center -mt-2">
-                  <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center" style={{ boxShadow: 'var(--shadow-md)' }}>
+                  <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center shadow-md">
                     <Plus size={20} className="text-primary-foreground" />
                   </div>
                 </Link>
@@ -57,9 +58,9 @@ export default function MobileTabBar() {
       {/* More menu modal */}
       {showMore && (
         <>
-          <div className="fixed inset-0 bg-dark/30 z-40 lg:hidden" onClick={() => setShowMore(false)} />
+          <div className="fixed inset-0 bg-dark/30 z-40 md:hidden" onClick={() => setShowMore(false)} />
           <div
-            className="fixed bottom-20 left-4 right-4 bg-surface rounded-2xl z-50 p-2 lg:hidden"
+            className="fixed bottom-20 left-4 right-4 bg-surface rounded-2xl z-50 p-2 md:hidden"
             style={{ boxShadow: 'var(--shadow-lg)' }}
           >
             {MORE_ITEMS.map(item => (

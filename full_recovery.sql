@@ -265,3 +265,32 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
+
+-- Increment views function
+CREATE OR REPLACE FUNCTION public.increment_views(p_listing_id uuid)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE listings SET total_views = total_views + 1 WHERE id = p_listing_id;
+$$;
+
+-- Updated_at trigger function
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+-- Trigger for updating updated_at
+DROP TRIGGER IF EXISTS update_listings_updated_at ON public.listings;
+CREATE TRIGGER update_listings_updated_at
+  BEFORE UPDATE ON public.listings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at_column();
