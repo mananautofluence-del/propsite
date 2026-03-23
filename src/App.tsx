@@ -31,6 +31,7 @@ const App = () => (
             <Route path="/create" element={<CreateListing />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/listings" element={<DashboardListings />} />
+            <Route path="/dashboard/marketplace" element={<DashboardListings />} />
             <Route path="/dashboard/listings/new" element={<CreateListing />} />
             <Route path="/dashboard/analytics" element={<Dashboard />} />
             <Route path="/dashboard/collections" element={<DashboardCollections />} />

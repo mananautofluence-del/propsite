@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, FolderOpen, BarChart3, Settings } from 'lucide-react';
+import { LayoutDashboard, Building2, FolderOpen, BarChart3, Settings, Search } from 'lucide-react';
 
 const NAV = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
-  { to: '/dashboard/listings', label: 'Listings', icon: Building2 },
+  { to: '/dashboard/listings', label: 'My Listings', icon: Building2 },
+  { to: '/dashboard/marketplace', label: 'Marketplace', icon: Search },
   { to: '/dashboard/collections', label: 'Collections', icon: FolderOpen },
   { to: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings },

@@ -877,10 +877,10 @@ export default function PublicListingPage() {
         </div>
       </div>
 
-      {/* ═══ LIGHTBOX ═══ */}
+      {/* Lightbox */}
       {lightbox !== null && (
         <div
-          className="fixed inset-0 bg-[#000000]/95 z-[100] flex items-center justify-center"
+          className="fixed inset-0 bg-[#000000]/95 z-[200] flex items-center justify-center"
           onClick={() => setLightbox(null)}
           onTouchStart={e => { lbTouchStartX.current = e.touches[0].clientX; }}
           onTouchEnd={e => {
@@ -920,6 +920,26 @@ export default function PublicListingPage() {
             {allPhotos[lightbox]?.room_tag && allPhotos[lightbox].room_tag !== 'general' && (
               <div className="absolute bottom-[16px] left-[16px] bg-white/90 text-[#111111] text-[12px] font-[600] px-[10px] py-[4px] rounded-[8px] font-sans">{allPhotos[lightbox].room_tag}</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Broker Floating Action Bar */}
+      {currentUser && (
+        <div className="fixed bottom-[88px] left-[16px] right-[16px] z-[60] md:bottom-[32px] md:left-auto md:right-[32px] md:w-[280px]">
+          <div className="bg-white rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-[#EBEBEB] p-3 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="flex items-center gap-2 pl-2">
+                <div className="w-8 h-8 rounded-full bg-[#EAF3ED] flex items-center justify-center">
+                   <Download size={16} className="text-[#1A5C3A]" />
+                </div>
+                <span className="font-sans text-[13px] font-[600] text-[#111111]">Broker Tools</span>
+             </div>
+             <button 
+               onClick={handleDownloadStory}
+               className="bg-[#1A5C3A] text-white px-[14px] py-[8px] rounded-[12px] font-sans text-[12px] font-[700] hover:bg-[#154a2f] transition-colors"
+             >
+                Generate Story
+             </button>
           </div>
         </div>
       )}
