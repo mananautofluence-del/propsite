@@ -3,9 +3,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { formatPrice } from '@/lib/mock-data';
 import { supabase } from '@/integrations/supabase/client';
-import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2, Share2, Heart, ArrowLeft, Download, UserPlus } from 'lucide-react';
-import { toJpeg } from 'html-to-image';
-import { WhatsAppStoryTemplate } from '@/components/WhatsAppStoryTemplate';
+import { ChevronLeft, ChevronRight, X, MapPin, Phone, MessageCircle, Check, Camera, Loader2, Share2, Heart, ArrowLeft, UserPlus } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -145,7 +143,7 @@ export default function PublicListingPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showCobrokeModal, setShowCobrokeModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const storyRef = useRef<HTMLDivElement>(null);
+
   const heroTouchStartX = useRef(0);
   const lbTouchStartX = useRef(0);
 
@@ -162,20 +160,7 @@ export default function PublicListingPage() {
     });
   }, []);
 
-  const handleDownloadStory = async () => {
-    if (!storyRef.current) return;
-    try {
-      const dataUrl = await toJpeg(storyRef.current, { quality: 0.95 });
-      const link = document.createElement('a');
-      link.download = `story-${listing.slug}.jpg`;
-      link.href = dataUrl;
-      link.click();
-      toast.success('Story downloaded!');
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to generate story');
-    }
-  };
+
 
   const handleGenerateCobroke = async () => {
     if (!currentUser) {
@@ -505,14 +490,7 @@ export default function PublicListingPage() {
 
           {/* Share + Save buttons */}
           <div className="absolute top-[16px] right-[16px] flex gap-[8px] z-10">
-            <button
-              type="button"
-              onClick={handleDownloadStory}
-              className="w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center shadow-sm"
-              title="Download WhatsApp Story"
-            >
-              <Download size={16} color="#1A5C3A" strokeWidth={2.5} />
-            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -791,14 +769,7 @@ export default function PublicListingPage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={handleDownloadStory}
-                          className="flex items-center justify-center gap-2 py-3 bg-[#EAF3ED] text-[#1A5C3A] rounded-xl font-sans text-[13px] font-[600]"
-                        >
-                          <Download size={14} />
-                          Story
-                        </button>
+                      <div className="flex flex-col gap-2">
                         <button
                           onClick={() => {
                             if (currentUser?.id === listing.user_id) {
@@ -924,38 +895,9 @@ export default function PublicListingPage() {
         </div>
       )}
 
-      {/* Broker Floating Action Bar */}
-      {currentUser && (
-        <div className="fixed bottom-[88px] left-[16px] right-[16px] z-[60] md:bottom-[32px] md:left-auto md:right-[32px] md:w-[280px]">
-          <div className="bg-white rounded-[20px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-[#EBEBEB] p-3 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-             <div className="flex items-center gap-2 pl-2">
-                <div className="w-8 h-8 rounded-full bg-[#EAF3ED] flex items-center justify-center">
-                   <Download size={16} className="text-[#1A5C3A]" />
-                </div>
-                <span className="font-sans text-[13px] font-[600] text-[#111111]">Broker Tools</span>
-             </div>
-             <button 
-               onClick={handleDownloadStory}
-               className="bg-[#1A5C3A] text-white px-[14px] py-[8px] rounded-[12px] font-sans text-[12px] font-[700] hover:bg-[#154a2f] transition-colors"
-             >
-                Generate Story
-             </button>
-          </div>
-        </div>
-      )}
+
       
-      {/* Hidden Story Template */}
-      <WhatsAppStoryTemplate 
-        listing={listing}
-        photos={allPhotos}
-        broker={{
-          name: listing.broker_name,
-          agency: listing.broker_agency,
-          avatar_url: listing.broker_avatar_url,
-          rera_number: listing.broker_rera
-        }}
-        templateRef={storyRef}
-      />
+
 
       {/* Co-Broke Modal */}
       {showCobrokeModal && (
