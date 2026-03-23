@@ -718,6 +718,42 @@ export type Database = {
         }
         Relationships: []
       }
+      white_labeled_links: {
+        Row: {
+          id: string
+          original_listing_id: string | null
+          partner_user_id: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          original_listing_id?: string | null
+          partner_user_id?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          original_listing_id?: string | null
+          partner_user_id?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "white_labeled_links_original_listing_id_fkey"
+            columns: ["original_listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "white_labeled_links_partner_user_id_fkey"
+            columns: ["partner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -234,23 +234,23 @@ export default function PublicListingPage() {
       let finalBroker = null;
 
       if (partnerId) {
-        // Verify co-broke link payment
-        const { data: cobrokeLink } = await supabase
+        // Verify co-broke link payment safely
+        const { data: cobrokeLink, error: cobrokeError } = await supabase
           .from('white_labeled_links' as any)
           .select('id')
           .eq('original_listing_id', data.id)
           .eq('partner_user_id', partnerId)
-          .single();
+          .maybeSingle(); // CRITICAL: prevents crash on 0 rows
 
-        if (cobrokeLink) {
-          // Fetch partner details
-          const { data: partnerProfile } = await supabase
+        if (cobrokeLink && !cobrokeError) {
+          // Fetch partner details safely
+          const { data: partnerProfile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', partnerId)
-            .single();
+            .maybeSingle();
 
-          if (partnerProfile) {
+          if (partnerProfile && !profileError) {
             finalBroker = {
               name: partnerProfile.full_name,
               phone: partnerProfile.phone,
