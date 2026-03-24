@@ -58,7 +58,7 @@ export default function CreatePresentation() {
 
       // Upload photos
       const taggedPhotos: PresentationPhoto[] = [];
-      const SMART_TAGS = ['cover', 'exterior', 'living', 'bedroom', 'kitchen', 'bathroom', 'balcony', 'amenity'];
+      const semanticTags = ['cover', 'exterior', 'interior', 'lifestyle', 'amenity', 'detail', 'view', 'night'];
       for (let i = 0; i < photos.length; i++) {
         const file = photos[i];
         const fileExt = file.name.split('.').pop();
@@ -68,59 +68,84 @@ export default function CreatePresentation() {
         let publicUrl = '';
         if (!error) { const { data: { publicUrl: url } } = supabase.storage.from('listing-photos').getPublicUrl(filePath); publicUrl = url; }
         else { publicUrl = photoPreviewUrls[i] || ''; }
-        taggedPhotos.push({ url: publicUrl, tag: i < SMART_TAGS.length ? SMART_TAGS[i] : 'other', orderIndex: i });
+        const tag = i < semanticTags.length ? semanticTags[i] : `photo_${i}`;
+        taggedPhotos.push({ url: publicUrl, tag, orderIndex: i });
       }
+
+      const photoTagList = taggedPhotos.map((p, i) => `photo ${i + 1}: tag="${p.tag}"`).join(', ');
 
       setGenerationStatus('AI is composing your presentation...');
 
-      const SYSTEM_PROMPT = `You are an elite layout director for a luxury real estate app. The user has selected a visual theme (provided below). Read their property data carefully and compose a GenerativePresentation JSON.
+      const SYSTEM_PROMPT = `You are an elite layout director for a luxury real estate presentation app. Generate a GenerativePresentation JSON.
 
-OUTPUT: Return ONLY valid JSON. No markdown. No code fences. No explanation.
+OUTPUT RULES:
+- Return ONLY valid JSON. Zero markdown. Zero code fences. Zero explanation. Start with { and end with }.
+- Generate between 6 and 8 slides. Never fewer than 6.
+- Never use the same layout twice.
+- First slide: always hero-cinematic OR hero-editorial (never both).
+- Last slide: always contact-minimal.
+- If 5+ photos available: MUST include gallery-masonry.
 
-interface GenerativePresentation {
-  theme: { backgroundColor: string; textColor: string; accentColor: string; headingFont: string; bodyFont: string; };
-  slides: Array<{
-    id: string;
-    layout: "hero-cinematic" | "hero-editorial" | "bento-grid-features" | "magazine-split" | "stats-monumental" | "vision-quote" | "gallery-masonry" | "contact-minimal";
-    eyebrow?: string; headline?: string; subheadline?: string; bodyText?: string; pullQuote?: string;
-    bulletPoints?: string[];
-    bentoBoxes?: Array<{ icon: string; title: string; description: string; size: "large" | "small" }>;
-    stats?: Array<{ label: string; value: string; unit?: string }>;
-    imageTags: string[];
-    contactInfo?: { name: string; phone: string; agency: string; rera: string; tagline?: string };
-  }>;
-}
+LAYOUT DEFINITIONS:
+"hero-cinematic" — full bleed image, dark overlay, massive text
+"hero-editorial" — solid color left half + image right half
+"bento-grid-features" — grid of feature boxes with icons
+"magazine-split" — image left, text right with narrative copy
+"stats-monumental" — NO image, giant numbers only (3 stats max)
+"vision-quote" — NO image, giant italic pull quote fills screen
+"gallery-masonry" — 3-photo asymmetric collage
+"contact-minimal" — clean centered broker contact card
 
-LAYOUT SELECTION INTELLIGENCE:
-→ Long description (200+ words): Use magazine-split for narrative + bento-grid-features for amenities.
-→ Short description (under 100 words): Use vision-quote for breathing room + stats-monumental for data.
-→ ALWAYS start with hero-cinematic OR hero-editorial. Never both.
-  hero-cinematic for dramatic properties (mountains, heritage, night photography).
-  hero-editorial for clean/modern properties (apartments, new construction).
-→ ALWAYS end with contact-minimal.
-→ For 5+ photos: include gallery-masonry. Under 3 photos: skip it.
-→ NEVER use the same layout twice. Only one hero layout total.
+PROPERTY ANALYSIS:
+Read the description carefully. Decide:
+→ Is it dramatic/moody (mountains, heritage, night)? Use hero-cinematic as first slide.
+→ Is it clean/modern (apartment, new build, white interiors)? Use hero-editorial as first slide.
+→ Is description 200+ words? MUST use magazine-split for narrative + bento-grid-features.
+→ Is description under 100 words? MUST use vision-quote + stats-monumental for breathing room.
 
 CONTENT RULES:
-→ eyebrow: Always fill. Format: 'CITY · PROPERTY TYPE' e.g. 'KASHMIR · MOUNTAIN ESTATE'
-→ headline: Maximum 6 words. Poetic, not descriptive. BAD: '3 BHK Luxury Apartment'. GOOD: 'Where Silence Has An Address'
-→ pullQuote (vision-quote only): 10-18 words, first-person buyer fantasy.
-→ bentoBoxes: 5-6 boxes. Mix 1 large + rest small. Titles are EXPERIENCES not features.
-  BAD title: 'Swimming Pool'. GOOD: 'Infinity Edge'. GOOD description: 'Suspended over the valley. Heated. Open at dawn.'
-→ stats: Premium labels. BAD: { label: 'Area', value: '3000' }. GOOD: { label: 'LIVING CANVAS', value: '3,000', unit: 'SQ FT' }
-→ imageTags: hero-cinematic → ['cover','exterior']. magazine-split → ['exterior','living']. gallery-masonry → ['pool','bonfire','garden']. stats-monumental → []. vision-quote → []. contact-minimal → [].
+eyebrow: Always populate. Format: 'CITY · PROPERTY TYPE'
+  Example: 'KASHMIR · MOUNTAIN ESTATE' or 'MUMBAI · SEA-VIEW PENTHOUSE'
 
-SELECTED THEME — APPLY STRICTLY:
-${JSON.stringify(selectedTheme, null, 2)}
+headline: 3-6 words MAX. Evocative poetry, NOT description.
+  BAD: '3 BHK Luxury Apartment For Sale In Mumbai'
+  GOOD: 'Where The City Bows Down'
+  BAD: 'Kashmir Property With Mountain Views'
+  GOOD: 'Silence At Five Thousand Feet'
 
-Generate 5-7 slides. Each slide is a new scene. Never generate a slide with empty headline AND empty bodyText.`;
+subheadline: ONE sentence. Sensory. Ends without a full stop.
+
+bodyText (magazine-split only): Write like Architectural Digest.
+  Mention textures, light quality, altitude, atmosphere.
+  2-3 sentences. Aspirational, not factual.
+
+pullQuote (vision-quote only): 10-18 words. First-person fantasy.
+  Must make the reader feel they are already living there.
+
+bentoBoxes: 5-6 boxes. EXPERIENCES not features.
+  BAD title: 'Swimming Pool'. GOOD title: 'Infinity Edge'
+  GOOD description: 'Suspended over the valley floor. Open at dawn.'
+  Mix: 1 box with size "large", rest with size "small"
+
+stats (stats-monumental only): 3 stats MAXIMUM.
+  Format: { label: "LIVING CANVAS", value: "3,000", unit: "SQ FT" }
+  Labels must feel premium, not generic.
+
+imageTags: ONLY use tags provided in the user message.
+  Do not invent tags. Use the exact strings listed.
+
+contactInfo: Always populate on contact-minimal slide.
+  Add a tagline field: a 3-5 word description of the broker's specialty.
+
+SELECTED THEME — USE THESE EXACT VALUES, DO NOT CHANGE:
+${JSON.stringify(selectedTheme, null, 2)}`;
 
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': CLAUDE_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 4000, system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: `Design a property presentation.\n\nProperty: "${description}"\n\nBroker: ${brokerProfile.fullName || 'N/A'}\nPhone: ${brokerProfile.phone || 'N/A'}\nAgency: ${brokerProfile.agencyName || 'N/A'}\nRERA: ${brokerProfile.reraNumber || 'N/A'}\n\nAvailable photo tags: ${taggedPhotos.map(p => p.tag).join(', ') || 'cover'}\n\nReturn ONLY valid JSON.` }]
+          model: 'claude-sonnet-4-20250514', max_tokens: 8000, system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: `Design a property presentation.\n\nProperty: "${description}"\n\nBroker: ${brokerProfile.fullName || 'N/A'}\nPhone: ${brokerProfile.phone || 'N/A'}\nAgency: ${brokerProfile.agencyName || 'N/A'}\nRERA: ${brokerProfile.reraNumber || 'N/A'}\n\nYou have ${taggedPhotos.length} photos. Use these EXACT tags in imageTags: ${photoTagList}. For gallery-masonry use: ["cover","exterior","interior"]. For hero slides use: ["cover"]. For split slides use: ["exterior"] or ["interior"]. ONLY use tags from the list above.\n\nReturn ONLY valid JSON.` }]
         })
       });
 

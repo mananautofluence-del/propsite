@@ -4,7 +4,10 @@ import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTyp
 interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
 
 function findPhoto(photos: PresentationPhoto[], tags: string[]): string {
-  for (const t of tags) { const f = photos.find(p => p.tag === t); if (f) return f.url; }
+  for (const t of tags) {
+    const f = photos.find(p => p.tag === t);
+    if (f) return f.url;
+  }
   return photos[0]?.url || '';
 }
 
@@ -24,7 +27,7 @@ export default function MagazineSplit({ data, theme, photos }: Props) {
       {/* Right — text */}
       <div style={{ position: 'absolute', left: '540px', top: 0, width: '540px', height: '1080px', backgroundColor: theme.backgroundColor, padding: '80px 64px', boxSizing: 'border-box', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
-          {data.eyebrow && <div style={{ fontSize: '11px', letterSpacing: '4px', textTransform: 'uppercase', color: theme.accentColor, marginBottom: '8px' }}>{data.eyebrow}</div>}
+          {data.eyebrow && <div style={{ fontSize: '11px', letterSpacing: '4px', textTransform: 'uppercase' as const, color: theme.accentColor, marginBottom: '8px' }}>{data.eyebrow}</div>}
           {data.headline && <div style={{ fontSize: '52px', fontFamily: theme.headingFont, color: theme.textColor, marginTop: '16px', lineHeight: '1.05', fontWeight: 700 }}>{data.headline}</div>}
           <div style={{ width: '48px', height: '1px', backgroundColor: theme.accentColor, marginTop: '24px', marginBottom: '24px' }} />
           {data.bodyText && <div style={{ fontSize: bodyFontSize, fontFamily: theme.bodyFont, lineHeight: '1.75', color: theme.textColor, opacity: 0.7, maxWidth: '380px' }}>{data.bodyText}</div>}

@@ -3,30 +3,121 @@ import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTyp
 
 interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
 
+function getStatFontSize(value: string): string {
+  const len = value.replace(/[^a-zA-Z0-9]/g, '').length;
+  if (len <= 2) return '144px';
+  if (len <= 4) return '120px';
+  if (len <= 6) return '96px';
+  if (len <= 8) return '72px';
+  return '56px';
+}
+
 export default function StatsMonumental({ data, theme }: Props) {
-  const stats = data.stats || [];
+  const stats = (data.stats || []).slice(0, 3);
+
   return (
-    <div style={{ width: '1080px', height: '1080px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden', fontFamily: theme.bodyFont, backgroundColor: theme.backgroundColor, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {/* Top */}
-      {data.eyebrow && <div style={{ textTransform: 'uppercase', letterSpacing: '6px', fontSize: '11px', color: theme.accentColor, marginTop: '80px', textAlign: 'center' }}>{data.eyebrow}</div>}
-      <div style={{ width: '120px', height: '1px', backgroundColor: theme.accentColor, marginTop: '24px', marginBottom: '80px' }} />
+    <div style={{
+      width: '1080px', height: '1080px',
+      boxSizing: 'border-box', position: 'relative',
+      overflow: 'hidden', fontFamily: theme.bodyFont,
+      backgroundColor: theme.backgroundColor,
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+    }}>
+      {/* Subtle background texture */}
+      <div style={{
+        position: 'absolute', inset: 0, opacity: 0.03,
+        backgroundImage: `repeating-linear-gradient(
+          45deg, ${theme.textColor} 0px, ${theme.textColor} 1px,
+          transparent 1px, transparent 40px
+        )`,
+      }} />
+
+      {/* Top eyebrow */}
+      {data.eyebrow && (
+        <div style={{
+          position: 'absolute', top: '80px',
+          textTransform: 'uppercase' as const, letterSpacing: '6px',
+          fontSize: '11px', color: theme.accentColor, textAlign: 'center',
+          fontFamily: theme.bodyFont,
+        }}>
+          {data.eyebrow}
+        </div>
+      )}
+
+      {/* Thin rule */}
+      <div style={{
+        position: 'absolute', top: '108px',
+        width: '120px', height: '1px',
+        backgroundColor: theme.accentColor,
+      }} />
 
       {/* Stats row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', flex: 1, width: '100%', padding: '0 60px', boxSizing: 'border-box' }}>
+      <div style={{
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'center', gap: '0px',
+        width: '100%', padding: '0 60px',
+        boxSizing: 'border-box', zIndex: 1,
+      }}>
         {stats.map((s, i) => (
           <React.Fragment key={i}>
-            {i > 0 && <div style={{ width: '1px', height: '120px', backgroundColor: theme.textColor, opacity: 0.15 }} />}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-              <div style={{ fontSize: '120px', fontFamily: theme.headingFont, color: theme.textColor, lineHeight: '0.85', letterSpacing: '-0.04em', fontWeight: 700 }}>{s.value}</div>
-              {s.unit && <div style={{ fontSize: '14px', letterSpacing: '4px', color: theme.accentColor, marginTop: '12px', textTransform: 'uppercase' }}>{s.unit}</div>}
-              <div style={{ fontSize: '11px', letterSpacing: '3px', color: theme.textColor, opacity: 0.5, marginTop: '8px', textTransform: 'uppercase' }}>{s.label}</div>
+            {i > 0 && (
+              <div style={{
+                width: '1px', height: '140px',
+                backgroundColor: theme.textColor,
+                opacity: 0.12, flexShrink: 0, margin: '0 40px',
+              }} />
+            )}
+            <div style={{
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', textAlign: 'center',
+              minWidth: 0, flex: 1,
+            }}>
+              <div style={{
+                fontSize: getStatFontSize(s.value),
+                fontFamily: theme.headingFont,
+                color: theme.textColor,
+                lineHeight: '0.88',
+                letterSpacing: '-0.04em',
+                fontWeight: 700,
+                whiteSpace: 'nowrap' as const,
+              }}>
+                {s.value}
+              </div>
+              {s.unit && (
+                <div style={{
+                  fontSize: '13px', letterSpacing: '4px',
+                  color: theme.accentColor, marginTop: '14px',
+                  textTransform: 'uppercase' as const, fontFamily: theme.bodyFont,
+                }}>
+                  {s.unit}
+                </div>
+              )}
+              <div style={{
+                fontSize: '11px', letterSpacing: '3px',
+                color: theme.textColor, opacity: 0.45,
+                marginTop: '8px', textTransform: 'uppercase' as const,
+                fontFamily: theme.bodyFont,
+              }}>
+                {s.label}
+              </div>
             </div>
           </React.Fragment>
         ))}
       </div>
 
-      {/* Bottom */}
-      {data.headline && <div style={{ fontFamily: theme.headingFont, fontSize: '24px', textAlign: 'center', marginBottom: '80px', fontStyle: 'italic', color: theme.textColor, opacity: 0.5, padding: '0 80px' }}>{data.headline}</div>}
+      {/* Bottom headline */}
+      {data.headline && (
+        <div style={{
+          position: 'absolute', bottom: '80px',
+          fontFamily: theme.headingFont, fontSize: '22px',
+          textAlign: 'center', fontStyle: 'italic',
+          color: theme.textColor, opacity: 0.35,
+          padding: '0 120px', letterSpacing: '0.02em',
+        }}>
+          {data.headline}
+        </div>
+      )}
     </div>
   );
 }

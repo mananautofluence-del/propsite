@@ -4,19 +4,26 @@ import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTyp
 interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
 
 function findPhoto(photos: PresentationPhoto[], tags: string[]): string {
-  for (const t of tags) { const f = photos.find(p => p.tag === t); if (f) return f.url; }
+  for (const t of tags) {
+    const f = photos.find(p => p.tag === t);
+    if (f) return f.url;
+  }
   return photos[0]?.url || '';
 }
 
 export default function HeroEditorial({ data, theme, photos }: Props) {
   const img = findPhoto(photos, data.imageTags || ['interior', 'living']);
   const stats = data.stats || [];
+  const headlineLen = (data.headline || '').length;
+  const headlineFontSize = headlineLen <= 15 ? '72px'
+    : headlineLen <= 25 ? '58px' : '46px';
+
   return (
     <div style={{ width: '1080px', height: '1080px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden', fontFamily: theme.bodyFont }}>
       {/* Left panel */}
       <div style={{ position: 'absolute', left: 0, top: 0, width: '520px', height: '1080px', backgroundColor: theme.backgroundColor, padding: '80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-        {data.eyebrow && <div style={{ textTransform: 'uppercase', letterSpacing: '6px', fontSize: '11px', color: theme.accentColor, fontFamily: theme.bodyFont }}>{data.eyebrow}</div>}
-        {data.headline && <div style={{ fontSize: '72px', lineHeight: '0.95', fontFamily: theme.headingFont, color: theme.textColor, marginTop: '24px', marginBottom: '32px', fontWeight: 700 }}>{data.headline}</div>}
+        {data.eyebrow && <div style={{ textTransform: 'uppercase' as const, letterSpacing: '6px', fontSize: '11px', color: theme.accentColor, fontFamily: theme.bodyFont }}>{data.eyebrow}</div>}
+        {data.headline && <div style={{ fontSize: headlineFontSize, lineHeight: '0.95', fontFamily: theme.headingFont, color: theme.textColor, marginTop: '24px', marginBottom: '32px', fontWeight: 700 }}>{data.headline}</div>}
         <div style={{ width: '48px', height: '1px', backgroundColor: theme.accentColor }} />
         {data.bodyText && <div style={{ fontSize: '17px', lineHeight: '1.7', color: theme.textColor, opacity: 0.75, marginTop: '24px', maxWidth: '380px', fontFamily: theme.bodyFont }}>{data.bodyText}</div>}
         <div style={{ marginTop: 'auto', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>

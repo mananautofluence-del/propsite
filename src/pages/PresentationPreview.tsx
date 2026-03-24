@@ -131,8 +131,8 @@ export default function PresentationPreview() {
     setIsRegenerating(true); setShowRegenSheet(false); haptic();
     try {
       const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': K, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4000,
-          system: `Regenerate this presentation. User wants: "${regenInstruction}". Keep property facts. Output ONLY valid JSON: { theme: ThemeConfig, slides: SlideData[] }. Layouts: hero-cinematic, hero-editorial, bento-grid-features, magazine-split, stats-monumental, vision-quote, gallery-masonry, contact-minimal. 5-7 slides. First=hero, Last=contact-minimal.`,
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 8000,
+          system: `Regenerate this presentation. User wants: "${regenInstruction}". Keep property facts. Output ONLY valid JSON: { theme: ThemeConfig, slides: SlideData[] }. Layouts: hero-cinematic, hero-editorial, bento-grid-features, magazine-split, stats-monumental, vision-quote, gallery-masonry, contact-minimal. 6-8 slides. First=hero, Last=contact-minimal.`,
           messages: [{ role: 'user', content: JSON.stringify(presentationData) }] }) });
       const d = await r.json(); const t = (d.content?.[0]?.text || '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const np = JSON.parse(t) as GenerativePresentation;
@@ -142,22 +142,54 @@ export default function PresentationPreview() {
   };
 
   const handleExportPDF = async () => {
-    if (!presentationData) return; setExporting(true); toast.info('Generating PDF...');
+    if (!presentationData) return;
+    setExporting(true);
+    toast.info('Generating PDF... please wait');
     try {
       const { theme, slides } = presentationData;
       const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [1080, 1080] });
+
       for (let i = 0; i < slides.length; i++) {
         if (i > 0) pdf.addPage([1080, 1080]);
-        const SB = getSlideComponent(slides[i].layout);
-        const el = document.createElement('div'); el.style.cssText = 'position:fixed;left:-9999px;top:0;width:1080px;height:1080px'; document.body.appendChild(el);
-        const root = createRoot(el);
-        await new Promise<void>(r => { root.render(<SB data={slides[i]} theme={theme} photos={photos} />); setTimeout(r, 800); });
-        const canvas = await html2canvas(el, { width: 1080, height: 1080, scale: 2, useCORS: true, allowTaint: true, logging: false });
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 1080, 1080);
-        root.unmount(); document.body.removeChild(el);
+        const SlideBlock = getSlideComponent(slides[i].layout);
+
+        const container = document.createElement('div');
+        container.style.cssText = [
+          'position:fixed', 'left:-9999px', 'top:0',
+          'width:1080px', 'height:1080px', 'overflow:hidden',
+          'transform:none', 'zoom:1',
+          'background:' + theme.backgroundColor,
+        ].join(';');
+        document.body.appendChild(container);
+
+        const root = createRoot(container);
+        await new Promise<void>(resolve => {
+          root.render(
+            <SlideBlock data={slides[i]} theme={theme} photos={photos} />
+          );
+          setTimeout(resolve, 1500);
+        });
+
+        const canvas = await html2canvas(container, {
+          width: 1080, height: 1080, scale: 1,
+          useCORS: true, allowTaint: true, logging: false,
+          backgroundColor: theme.backgroundColor,
+          imageTimeout: 20000,
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', 0, 0, 1080, 1080);
+
+        root.unmount();
+        document.body.removeChild(container);
       }
-      pdf.save(`${stored?.title || 'presentation'}.pdf`); toast.success('PDF downloaded!');
-    } catch { toast.error('Export failed'); }
+
+      pdf.save(`${stored?.title || 'presentation'}.pdf`);
+      toast.success('PDF downloaded!');
+    } catch (err) {
+      console.error('PDF export error:', err);
+      toast.error('Export failed — try again');
+    }
     setExporting(false);
   };
 
