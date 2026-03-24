@@ -31,13 +31,25 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       if (listings && Array.isArray(listings) && listings.length > 0) {
         const listing = listings[0];
         
-        // Use the dynamic OG image generator Edge Function instead of raw photo
-        // This renders a premium "mini listing card" with photo + price + title + specs
-        const ogImageUrl = `${supabaseUrl}/functions/v1/generate-og-image?listing_id=${listing.id}`;
+        const photoRes = await fetch(`${supabaseUrl}/rest/v1/listing_photos?listing_id=eq.${listing.id}&order=order_index.asc&select=*`, {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`
+          }
+        });
+        
+        let heroPhotoUrl = "";
+        if (photoRes.ok) {
+          const photos = (await photoRes.json()) as any[];
+          const heroPhoto = Array.isArray(photos) ? (photos.find(p => p.is_hero) || photos[0]) : null;
+          if (heroPhoto && heroPhoto.url) {
+            heroPhotoUrl = heroPhoto.url.replace('/object/public/', '/render/image/public/') + '?width=800&height=600&quality=70&resize=contain';
+          }
+        }
 
         const title = listing.headline || 'PropSite Listing';
         const desc = (listing.ai_description || 'View this premium property on PropSite.').slice(0, 150);
-        const image = ogImageUrl;
+        const image = heroPhotoUrl;
 
         let rewriter = new HTMLRewriter()
           .on('title', { element(e) { e.setInnerContent(title); } })
@@ -48,16 +60,14 @@ export const onRequest: PagesFunction<Env> = async (context) => {
             element(e) { e.setAttribute("content", desc); } 
           });
 
-        rewriter = rewriter.on('head', {
-          element(e) {
-            e.append(`<meta property="og:image" content="${image}" />`, { html: true });
-            e.append(`<meta property="og:image:width" content="1200" />`, { html: true });
-            e.append(`<meta property="og:image:height" content="630" />`, { html: true });
-            e.append(`<meta property="og:type" content="website" />`, { html: true });
-            e.append(`<meta name="twitter:card" content="summary_large_image" />`, { html: true });
-            e.append(`<meta name="twitter:image" content="${image}" />`, { html: true });
-          }
-        });
+        if (image) {
+          rewriter = rewriter.on('head', {
+            element(e) {
+              e.append(`<meta property="og:image" content="${image}" />`, { html: true });
+              e.append(`<meta name="twitter:image" content="${image}" />`, { html: true });
+            }
+          });
+        }
 
         return rewriter.transform(response);
       }
