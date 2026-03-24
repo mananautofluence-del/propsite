@@ -1,16 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Plus, BarChart3, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, Building2, Plus, Users, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 
 const TABS = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { to: '/dashboard/listings', label: 'Listings', icon: Building2 },
   { to: '/create', label: 'Create', icon: Plus, isAction: true },
+  { to: '/dashboard/leads', label: 'Leads', icon: Users },
 ];
 
 const MORE_ITEMS = [
   { to: '/dashboard/collections', label: 'Collections' },
-  { to: '/dashboard/leads', label: 'Leads' },
+  { to: '/dashboard/presentations', label: 'Presentations' },
   { to: '/dashboard/settings', label: 'Settings' },
 ];
 

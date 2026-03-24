@@ -83,11 +83,12 @@ export default function CreatePresentation() {
       // 1. Upload photos & AI-tag them
       setGenerationStatus('Processing photos...');
       const taggedPhotos: PresentationPhoto[] = [];
+      const SMART_TAGS = ['cover', 'living', 'bedroom', 'kitchen', 'bathroom', 'balcony', 'exterior', 'amenity'];
 
       for (let i = 0; i < photos.length; i++) {
         const file = photos[i];
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        const fileName = `${Date.now()}_${i}.${fileExt}`;
         const filePath = `${user?.id}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
@@ -101,48 +102,16 @@ export default function CreatePresentation() {
             .getPublicUrl(filePath);
           publicUrl = url;
         } else {
-          // Fallback to blob URL if upload fails
           publicUrl = photoPreviewUrls[i] || '';
         }
 
-        // AI Photo Tagging
-        let tag = i === 0 ? 'cover' : 'other';
-        if (i > 0 && CLAUDE_KEY) {
-          try {
-            const base64 = await fileToBase64(file);
-            const tagResponse = await fetch('https://api.anthropic.com/v1/messages', {
-              method: 'POST',
-              headers: {
-                'x-api-key': CLAUDE_KEY,
-                'anthropic-version': '2023-06-01',
-                'anthropic-dangerous-direct-browser-access': 'true',
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                model: 'claude-3-5-sonnet-20241022',
-                max_tokens: 50,
-                messages: [{
-                  role: 'user',
-                  content: [
-                    { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-                    { type: 'text', text: 'Tag this photo with ONE word: cover, living, bedroom, kitchen, bathroom, balcony, exterior, amenity, other. Return only the single word.' }
-                  ]
-                }]
-              })
-            });
-            const tagResult = await tagResponse.json();
-            const aiTag = tagResult.content?.[0]?.text?.trim().toLowerCase();
-            if (['cover', 'living', 'bedroom', 'kitchen', 'bathroom', 'balcony', 'exterior', 'amenity', 'other'].includes(aiTag)) {
-              tag = aiTag;
-            }
-          } catch { /* fallback tag */ }
-        }
-
+        // Smart sequential tagging — no AI call needed, instant
+        const tag = i < SMART_TAGS.length ? SMART_TAGS[i] : 'other';
         taggedPhotos.push({ url: publicUrl, tag, orderIndex: i });
       }
 
       // 2. Generate Presentation with Claude Art Director
-      setGenerationStatus('AI is designing your presentation...');
+      setGenerationStatus('AI is designing your slides...');
 
       const SYSTEM_PROMPT = `You are a luxury Indian real estate Art Director. You read property descriptions and design stunning visual presentations.
 
@@ -191,7 +160,7 @@ RULES:
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
+          model: 'claude-sonnet-4-20250514',
           max_tokens: 4000,
           system: SYSTEM_PROMPT,
           messages: [{
