@@ -2,20 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import satori from "https://esm.sh/satori@0.10.11";
-import { Resvg, initWasm } from "https://esm.sh/@resvg/resvg-wasm@3.1.4";
-
-// Initialize WASM for Resvg (required in Edge Runtime)
-const resvgWasm = fetch("https://unpkg.com/@resvg/resvg-wasm@3.1.4/index_bg.wasm");
-let wasmInitPromise: Promise<void> | null = null;
-const initWasmOnce = async () => {
-  if (!wasmInitPromise) {
-    wasmInitPromise = resvgWasm.then((res) => initWasm(res)).catch((e) => {
-      console.error("WASM init failed", e);
-      throw e;
-    });
-  }
-  return wasmInitPromise;
-};
+import { renderAsync } from "https://deno.land/x/resvg_wasm@0.2.0/mod.ts";
 
 // Fetch Fonts
 const fontRegularUrl = "https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.8/files/inter-latin-400-normal.woff";
@@ -96,7 +83,6 @@ serve(async (req: Request) => {
     }
 
     const { fontRegular, fontBold } = await getFonts();
-    await initWasmOnce();
 
     // Satori SVG Generation (React Element syntax simulation via object literal)
     const svg = await satori(
@@ -288,19 +274,13 @@ serve(async (req: Request) => {
       }
     );
 
-    // Render SVG precisely to PNG
-    const resvg = new Resvg(svg, {
+    // Render SVG to PNG using Deno-native resvg_wasm
+    const pngBuffer = await renderAsync(svg, {
       fitTo: {
         mode: "width",
         value: 1200,
       },
-      font: {
-        loadSystemFonts: false,
-      },
     });
-
-    const pngData = resvg.render();
-    const pngBuffer = pngData.asPng();
 
     return new Response(pngBuffer, {
       headers: {
@@ -309,7 +289,7 @@ serve(async (req: Request) => {
       },
     });
   } catch (err: any) {
-    console.error("OG Image Generater Error:", err);
+    console.error("OG Image Generator Error:", err);
     return new Response("Internal Server Error: " + err.message, { status: 500 });
   }
 });
