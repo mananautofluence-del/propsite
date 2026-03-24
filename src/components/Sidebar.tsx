@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, FolderOpen, BarChart3, Settings, Search, Flame } from 'lucide-react';
+import { LayoutDashboard, Building2, FolderOpen, BarChart3, Settings, Search, Flame, FileText } from 'lucide-react';
 
 const NAV = [
   { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { to: '/dashboard/listings', label: 'My Listings', icon: Building2 },
+  { to: '/dashboard/presentations', label: 'Presentations', icon: FileText },
   { to: '/dashboard/collections', label: 'Collections', icon: FolderOpen },
   { to: '/dashboard/leads', label: 'Leads', icon: Flame },
   { to: '/dashboard/settings', label: 'Settings', icon: Settings },

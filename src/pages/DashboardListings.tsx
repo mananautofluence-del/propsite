@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPrice } from '@/lib/mock-data';
-import { Plus, Search, Eye, Building2, UserPlus, Share2, Loader2, X, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { Plus, Search, Eye, Building2, UserPlus, Share2, Loader2, X, ExternalLink, Link as LinkIcon, Presentation } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STATUS_TABS = ['all', 'live', 'draft', 'marketplace'] as const;
@@ -213,6 +213,12 @@ export default function DashboardListings() {
                     <Share2 size={13} /> Share
                   </button>
                 )}
+                <button
+                  onClick={e => { e.stopPropagation(); navigate(`/dashboard/presentations/new?listing_id=${l.id}`); }}
+                  className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg bg-[hsl(var(--amber-light))] text-[hsl(var(--amber-dark))] hover:bg-[#FCEBD0] transition-colors text-[11px] font-medium"
+                >
+                  <Presentation size={13} /> Make PPT
+                </button>
                 <button
                   onClick={e => { e.stopPropagation(); navigate(`/l/${l.slug}`); }}
                   className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg bg-surface-2 text-text-2 hover:text-text-1 hover:bg-[#EBEBEB] transition-colors text-[11px] font-medium"

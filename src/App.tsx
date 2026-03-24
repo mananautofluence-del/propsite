@@ -17,7 +17,9 @@ import DashboardCollections from "./pages/DashboardCollections";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardLeads from "./pages/DashboardLeads";
 import DashboardSettings from "./pages/DashboardSettings";
+import PresentationsList from "./pages/PresentationsList";
 import CreatePresentation from "./pages/CreatePresentation";
+import PresentationPreview from "./pages/PresentationPreview";
 
 const queryClient = new QueryClient();
 
@@ -33,12 +35,14 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/create" element={<CreateListing />} />
-            <Route path="/create-presentation" element={<CreatePresentation />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="listings" element={<DashboardListings />} />
               <Route path="marketplace" element={<DashboardListings />} />
               <Route path="listings/new" element={<CreateListing />} />
+              <Route path="presentations" element={<PresentationsList />} />
+              <Route path="presentations/new" element={<CreatePresentation />} />
+              <Route path="presentations/:id" element={<PresentationPreview />} />
               <Route path="analytics" element={<Dashboard />} />
               <Route path="collections" element={<DashboardCollections />} />
               <Route path="projects" element={<Dashboard />} />
