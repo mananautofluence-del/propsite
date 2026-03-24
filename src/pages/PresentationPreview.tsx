@@ -48,20 +48,38 @@ export default function PresentationPreview() {
     });
   }, [id, navigate]);
 
+  useEffect(() => {
+    // Handling dynamic resize of the 1080x1080 frame
+    const handleResize = () => {
+      const container = document.getElementById('preview-container');
+      if (container && container.parentElement) {
+        const scale = container.parentElement.clientWidth / 1080;
+        container.style.setProperty('--scale-factor', scale.toString());
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [activePageIdx]);
+
   if (loading || !presentation) {
     return <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-4 text-[#888888]"><Loader2 className="animate-spin mr-2" /> Loading preview...</div>;
   }
 
-  const pages = presentation.pages;
-  const activePage = pages[activePageIdx];
-  const ThemeComponent = getThemeComponent(presentation.theme);
+  const pages = presentation?.pages || ['cover', 'overview'];
+  const activePage = pages[activePageIdx] || 'cover';
+  const ThemeComponent = getThemeComponent(presentation?.theme || 'signature');
   
-  // Reconstruct photos array for the theme
-  const photos = presentation.photo_urls.map((url, i) => ({
+  // Reconstruct photos array for the theme safely
+  const safeUrls = presentation?.photo_urls || [];
+  const safeTags = presentation?.photo_tags || [];
+  const photos = safeUrls.map((url: string, i: number) => ({
     url,
-    tag: presentation.photo_tags[i] as any,
+    tag: safeTags[i] as any,
     orderIndex: i
   }));
+  
+  const safeContent = presentation?.content || {} as any;
 
   const handleExportPDF = async () => {
     setExporting(true);
@@ -93,10 +111,10 @@ export default function PresentationPreview() {
         await new Promise<void>(resolve => {
           root.render(
             <ThemeComponent 
-              content={presentation.content} 
+              content={safeContent} 
               pageType={pageType} 
               photos={photos} 
-              format={presentation.format} 
+              format={presentation?.format || 'square'} 
             />
           );
           setTimeout(resolve, 800);
@@ -153,7 +171,7 @@ export default function PresentationPreview() {
           <ArrowLeft size={16} className="mr-1" /> Back
         </button>
         <div className="text-[14px] font-semibold text-[#111111] capitalize">
-          {presentation.theme} Preview
+          {presentation?.theme || 'Presentation'} Preview
         </div>
         <button 
           onClick={handleExportPDF} 
@@ -180,7 +198,7 @@ export default function PresentationPreview() {
                 className={`w-[60px] h-[60px] rounded-lg bg-white overflow-hidden flex items-center justify-center transition-all ${activePageIdx === i ? 'border-2 border-[#1A5C3A] shadow-sm' : 'border border-[#EBEBEB] opacity-70'}`}
               >
                 <div style={{ transform: 'scale(0.055)', transformOrigin: 'top left', width: '1080px', height: '1080px', pointerEvents: 'none' }}>
-                  <ThemeComponent content={presentation.content} pageType={p} photos={photos} format={presentation.format} />
+                  <ThemeComponent content={safeContent} pageType={p} photos={photos} format={presentation?.format || 'square'} />
                 </div>
               </div>
               <span className={`text-[10px] uppercase tracking-wide ${activePageIdx === i ? 'font-bold text-[#1A5C3A]' : 'font-semibold text-[#888888]'}`}>{p}</span>
@@ -209,28 +227,15 @@ export default function PresentationPreview() {
 
           <div style={{ width: '100%', height: '100%', position: 'relative' }}>
             <div 
+              id="preview-container"
               style={{
                 position: 'absolute', top: 0, left: 0, width: '1080px', height: '1080px',
-                transform: 'scale(var(--scale-factor))', 
+                transform: 'scale(var(--scale-factor, 0.5))', 
                 transformOrigin: 'top left',
                 pointerEvents: 'none'
               }}
-              // CSS variable technique to dynamically scale down the 1080px content to match the container width
-              ref={(node) => {
-                if (node && node.parentElement) {
-                  const scale = node.parentElement.clientWidth / 1080;
-                  node.style.setProperty('--scale-factor', scale.toString());
-                  // Add window resize listener
-                  const onResize = () => {
-                    const newScale = node.parentElement?.clientWidth ? node.parentElement.clientWidth / 1080 : scale;
-                    node.style.setProperty('--scale-factor', newScale.toString());
-                  };
-                  window.addEventListener('resize', onResize);
-                  return () => window.removeEventListener('resize', onResize);
-                }
-              }}
             >
-              <ThemeComponent content={presentation.content} pageType={activePage} photos={photos} format={presentation.format} />
+              <ThemeComponent content={safeContent} pageType={activePage} photos={photos} format={presentation?.format || 'square'} />
             </div>
           </div>
         </div>
