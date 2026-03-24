@@ -119,7 +119,7 @@ export default function CreatePresentation() {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                model: 'claude-3-7-sonnet-latest',
+                model: 'claude-3-5-sonnet-20241022',
                 max_tokens: 50,
                 messages: [{
                   role: 'user',
@@ -191,7 +191,7 @@ RULES:
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'claude-3-7-sonnet-latest',
+          model: 'claude-3-5-sonnet-20241022',
           max_tokens: 4000,
           system: SYSTEM_PROMPT,
           messages: [{
