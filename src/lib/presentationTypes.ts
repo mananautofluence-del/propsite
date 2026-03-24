@@ -1,12 +1,12 @@
-// === Gamma-Style Generative Presentation Type System ===
-
 export type SlideLayout =
-  | 'hero-cover'
-  | 'split-left-image'
-  | 'split-right-image'
-  | 'features-grid'
-  | 'full-gallery'
-  | 'contact-card';
+  | 'hero-cinematic'
+  | 'hero-editorial'
+  | 'bento-grid-features'
+  | 'magazine-split'
+  | 'stats-monumental'
+  | 'vision-quote'
+  | 'gallery-masonry'
+  | 'contact-minimal';
 
 export interface ThemeConfig {
   backgroundColor: string;
@@ -16,20 +16,31 @@ export interface ThemeConfig {
   bodyFont: string;
 }
 
+export interface BentoBox {
+  icon: string;
+  title: string;
+  description: string;
+  size: 'large' | 'small';
+}
+
 export interface SlideData {
   id: string;
   layout: SlideLayout;
+  eyebrow?: string;
   headline?: string;
   subheadline?: string;
   bodyText?: string;
+  pullQuote?: string;
   bulletPoints?: string[];
-  stats?: { label: string; value: string }[];
+  bentoBoxes?: BentoBox[];
+  stats?: { label: string; value: string; unit?: string }[];
   imageTags: string[];
   contactInfo?: {
     name: string;
     phone: string;
     agency: string;
     rera: string;
+    tagline?: string;
   };
 }
 
@@ -38,14 +49,12 @@ export interface GenerativePresentation {
   slides: SlideData[];
 }
 
-// Photo type (unchanged)
 export interface PresentationPhoto {
   url: string;
   tag: string;
   orderIndex: number;
 }
 
-// Stored presentation shape (localStorage)
 export interface StoredPresentation {
   id: string;
   user_id: string | null;
