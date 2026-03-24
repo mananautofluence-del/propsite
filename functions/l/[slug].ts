@@ -43,7 +43,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           const photos = (await photoRes.json()) as any[];
           const heroPhoto = Array.isArray(photos) ? (photos.find(p => p.is_hero) || photos[0]) : null;
           if (heroPhoto && heroPhoto.url) {
-            heroPhotoUrl = heroPhoto.url.replace('/object/public/', '/render/image/public/') + '?width=800&height=600&quality=70&resize=contain';
+            heroPhotoUrl = heroPhoto.url;
           }
         }
 
