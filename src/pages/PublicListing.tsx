@@ -339,11 +339,13 @@ export default function PublicListingPage() {
 
     const heroPhoto = photos.find((p: any) => p.is_hero) || photos[0];
     const description = (listing.ai_description || '').slice(0, 120);
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const ogImageUrl = listing.id ? `https://${projectId}.supabase.co/functions/v1/generate-og-image?listing_id=${listing.id}` : (heroPhoto?.url || '');
 
     document.title = listing.headline || 'PropSite';
     setMeta('og:title', listing.headline || '');
     setMeta('og:description', description);
-    setMeta('og:image', heroPhoto?.url || '');
+    setMeta('og:image', ogImageUrl);
     setMeta('og:image:width', '1200');
     setMeta('og:image:height', '630');
     setMeta('og:type', 'website');
@@ -352,7 +354,7 @@ export default function PublicListingPage() {
     setNameMeta('twitter:card', 'summary_large_image');
     setNameMeta('twitter:title', listing.headline || '');
     setNameMeta('twitter:description', description);
-    setNameMeta('twitter:image', heroPhoto?.url || '');
+    setNameMeta('twitter:image', ogImageUrl);
   }, [listing, photos]);
 
   useEffect(() => {
