@@ -278,7 +278,7 @@ Broker details if provided: "${JSON.stringify(brokerProfile)}"`
     return (
       <div key={id} className="mb-4">
         <div 
-          onClick={() => setTheme(id as any)}
+          onClick={() => { setTheme(id as any); setStep(2); }}
           className="w-full aspect-square rounded-[16px] overflow-hidden border-[2.5px] transition-all cursor-pointer relative bg-white"
           style={{ 
             borderColor: isSelected ? '#1A5C3A' : 'transparent',
@@ -430,7 +430,7 @@ Broker details if provided: "${JSON.stringify(brokerProfile)}"`
               ))}
             </div>
             
-            <div className="sticky bottom-16 md:bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] p-4 flex items-center justify-between z-30 px-5 md:px-8 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] mt-8 -mx-5 md:-mx-5">
+            <div className="mt-8 pt-6 border-t border-[#EBEBEB] flex items-center justify-between mb-8">
               <button 
                 onClick={() => { setTheme('auto'); setStep(2); }}
                 className="text-[#1A5C3A] text-[13px] font-semibold hover:underline"
@@ -534,8 +534,8 @@ Broker details if provided: "${JSON.stringify(brokerProfile)}"`
               )}
             </div>
 
-            {/* Bottom Sticky Action Bar */}
-            <div className="sticky bottom-16 md:bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] p-3 flex items-center justify-between px-5 md:px-8 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] z-30 mt-8 -mx-5 md:-mx-5">
+            {/* Bottom Action Bar */}
+            <div className="mt-8 pt-6 border-t border-[#EBEBEB] flex items-center justify-between mb-16">
               <button 
                 onClick={() => setStep(1)}
                 className="text-[#888888] text-[15px] font-medium h-[46px] px-4 -ml-4"
