@@ -1,48 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Presentation, PageType } from '@/lib/presentationTypes';
-import { ArrowLeft, Download, MessageCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { StoredPresentation, SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
+import { ArrowLeft, Download, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { createRoot } from 'react-dom/client';
 
-// Lazy loading themes to avoid circular dependencies
-import PenthouseTheme from '@/components/themes/PenthouseTheme';
-import SignatureTheme from '@/components/themes/SignatureTheme';
-import EstateTheme from '@/components/themes/EstateTheme';
-import CorporateTheme from '@/components/themes/CorporateTheme';
-import HighStreetTheme from '@/components/themes/HighStreetTheme';
-import LogisticsTheme from '@/components/themes/LogisticsTheme';
+// Slide blocks
+import HeroCover from '@/components/presentation-blocks/HeroCover';
+import SplitLeftImage from '@/components/presentation-blocks/SplitLeftImage';
+import SplitRightImage from '@/components/presentation-blocks/SplitRightImage';
+import FeaturesGrid from '@/components/presentation-blocks/FeaturesGrid';
+import FullGallery from '@/components/presentation-blocks/FullGallery';
+import ContactCard from '@/components/presentation-blocks/ContactCard';
 
-function getThemeComponent(themeName: string) {
-  switch (themeName) {
-    case 'penthouse': return PenthouseTheme;
-    case 'signature': return SignatureTheme;
-    case 'estate': return EstateTheme;
-    case 'corporate': return CorporateTheme;
-    case 'highstreet': return HighStreetTheme;
-    case 'logistics': return LogisticsTheme;
-    default: return SignatureTheme;
+function getSlideComponent(layout: string) {
+  switch (layout) {
+    case 'hero-cover': return HeroCover;
+    case 'split-left-image': return SplitLeftImage;
+    case 'split-right-image': return SplitRightImage;
+    case 'features-grid': return FeaturesGrid;
+    case 'full-gallery': return FullGallery;
+    case 'contact-card': return ContactCard;
+    default: return SplitLeftImage;
   }
 }
 
 export default function PresentationPreview() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [presentation, setPresentation] = useState<Presentation | null>(null);
+  const [stored, setStored] = useState<StoredPresentation | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activePageIdx, setActivePageIdx] = useState(0);
+  const [activeSlideIdx, setActiveSlideIdx] = useState(0);
   const [exporting, setExporting] = useState(false);
 
+  // Load from localStorage
   useEffect(() => {
-    // Load from localStorage instead of Supabase
     try {
       const all = JSON.parse(localStorage.getItem('propsite_presentations') || '[]');
       const found = all.find((p: any) => p.id === id);
       if (found) {
-        setPresentation(found as any);
+        setStored(found);
       } else {
         toast.error('Presentation not found');
         navigate('/dashboard/presentations');
@@ -55,221 +54,207 @@ export default function PresentationPreview() {
     setLoading(false);
   }, [id, navigate]);
 
+  // Dynamic Google Fonts injection
   useEffect(() => {
-    // Handling dynamic resize of the 1080x1080 frame
+    if (!stored?.presentation?.theme) return;
+    const { headingFont, bodyFont } = stored.presentation.theme;
+    const fonts = [...new Set([headingFont, bodyFont])].filter(Boolean);
+    const families = fonts.map(f => f.replace(/ /g, '+')).join('&family=');
+    const linkId = 'dynamic-google-fonts';
+    let link = document.getElementById(linkId) as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    link.href = `https://fonts.googleapis.com/css2?family=${families}:wght@400;500;600;700;800&display=swap`;
+  }, [stored]);
+
+  // Scale the preview container
+  useEffect(() => {
     const handleResize = () => {
-      const container = document.getElementById('preview-container');
-      if (container && container.parentElement) {
+      const container = document.getElementById('preview-frame');
+      if (container?.parentElement) {
         const scale = container.parentElement.clientWidth / 1080;
-        container.style.setProperty('--scale-factor', scale.toString());
+        container.style.setProperty('--preview-scale', scale.toString());
       }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [activePageIdx]);
+  }, [activeSlideIdx]);
 
-  if (loading || !presentation) {
-    return <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-4 text-[#888888]"><Loader2 className="animate-spin mr-2" /> Loading preview...</div>;
-  }
-
-  const pages = presentation?.pages || ['cover', 'overview'];
-  const activePage = pages[activePageIdx] || 'cover';
-  const ThemeComponent = getThemeComponent(presentation?.theme || 'signature');
-  
-  // Reconstruct photos array for the theme safely
-  const safeUrls = presentation?.photo_urls || [];
-  const safeTags = presentation?.photo_tags || [];
-  const photos = safeUrls.map((url: string, i: number) => ({
+  // Build photos array
+  const photos: PresentationPhoto[] = (stored?.photo_urls || []).map((url, i) => ({
     url,
-    tag: safeTags[i] as any,
+    tag: stored?.photo_tags?.[i] || 'other',
     orderIndex: i
   }));
-  
-  const safeContent = presentation?.content || {} as any;
 
+  // PDF Export
   const handleExportPDF = async () => {
+    if (!stored?.presentation) return;
     setExporting(true);
-    toast.info('Generating high-quality PDF. This may take a minute...');
-    
+    toast.info('Generating PDF...');
+
     try {
-      const pageTypes = presentation.pages;
-      
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.top = '-9999px';
-      container.style.left = '-9999px';
-      container.style.width = '1080px';
-      container.style.height = '1080px';
-      container.style.overflow = 'hidden';
-      document.body.appendChild(container);
+      const { theme, slides } = stored.presentation;
+      const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [1080, 1080] });
 
-      // Square A-format approximation: 210x210mm
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [210, 210] });
+      for (let i = 0; i < slides.length; i++) {
+        if (i > 0) pdf.addPage([1080, 1080]);
 
-      for (let i = 0; i < pageTypes.length; i++) {
-        const pageType = pageTypes[i];
-        
-        const rootContainer = document.createElement('div');
-        container.appendChild(rootContainer);
-        const root = createRoot(rootContainer);
-        
-        // Wait for rendering and image loading
+        const slide = slides[i];
+        const SlideBlock = getSlideComponent(slide.layout);
+
+        const offscreen = document.createElement('div');
+        offscreen.style.position = 'fixed';
+        offscreen.style.left = '-9999px';
+        offscreen.style.top = '0';
+        offscreen.style.width = '1080px';
+        offscreen.style.height = '1080px';
+        document.body.appendChild(offscreen);
+
+        const root = createRoot(offscreen);
         await new Promise<void>(resolve => {
-          root.render(
-            <ThemeComponent 
-              content={safeContent} 
-              pageType={pageType} 
-              photos={photos} 
-              format={presentation?.format || 'square'} 
-            />
-          );
+          root.render(<SlideBlock data={slide} theme={theme} photos={photos} />);
           setTimeout(resolve, 800);
         });
 
-        const canvas = await html2canvas(container, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: null,
-          width: 1080,
-          height: 1080,
-          logging: false
+        const canvas = await html2canvas(offscreen, {
+          width: 1080, height: 1080, scale: 2,
+          useCORS: true, allowTaint: true, logging: false
         });
 
-        if (i > 0) pdf.addPage([210, 210]);
-        
         const imgData = canvas.toDataURL('image/jpeg', 0.92);
-        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 210);
-        
+        pdf.addImage(imgData, 'JPEG', 0, 0, 1080, 1080);
+
         root.unmount();
-        container.innerHTML = ''; // clear for next page
+        document.body.removeChild(offscreen);
       }
 
-      document.body.removeChild(container);
-
-      const filename = (presentation.title || 'Presentation')
-        .replace(/[^a-zA-Z0-9]/g, '_')
-        .toLowerCase() + '_propsite.pdf';
-      
-      pdf.save(filename);
-      toast.success('PDF downloaded successfully!');
-      
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to generate PDF');
-    } finally {
-      setExporting(false);
+      pdf.save(`${stored.title || 'presentation'}.pdf`);
+      toast.success('PDF downloaded!');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to export PDF');
     }
+    setExporting(false);
   };
 
-  const shareOnWhatsApp = async () => {
-    await handleExportPDF();
-    const text = "Here's the property presentation: ";
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  };
+  // Loading state
+  if (loading || !stored?.presentation) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-4">
+        <Loader2 className="animate-spin mr-2 text-[#888888]" /> Loading preview...
+      </div>
+    );
+  }
+
+  const { theme, slides } = stored.presentation;
+  const activeSlide = slides[activeSlideIdx] || slides[0];
+  const SlideBlock = getSlideComponent(activeSlide.layout);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] font-sans flex flex-col pt-14 pb-24 md:pt-0 md:pb-0">
-      
-      {/* Top Header */}
-      <div className="h-[52px] bg-white border-b border-[#EBEBEB] px-4 flex items-center justify-between sticky top-[56px] md:top-0 z-20">
-        <button onClick={() => navigate('/dashboard/presentations')} className="text-[#888888] flex items-center text-[14px] hover:text-[#111111]">
-          <ArrowLeft size={16} className="mr-1" /> Back
+    <div className="min-h-screen bg-[#F5F5F5] flex flex-col font-sans">
+      {/* Top Bar */}
+      <div className="bg-white border-b border-[#EBEBEB] px-4 md:px-8 h-14 flex items-center justify-between sticky top-0 md:top-14 z-30">
+        <button onClick={() => navigate('/dashboard/presentations')} className="flex items-center gap-1 text-[14px] text-[#555555] font-medium hover:text-[#111111] transition-colors">
+          <ArrowLeft size={16} /> Back
         </button>
-        <div className="text-[14px] font-semibold text-[#111111] capitalize">
-          {presentation?.theme || 'Presentation'} Preview
+        <div className="text-[14px] font-semibold text-[#111111]">
+          {stored.title || 'Presentation'} — Slide {activeSlideIdx + 1}/{slides.length}
         </div>
-        <button 
-          onClick={handleExportPDF} 
+        <button
+          onClick={handleExportPDF}
           disabled={exporting}
-          className="bg-[#1A5C3A] text-white rounded-lg h-9 px-4 text-[13px] font-semibold flex items-center gap-1.5 disabled:opacity-50"
+          className="bg-[#1A5C3A] hover:bg-[#14482D] disabled:opacity-50 text-white text-[13px] font-semibold h-8 px-4 rounded-lg flex items-center gap-1.5 transition-colors"
         >
-          {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} 
-          <span className="hidden sm:inline">Download PDF</span>
+          {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          {exporting ? 'Exporting...' : 'PDF'}
         </button>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 w-full max-w-[600px] mx-auto p-5 flex flex-col">
-        
-        {/* Thumbnails Strip */}
-        <div className="flex overflow-x-auto gap-3 py-3 px-1 mb-4 hide-scrollbar">
-          {pages.map((p, i) => (
-            <button
-              key={p}
-              onClick={() => setActivePageIdx(i)}
-              className="flex flex-col items-center gap-1.5 shrink-0"
-            >
-              <div 
-                className={`w-[60px] h-[60px] rounded-lg bg-white overflow-hidden flex items-center justify-center transition-all ${activePageIdx === i ? 'border-2 border-[#1A5C3A] shadow-sm' : 'border border-[#EBEBEB] opacity-70'}`}
-              >
-                <div style={{ transform: 'scale(0.055)', transformOrigin: 'top left', width: '1080px', height: '1080px', pointerEvents: 'none' }}>
-                  <ThemeComponent content={safeContent} pageType={p} photos={photos} format={presentation?.format || 'square'} />
-                </div>
-              </div>
-              <span className={`text-[10px] uppercase tracking-wide ${activePageIdx === i ? 'font-bold text-[#1A5C3A]' : 'font-semibold text-[#888888]'}`}>{p}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Active Page Preview Viewer */}
-        <div className="relative w-full aspect-square rounded-[16px] overflow-hidden bg-white shadow-[0_8px_32px_rgba(0,0,0,0.15)] mb-6 touch-pan-y">
-          
-          <button 
-            disabled={activePageIdx === 0} 
-            onClick={() => setActivePageIdx(i => i - 1)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/20 hover:bg-black/40 text-white rounded-full flex items-center justify-center z-10 disabled:opacity-0 transition-all backdrop-blur-sm"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          
-          <button 
-            disabled={activePageIdx === pages.length - 1} 
-            onClick={() => setActivePageIdx(i => i + 1)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/20 hover:bg-black/40 text-white rounded-full flex items-center justify-center z-10 disabled:opacity-0 transition-all backdrop-blur-sm"
-          >
-            <ChevronRight size={24} />
-          </button>
-
-          <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-            <div 
-              id="preview-container"
+      {/* Main Preview */}
+      <div className="flex-1 flex flex-col items-center p-4 md:p-8 gap-4 md:gap-6">
+        {/* Slide Canvas */}
+        <div className="w-full max-w-[600px] mx-auto">
+          <div style={{ width: '100%', aspectRatio: '1 / 1', position: 'relative', overflow: 'hidden', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
+            <div
+              id="preview-frame"
               style={{
-                position: 'absolute', top: 0, left: 0, width: '1080px', height: '1080px',
-                transform: 'scale(var(--scale-factor, 0.5))', 
+                position: 'absolute', top: 0, left: 0,
+                width: 1080, height: 1080,
+                transform: 'scale(var(--preview-scale, 0.5))',
                 transformOrigin: 'top left',
                 pointerEvents: 'none'
               }}
             >
-              <ThemeComponent content={safeContent} pageType={activePage} photos={photos} format={presentation?.format || 'square'} />
+              <SlideBlock data={activeSlide} theme={theme} photos={photos} />
             </div>
           </div>
         </div>
 
-      </div>
-
-      {/* Bottom Fixed Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-[#EBEBEB] px-5 flex items-center justify-center gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] z-30 md:relative md:z-auto">
-        <div className="max-w-[600px] w-full flex gap-3">
-          <button 
-            onClick={shareOnWhatsApp}
-            disabled={exporting}
-            className="flex-1 bg-white border-[1.5px] border-[#1A5C3A] text-[#1A5C3A] rounded-[12px] h-[46px] flex items-center justify-center gap-2 font-semibold text-[15px] hover:bg-[#F2F8F4] transition-colors disabled:opacity-50"
+        {/* Navigation Arrows */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setActiveSlideIdx(Math.max(0, activeSlideIdx - 1))}
+            disabled={activeSlideIdx === 0}
+            className="w-10 h-10 rounded-full bg-white border border-[#EBEBEB] disabled:opacity-30 flex items-center justify-center hover:bg-[#F5F5F5] transition-colors shadow-sm"
           >
-            <MessageCircle size={18} /> Share on WhatsApp
+            <ChevronLeft size={18} />
           </button>
-          <button 
-            onClick={handleExportPDF}
-            disabled={exporting}
-            className="flex-1 bg-[#1A5C3A] text-white rounded-[12px] h-[46px] flex items-center justify-center gap-2 font-bold text-[15px] hover:bg-[#14482D] transition-colors disabled:opacity-50"
+
+          {/* Dot Indicators */}
+          <div className="flex gap-1.5">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveSlideIdx(i)}
+                className="transition-all"
+                style={{
+                  width: activeSlideIdx === i ? 24 : 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: activeSlideIdx === i ? theme.accentColor : '#DDDCDC'
+                }}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => setActiveSlideIdx(Math.min(slides.length - 1, activeSlideIdx + 1))}
+            disabled={activeSlideIdx === slides.length - 1}
+            className="w-10 h-10 rounded-full bg-white border border-[#EBEBEB] disabled:opacity-30 flex items-center justify-center hover:bg-[#F5F5F5] transition-colors shadow-sm"
           >
-            {exporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />} 
-            Download PDF
+            <ChevronRight size={18} />
           </button>
         </div>
+
+        {/* Thumbnail Strip */}
+        <div className="flex gap-2 overflow-x-auto py-1 px-1 max-w-full">
+          {slides.map((slide, i) => {
+            const ThumbBlock = getSlideComponent(slide.layout);
+            return (
+              <button
+                key={i}
+                onClick={() => setActiveSlideIdx(i)}
+                className={`flex-shrink-0 w-[72px] h-[72px] rounded-lg overflow-hidden border-2 transition-all ${
+                  activeSlideIdx === i ? 'border-[#1A5C3A] shadow-md' : 'border-[#EBEBEB] opacity-60 hover:opacity-100'
+                }`}
+              >
+                <div style={{ 
+                  transform: 'scale(0.0667)', transformOrigin: 'top left', 
+                  width: 1080, height: 1080, pointerEvents: 'none' 
+                }}>
+                  <ThumbBlock data={slide} theme={theme} photos={photos} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
-      
     </div>
   );
 }
