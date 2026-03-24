@@ -54,7 +54,7 @@ export default function CreatePresentation() {
     if (initialListingId) {
       supabase.from('listings').select('*, listing_photos(url)').eq('id', initialListingId).single().then(({ data }) => {
         if (data) {
-          const desc = `${data.headline || ''}\n${data.description || ''}\n${data.locality || ''}, ${data.city || ''}\n${data.price ? `₹${data.price}` : ''}`;
+          const desc = `${data.headline || ''}\n${data.ai_description || ''}\n${data.locality || ''}, ${data.city || ''}\n${data.price ? `₹${data.price}` : ''}`;
           setDescription(desc);
           
           if (data.listing_photos && data.listing_photos.length > 0) {
@@ -119,13 +119,13 @@ export default function CreatePresentation() {
         const filePath = `${user?.id}/${fileName}`;
         
         const { error: uploadError } = await supabase.storage
-          .from('property-photos')
+          .from('listing-photos')
           .upload(filePath, file);
           
         if (uploadError) throw new Error('Failed to upload photos');
         
         const { data: { publicUrl } } = supabase.storage
-          .from('property-photos')
+          .from('listing-photos')
           .getPublicUrl(filePath);
           
         uploadedUrls.push(publicUrl);
@@ -244,8 +244,7 @@ Broker details if provided: "${JSON.stringify(brokerProfile)}"`
 
       // 3. Save to Supabase
       setGenerationStatus('Putting it all together...');
-      const { data: newPresentation, error: insertError } = await supabase
-        .from('presentations')
+      const { data: newPresentation, error: insertError } = await supabase.from('presentations' as any)
         .insert({
           user_id: user?.id,
           listing_id: initialListingId || null,
@@ -431,7 +430,7 @@ Broker details if provided: "${JSON.stringify(brokerProfile)}"`
               ))}
             </div>
             
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] p-4 flex items-center justify-between z-10 px-5 md:px-8 shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+            <div className="sticky bottom-16 md:bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] p-4 flex items-center justify-between z-30 px-5 md:px-8 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] mt-8 -mx-5 md:-mx-5">
               <button 
                 onClick={() => { setTheme('auto'); setStep(2); }}
                 className="text-[#1A5C3A] text-[13px] font-semibold hover:underline"
@@ -536,7 +535,7 @@ Broker details if provided: "${JSON.stringify(brokerProfile)}"`
             </div>
 
             {/* Bottom Sticky Action Bar */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] p-3 flex items-center justify-between px-5 md:px-8 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] z-10">
+            <div className="sticky bottom-16 md:bottom-0 left-0 right-0 bg-white border-t border-[#EBEBEB] p-3 flex items-center justify-between px-5 md:px-8 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] z-30 mt-8 -mx-5 md:-mx-5">
               <button 
                 onClick={() => setStep(1)}
                 className="text-[#888888] text-[15px] font-medium h-[46px] px-4 -ml-4"

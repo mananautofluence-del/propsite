@@ -101,9 +101,9 @@ export default function Dashboard() {
         </Link>
         <Link
           to="/dashboard/presentations/new"
-          className="bg-[#1A1A1A] hover:bg-black text-white h-11 rounded-xl flex items-center justify-center gap-2 text-[14px] font-medium shadow-md transition-transform hover:scale-[1.01] active:scale-[0.98]"
+          className="bg-[hsl(var(--green-light))] hover:bg-[#DDF3E4] text-primary h-11 rounded-xl flex items-center justify-center gap-2 text-[14px] font-medium shadow-sm transition-transform hover:scale-[1.01] active:scale-[0.98]"
         >
-          <Presentation size={16} /> Presentation
+          <Presentation size={16} /> Make Presentation
         </Link>
       </div>
 
@@ -140,7 +140,7 @@ export default function Dashboard() {
             <Presentation size={24} className="text-text-3 mx-auto mb-2" />
             <h3 className="text-[13px] font-medium text-text-1">No presentations yet</h3>
             <p className="text-[11px] text-text-2 mt-1 mb-3">Create your first presentation to impress clients.</p>
-            <Link to="/dashboard/presentations/new" className="bg-[#1A1A1A] hover:bg-black text-white rounded-lg text-[12px] h-8 px-4 inline-flex items-center justify-center transition-colors">Create Presentation</Link>
+            <Link to="/dashboard/presentations/new" className="bg-[hsl(var(--green-light))] hover:bg-[#DDF3E4] text-primary rounded-lg text-[12px] h-8 px-4 inline-flex items-center justify-center font-semibold transition-colors">Create Presentation</Link>
           </div>
         ) : (
           <>

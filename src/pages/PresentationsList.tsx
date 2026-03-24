@@ -18,11 +18,10 @@ export default function PresentationsList() {
   }, [user]);
 
   const fetchPresentations = async () => {
-    const { data, error } = await supabase
-      .from('presentations')
+    const { data, error } = await (supabase.from('presentations' as any)
       .select('*')
       .eq('user_id', user?.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }));
       
     if (!error && data) {
       setPresentations(data);
@@ -34,7 +33,7 @@ export default function PresentationsList() {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this presentation?')) return;
     
-    const { error } = await supabase.from('presentations').delete().eq('id', id);
+    const { error } = await (supabase.from('presentations' as any).delete().eq('id', id));
     if (error) {
       toast.error('Failed to delete presentation');
     } else {
