@@ -242,28 +242,31 @@ Broker details if provided: "${JSON.stringify(brokerProfile)}"`
 
       const finalTheme = theme === 'auto' ? (contentData.suggestedTheme || 'signature') : theme;
 
-      // 3. Save to Supabase
+      // 3. Save to localStorage (no database dependency)
       setGenerationStatus('Putting it all together...');
-      const { data: newPresentation, error: insertError } = await supabase.from('presentations' as any)
-        .insert({
-          user_id: user?.id,
-          listing_id: initialListingId || null,
-          title: contentData.headline || 'Property Presentation',
-          theme: finalTheme,
-          format: format,
-          content: contentData,
-          photo_urls: taggedPhotos.map(p => p.url),
-          photo_tags: taggedPhotos.map(p => p.tag),
-          pages: ['cover','overview','highlights','gallery','specs','amenities','location','contact'],
-          status: 'live'
-        })
-        .select()
-        .single();
+      const presentationId = crypto.randomUUID();
+      const presentationData = {
+        id: presentationId,
+        user_id: user?.id || null,
+        listing_id: initialListingId || null,
+        title: contentData.headline || 'Property Presentation',
+        theme: finalTheme,
+        format: format,
+        content: contentData,
+        photo_urls: taggedPhotos.map(p => p.url),
+        photo_tags: taggedPhotos.map(p => p.tag),
+        pages: ['cover','overview','highlights','gallery','specs','amenities','location','contact'],
+        status: 'live',
+        created_at: new Date().toISOString()
+      };
 
-      if (insertError) throw insertError;
+      // Save to localStorage
+      const existing = JSON.parse(localStorage.getItem('propsite_presentations') || '[]');
+      existing.push(presentationData);
+      localStorage.setItem('propsite_presentations', JSON.stringify(existing));
 
       toast.success('Presentation created successfully!');
-      navigate(`/dashboard/presentations/${newPresentation.id}`);
+      navigate(`/dashboard/presentations/${presentationId}`);
       
     } catch (error: any) {
       console.error(error);

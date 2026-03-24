@@ -74,7 +74,11 @@ export interface Presentation {
   theme: PresentationTheme;
   format: PresentationFormat;
   content: PresentationContent;
-  photos: PresentationPhoto[];
+  photo_urls: string[];
+  photo_tags: string[];
   pages: PageType[];
   created_at: string;
+  listing_id?: string | null;
+  status?: string;
+  pdf_url?: string;
 }

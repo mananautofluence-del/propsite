@@ -95,7 +95,7 @@ export default function SignatureTheme({ content, pageType, photos }: ThemeProps
           <div style={{ fontSize: 52, color: text, fontWeight: 800, marginBottom: 48, marginTop: 8 }}>What Makes It Special</div>
           
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {content.highlights.slice(0, 5).map((h, i) => (
+            {(content.highlights || []).slice(0, 5).map((h, i) => (
               <div key={i} style={{ padding: '24px 0', borderBottom: '1px solid #F0F0F0', display: 'flex', gap: 24, alignItems: 'center' }}>
                 <div style={{ width: 48, height: 48, backgroundColor: '#EAF3ED', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2">
@@ -174,7 +174,7 @@ export default function SignatureTheme({ content, pageType, photos }: ThemeProps
         <div style={{ fontSize: 48, color: text, fontWeight: 700, marginTop: 8, marginBottom: 40 }}>Included Features</div>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
-          {content.amenities.slice(0, 9).map((am, i) => (
+          {(content.amenities || []).slice(0, 9).map((am, i) => (
             <div key={i} style={{ backgroundColor: '#F8F8F8', borderRadius: 12, padding: '28px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: accent, marginBottom: 12 }}></div>
               <div style={{ fontSize: 22, color: text, fontWeight: 500 }}>{am}</div>

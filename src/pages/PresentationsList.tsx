@@ -17,28 +17,33 @@ export default function PresentationsList() {
     fetchPresentations();
   }, [user]);
 
-  const fetchPresentations = async () => {
-    const { data, error } = await (supabase.from('presentations' as any)
-      .select('*')
-      .eq('user_id', user?.id)
-      .order('created_at', { ascending: false }));
-      
-    if (!error && data) {
-      setPresentations(data);
+  const fetchPresentations = () => {
+    try {
+      const all = JSON.parse(localStorage.getItem('propsite_presentations') || '[]');
+      // Filter by user if logged in
+      const userPresentations = user ? all.filter((p: any) => p.user_id === user.id) : all;
+      setPresentations(userPresentations.sort((a: any, b: any) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ));
+    } catch (e) {
+      console.error('Failed to load presentations:', e);
+      setPresentations([]);
     }
     setLoading(false);
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this presentation?')) return;
     
-    const { error } = await (supabase.from('presentations' as any).delete().eq('id', id));
-    if (error) {
-      toast.error('Failed to delete presentation');
-    } else {
-      toast.success('Presentation deleted');
+    try {
+      const all = JSON.parse(localStorage.getItem('propsite_presentations') || '[]');
+      const filtered = all.filter((p: any) => p.id !== id);
+      localStorage.setItem('propsite_presentations', JSON.stringify(filtered));
       setPresentations(prev => prev.filter(p => p.id !== id));
+      toast.success('Presentation deleted');
+    } catch (e) {
+      toast.error('Failed to delete presentation');
     }
   };
 

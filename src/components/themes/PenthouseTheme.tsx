@@ -89,7 +89,7 @@ export default function PenthouseTheme({ content, pageType, photos }: ThemeProps
           <div style={{ ...hFont, fontSize: 52, color: text, marginTop: 8 }}>What Sets It Apart</div>
         </div>
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column' }}>
-          {content.highlights.slice(0, 5).map((h, i) => (
+          {(content.highlights || []).slice(0, 5).map((h, i) => (
             <div key={i} style={{ padding: '22px 60px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 28, alignItems: 'center' }}>
               <div style={{ width: 56, height: 56, border: `1px solid ${accent}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="1.5">
@@ -167,7 +167,7 @@ export default function PenthouseTheme({ content, pageType, photos }: ThemeProps
         <div style={{ ...hFont, fontSize: 52, color: text, marginTop: 8, marginBottom: 48 }}>Lifestyle Elevated</div>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
-          {content.amenities.slice(0, 9).map((am, i) => (
+          {(content.amenities || []).slice(0, 9).map((am, i) => (
             <div key={i} style={{ backgroundColor: '#1A1A1A', border: '1px solid #2A2A2A', padding: '32px 24px', textAlign: 'center', borderRadius: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 160 }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: accent, marginBottom: 16 }}></div>
               <div style={{ fontSize: 22, color: text, fontWeight: 500 }}>{am}</div>

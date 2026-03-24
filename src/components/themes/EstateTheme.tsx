@@ -93,7 +93,7 @@ export default function EstateTheme({ content, pageType, photos }: ThemeProps) {
         </div>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, flex: 1 }}>
-          {content.highlights.slice(0, 4).map((h, i) => (
+          {(content.highlights || []).slice(0, 4).map((h, i) => (
             <div key={i} style={{ backgroundColor: 'white', borderRadius: 20, padding: 40, display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 20px rgba(61,52,37,0.03)' }}>
               <div style={{ width: 56, height: 56, backgroundColor: 'rgba(107,143,113,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
                 <div style={{ width: 16, height: 16, backgroundColor: accent, borderRadius: '50%' }}></div>
@@ -169,7 +169,7 @@ export default function EstateTheme({ content, pageType, photos }: ThemeProps) {
           <div style={{ ...hFont, fontSize: 48, color: text, marginTop: 8, marginBottom: 48 }}>Amenities</div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {content.amenities.slice(0, 8).map((am, i) => (
+            {(content.amenities || []).slice(0, 8).map((am, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
                 <div style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: accent }}></div>
                 <div style={{ fontSize: 26, color: text, fontWeight: 400 }}>{am}</div>

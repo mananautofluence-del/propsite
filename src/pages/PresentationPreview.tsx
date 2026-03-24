@@ -37,15 +37,22 @@ export default function PresentationPreview() {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    supabase.from('presentations').select('*').eq('id', id).single().then(({ data, error }) => {
-      if (error || !data) {
+    // Load from localStorage instead of Supabase
+    try {
+      const all = JSON.parse(localStorage.getItem('propsite_presentations') || '[]');
+      const found = all.find((p: any) => p.id === id);
+      if (found) {
+        setPresentation(found as any);
+      } else {
         toast.error('Presentation not found');
         navigate('/dashboard/presentations');
-      } else {
-        setPresentation(data as Presentation);
       }
-      setLoading(false);
-    });
+    } catch (e) {
+      console.error('Failed to load presentation:', e);
+      toast.error('Presentation not found');
+      navigate('/dashboard/presentations');
+    }
+    setLoading(false);
   }, [id, navigate]);
 
   useEffect(() => {
