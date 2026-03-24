@@ -16,8 +16,23 @@ import VisionQuote from '@/components/presentation-blocks/VisionQuote';
 import GalleryMasonry from '@/components/presentation-blocks/GalleryMasonry';
 import ContactMinimal from '@/components/presentation-blocks/ContactMinimal';
 
+// Map old V1 layout names → new V2 names
+const LAYOUT_MIGRATION: Record<string, string> = {
+  'hero-cover': 'hero-cinematic',
+  'split-left-image': 'hero-editorial',
+  'split-right-image': 'magazine-split',
+  'features-grid': 'bento-grid-features',
+  'full-gallery': 'gallery-masonry',
+  'contact-card': 'contact-minimal',
+};
+
+function migrateLayout(layout: string): string {
+  return LAYOUT_MIGRATION[layout] || layout;
+}
+
 function getSlideComponent(layout: string) {
-  switch (layout) {
+  const resolved = migrateLayout(layout);
+  switch (resolved) {
     case 'hero-cinematic': return HeroCinematic;
     case 'hero-editorial': return HeroEditorial;
     case 'bento-grid-features': return BentoGridFeatures;
@@ -28,6 +43,22 @@ function getSlideComponent(layout: string) {
     case 'contact-minimal': return ContactMinimal;
     default: return HeroCinematic;
   }
+}
+
+// Migrate old presentation data to new format
+function migratePresentation(pres: any): GenerativePresentation {
+  const theme = pres.theme || {
+    backgroundColor: '#F2EDE4', textColor: '#1C2B1E', accentColor: '#8B6E4E',
+    headingFont: 'Cormorant Garamond', bodyFont: 'DM Sans',
+  };
+  const slides = (pres.slides || []).map((s: any, i: number) => ({
+    ...s,
+    id: s.id || `slide-${i}`,
+    layout: migrateLayout(s.layout || 'hero-cinematic'),
+    imageTags: s.imageTags || [],
+    eyebrow: s.eyebrow || '',
+  }));
+  return { theme, slides };
 }
 
 const LAYOUTS: { id: SlideLayout; label: string }[] = [
@@ -74,8 +105,15 @@ export default function PresentationPreview() {
     try {
       const all = JSON.parse(localStorage.getItem('propsite_presentations') || '[]');
       const found = all.find((p: any) => p.id === id);
-      if (found) { setStored(found); setPresentationData(found.presentation); setOriginalJson(JSON.stringify(found.presentation)); }
-      else { toast.error('Not found'); navigate('/dashboard/presentations'); }
+      if (found) {
+        const migrated = migratePresentation(found.presentation);
+        setStored(found);
+        setPresentationData(migrated);
+        setOriginalJson(JSON.stringify(migrated));
+      } else {
+        toast.error('Not found');
+        navigate('/dashboard/presentations');
+      }
     } catch { navigate('/dashboard/presentations'); }
     setLoading(false);
   }, [id, navigate]);
@@ -90,9 +128,19 @@ export default function PresentationPreview() {
   }, [presentationData?.theme]);
 
   useEffect(() => {
-    const r = () => { const c = document.getElementById('pf'); if (c?.parentElement) c.style.setProperty('--s', (c.parentElement.clientWidth / 1080).toString()); };
-    r(); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r);
-  }, [activeSlideIdx]);
+    const r = () => {
+      requestAnimationFrame(() => {
+        const c = document.getElementById('pf');
+        if (c?.parentElement) {
+          const scale = c.parentElement.clientWidth / 1080;
+          c.style.setProperty('--s', scale.toString());
+        }
+      });
+    };
+    r();
+    window.addEventListener('resize', r);
+    return () => window.removeEventListener('resize', r);
+  }, [activeSlideIdx, presentationData]);
 
   useEffect(() => { document.body.style.overflow = (editingSlideIndex !== null || showThemeEditor || showRegenSheet) ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [editingSlideIndex, showThemeEditor, showRegenSheet]);
   useEffect(() => { if (presentationData && originalJson) setHasChanges(JSON.stringify(presentationData) !== originalJson); }, [presentationData, originalJson]);
