@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,74 +76,73 @@ export default function CreatePresentation() {
 
       setGenerationStatus('AI is composing your presentation...');
 
-      const SYSTEM_PROMPT = `You are an elite real estate presentation director.
-Generate a GenerativePresentation JSON for PropSite.
+      const SYSTEM_PROMPT = `You are an elite real estate presentation director for PropSite.
+Generate a GenerativePresentation JSON object.
 
 CRITICAL OUTPUT RULE:
 Return ONLY raw valid JSON. No markdown. No code fences.
-No explanation. Start with { end with }.
+No explanation. Start with { and end with }.
 
-SLIDE COUNT: Generate exactly 6 to 8 slides.
+SLIDE COUNT: Generate exactly 6 to 8 slides. Never fewer than 6.
 
-AVAILABLE LAYOUTS (pick based on data, never repeat):
-"cover-editorial" — Large headline left, property image right. ALWAYS slide 1.
-"stats-two-col" — Two giant statistics. Use when you have 2 key numbers.
-"content-image-bottom" — Headline+text top-left, image top-right, 3 features bottom.
-"headline-two-images" — Headline+body top, two photos below side by side.
-"headline-numbered-list" — Headline+body left, 3 numbered points right.
-"headline-two-col-images" — Headline left, 2 images with captions right.
-"images-top-headline-bottom" — 2 photos top, headline+body bottom.
-"centered-numbered-cols" — Centered headline, 3 numbered columns below.
-"image-left-headline-numbered" — Image left, headline + 2 numbered right.
-"headline-body-image-numbered" — Complex layout: headline+body+image left, 2 numbered right.
-"headline-2x2-numbered" — Headline top, 2x2 grid of 4 features below.
-"headline-2img-2numbered" — Headline+2numbered left, 2 stacked images right.
-"two-images-headline-numbered" — 2 images left, headline+2numbered right.
-"image-top-headline-numbered" — Image+2numbered top, headline+body bottom.
-"contact-split" — Contact slide with vertical divider. ALWAYS last slide.
+AVAILABLE LAYOUTS — you MUST only use these exact strings:
+"cover-editorial"              → Big headline left, property image right. USE AS SLIDE 1 ALWAYS.
+"stats-two-col"                → Two giant statistics side by side. No image. Use for key numbers.
+"content-image-bottom"         → Headline+body top-left, image top-right, 3 feature columns bottom.
+"headline-two-images"          → Headline+body text top, two photos side by side below.
+"headline-numbered-list"       → Headline+body left, numbered items 01/02/03 stacked right.
+"headline-two-col-images"      → Headline left, two images with captions stacked right.
+"images-top-headline-bottom"   → Two photos on top, headline+body below.
+"centered-numbered-cols"       → Centered large headline, three numbered columns below.
+"image-left-headline-numbered" → Single image left, headline + two numbered points right.
+"headline-2x2-numbered"        → Headline top, 2x2 grid of four numbered features below.
+"headline-2img-2numbered"      → Headline + two numbered points left, two stacked images right.
+"two-images-headline-numbered" → Two images left side, headline + numbered points right.
+"contact-split"                → Contact details with vertical divider. USE AS LAST SLIDE ALWAYS.
 
-SELECTION RULES:
-- cover-editorial: ALWAYS first
-- contact-split: ALWAYS last
-- Use stats-two-col when property has clear metrics (area + BHK, or price + size)
-- Use numbered layouts when you have 2-4 distinct features/points
-- Use image-heavy layouts when 4+ photos provided
-- Vary layouts — no two consecutive slides same family
+LAYOUT SELECTION RULES:
+- "cover-editorial" MUST be slide 1
+- "contact-split" MUST be the last slide
+- NEVER use the same layout twice in one presentation
+- Pick layouts that match the volume of data:
+  · Has 2 key numbers (area + price, BHK + floor)? → use "stats-two-col"
+  · Has 3+ features/amenities? → use "headline-numbered-list" or "headline-2x2-numbered"
+  · Has 4+ photos? → use "headline-two-images" || "two-images-headline-numbered"
+  · Has long description? → use "content-image-bottom"
+  · Has short description? → use "centered-numbered-cols" to fill space elegantly
 
 CONTENT RULES:
 
-agencyName: broker's agency name (shown in header of every slide)
+agencyName: The broker's agency name. Shown in header of every slide.
 
 headline:
-  cover-editorial → 2-4 words MAX. Poetic.
-    REJECT: '3 BHK Luxury Apartment For Sale'
-    ACCEPT: 'Your Next Chapter' or 'Where Life Begins'
-  All other slides → 4-8 words, descriptive but elegant
+  On "cover-editorial" → 2-4 words, poetic and evocative. NOT descriptive.
+    WRONG: "3 BHK Apartment For Sale In Bandra"
+    RIGHT: "Your Next Chapter" or "Life, Elevated"
+  All other layouts → 5-8 words, elegant but descriptive.
 
-bodyText: Write naturally. NOT marketing speak. NOT lists.
-  2-4 sentences max. Clear and confident.
+bodyText: 2-3 natural sentences. NOT bullet points. NOT marketing clichés.
+  Write like a confident, calm estate agent. No exclamation marks.
 
-stats: For stats-two-col layout only.
-  Exactly 2 stats.
-  value: short and bold — '3,000' not '3000 sq ft'
-  label: headline for the stat — 'Square Feet of Space'
-  description: 1-2 sentence explanation
+numberedItems: For all numbered layouts.
+  Each item has: number ("01"), title (3-5 words bold), body (1-2 sentences)
+  Maximum 4 items per slide. Minimum 2.
 
-numberedItems: For numbered layouts.
-  number: '01', '02', '03', '04' (never more than 4)
-  title: 3-5 words, bold
-  body: 1-2 sentences, clear
+stats: For "stats-two-col" ONLY. Exactly 2 stats.
+  value: short — "3,200" not "3200 sq ft"
+  label: headline for the number — "Square Feet of Space"
+  description: one calm sentence explaining what this means
 
-imageTags: ONLY use exact tags provided to you.
-  cover-editorial → ['cover']
-  image layouts → use whichever tags exist
-  stats-two-col, centered-numbered-cols, contact-split → [] (no image)
+imageTags: Use ONLY the exact tag strings provided to you.
+  Slides with no photos (stats-two-col, contact-split): use []
+  Image slides: pick from the available tags list
 
-contactInfo: Always on contact-split.
-  Include website if provided.
-  tagline: 3-5 words about specialty.
+contactInfo on "contact-split":
+  Fill name, phone, agency, rera from what the broker provided.
+  tagline: 4-6 word specialty description.
+  Include website if it was given.
 
-SELECTED THEME (apply exactly, no changes):
+SELECTED THEME — apply EXACTLY, do not invent or change any values:
 ${JSON.stringify(selectedTheme, null, 2)}`;
 
       const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -203,15 +202,105 @@ ${JSON.stringify(selectedTheme, null, 2)}`;
   // === STEP 1: THEME SELECTION ===
   if (step === 1) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
-        <div className="px-5 py-4 bg-white border-b border-[#EBEBEB] sticky top-0 z-20">
-          <div className="max-w-2xl mx-auto flex gap-4 items-center">
-            <button onClick={() => navigate('/dashboard/presentations')} className="flex items-center gap-2 text-[14px] text-[#555] hover:text-black font-medium"><ArrowLeft size={16} /> Back</button>
-            <div className="flex-1 text-center font-bold text-[#111] text-[15px]">Create Presentation</div>
-            <div className="w-[60px]" />
+      <div style={{ minHeight: '100vh', backgroundColor: '#F7F7F7', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{
+          padding: '14px 20px',
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid #EBEBEB',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+        }}>
+          <button
+            onClick={() => navigate('/dashboard/presentations')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              color: '#555555', fontSize: '14px', fontWeight: 500,
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: '"DM Sans", sans-serif',
+              padding: '6px 8px', borderRadius: '8px',
+            }}
+          >
+            ← Back
+          </button>
+          <div style={{
+            flex: 1, textAlign: 'center',
+            fontSize: '15px', fontWeight: 700,
+            color: '#111111', fontFamily: '"DM Sans", sans-serif',
+          }}>
+            Create Presentation
+          </div>
+          {/* Step indicator */}
+          <div style={{
+            fontSize: '12px', color: '#AAAAAA',
+            fontFamily: '"DM Sans", sans-serif',
+            width: '60px', textAlign: 'right',
+          }}>
+            Step 1/2
           </div>
         </div>
-        <ThemeSelectionStep selectedTheme={selectedTheme} onThemeSelect={(t) => { setSelectedTheme(t); setStep(2); }} />
+
+        {/* Theme cards scroll area */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <ThemeSelectionStep
+            selectedTheme={selectedTheme}
+            onThemeSelect={(t) => setSelectedTheme(t)}
+          />
+        </div>
+
+        {/* Fixed bottom button — always visible */}
+        <div style={{
+          position: 'fixed',
+          bottom: 0, left: 0, right: 0,
+          padding: '16px 20px 36px 20px',
+          backgroundColor: '#FFFFFF',
+          borderTop: '1px solid #EBEBEB',
+          zIndex: 30,
+        }}>
+          <button
+            onClick={() => {
+              if (!selectedTheme) { toast.error('Please pick a style first'); return; }
+              setStep(2);
+            }}
+            style={{
+              width: '100%',
+              height: '52px',
+              borderRadius: '14px',
+              border: 'none',
+              cursor: selectedTheme ? 'pointer' : 'not-allowed',
+              backgroundColor: selectedTheme ? '#111111' : '#DDDDDD',
+              color: '#FFFFFF',
+              fontSize: '16px',
+              fontWeight: 700,
+              fontFamily: '"DM Sans", sans-serif',
+              letterSpacing: '0.2px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'background-color 0.15s ease',
+            }}
+          >
+            {selectedTheme ? (
+              <>
+                <span style={{
+                  display: 'inline-block',
+                  width: '10px', height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: selectedTheme.accentColor,
+                  marginRight: '4px',
+                }} />
+                Continue with {selectedTheme.headingFont.split(' ')[0]} style →
+              </>
+            ) : (
+              'Select a style to continue'
+            )}
+          </button>
+        </div>
       </div>
     );
   }
