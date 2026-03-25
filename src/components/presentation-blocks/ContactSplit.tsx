@@ -3,7 +3,12 @@ import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTyp
 import SlideShell from './SlideShell';
 import { Globe, Mail, Phone } from 'lucide-react';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
+interface Props {
+  data: SlideData;
+  theme: ThemeConfig;
+  photos: PresentationPhoto[];
+  pageNumber?: number;
+}
 
 export default function ContactSplit({ data, theme }: Props) {
   const contact = data.contactInfo;

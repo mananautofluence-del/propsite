@@ -2,7 +2,12 @@ import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 import SlideShell from './SlideShell';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
+interface Props {
+  data: SlideData;
+  theme: ThemeConfig;
+  photos: PresentationPhoto[];
+  pageNumber?: number;
+}
 
 export default function Headline2x2Numbered({ data, theme }: Props) {
   const items = (data.numberedItems || []).slice(0, 4);

@@ -2,7 +2,12 @@ import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 import SlideShell from './SlideShell';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
+interface Props {
+  data: SlideData;
+  theme: ThemeConfig;
+  photos: PresentationPhoto[];
+  pageNumber?: number;
+}
 
 export default function StatsTwoCol({ data, theme }: Props) {
   const stats = (data.stats || []).slice(0, 2);

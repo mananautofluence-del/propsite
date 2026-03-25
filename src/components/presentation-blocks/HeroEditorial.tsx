@@ -1,7 +1,12 @@
 import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; slideHeight?: number; }
+interface Props {
+  data: SlideData;
+  theme: ThemeConfig;
+  photos: PresentationPhoto[];
+  pageNumber?: number;
+}
 
 function findPhoto(photos: PresentationPhoto[], tags: string[]): string {
   for (const t of tags) { const f = photos.find(p => p.tag === t); if (f) return f.url; }
@@ -33,7 +38,7 @@ export default function HeroEditorial({ data, theme, photos, slideHeight }: Prop
       </div>
       {/* Right panel */}
       <div style={{ position: 'absolute', left: '520px', top: 0, width: '560px', height: `${h}px`, overflow: 'hidden' }}>
-        {img && <img src={img} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '560px', height: `${h}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '560px', minHeight: `${h}px` }} />}
+        {img && <img src={img} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '560px', height: `${h}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '560px', minHeight: `${h}px` }} / style={{ objectPosition: 'center center', display: 'block' }}>}
         <div style={{ position: 'absolute', left: 0, top: '80px', bottom: '80px', width: '2px', backgroundColor: theme.accentColor }} />
       </div>
     </div>

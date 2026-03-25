@@ -1,11 +1,11 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { StoredPresentation, SlideData, ThemeConfig, PresentationPhoto, GenerativePresentation, SlideLayout } from '@/lib/presentationTypes';
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { createRoot } from 'react-dom/client';
+import { slidesToHtmlStrings } from '@/lib/slideToHtml';
+import { supabase } from '@/integrations/supabase/client';
 
 import CoverEditorial from '@/components/presentation-blocks/CoverEditorial';
 import StatsTwoCol from '@/components/presentation-blocks/StatsTwoCol';
@@ -190,92 +190,64 @@ export default function PresentationPreview() {
   };
 
   const handleExportPDF = async () => {
-    if (!presentationData) return;
+    if (!presentationData || !stored) return;
     setExporting(true);
-    toast.info('Generating PDF — do not close this page');
-    
-    const { theme, slides } = presentationData;
-    
-    // Inject fonts before capture
-    const fontLink = document.createElement('link');
-    fontLink.rel = 'stylesheet';
-    const fontFamilies = [theme.headingFont, theme.bodyFont]
-      .filter(Boolean)
-      .map(f => `family=${f.replace(/ /g, '+')}:wght@400;500;600;700;800`)
-      .join('&');
-    fontLink.href = `https://fonts.googleapis.com/css2?${fontFamilies}&display=block`;
-    document.head.appendChild(fontLink);
-    
-    // Wait for fonts
-    await new Promise(r => setTimeout(r, 2000));
-    await document.fonts.ready;
-    
-    const pdf = new jsPDF({
-      orientation: 'landscape',
-      unit: 'px',
-      format: [1456, 816],
-    });
-    
-    for (let i = 0; i < slides.length; i++) {
-      if (i > 0) pdf.addPage([1456, 816], 'landscape');
-      const SlideBlock = getSlideComponent(slides[i].layout);
+
+    try {
+      const { theme, slides } = presentationData;
       
-      const container = document.createElement('div');
-      container.style.cssText = `
-        position:fixed; left:-9999px; top:0;
-        width:1456px; height:816px;
-        overflow:hidden; transform:none; zoom:1;
-        background:${theme.backgroundColor};
-      `;
-      document.body.appendChild(container);
-      
-      const root = createRoot(container);
-      await new Promise<void>(resolve => {
-        root.render(
-          React.createElement(SlideBlock, { 
-            data: slides[i], theme, photos 
-          })
+      toast.info('Preparing slides...');
+
+      // Step 1: Convert slides to self-contained HTML strings
+      // (photos become base64, fonts are embedded)
+      const slideHtmls = await slidesToHtmlStrings(slides, theme, photos);
+
+      toast.info('Rendering via server...');
+
+      // Step 2: Send to Edge Function for server-side rendering
+      const { data, error } = await supabase.functions.invoke('export-pdf', {
+        body: { slides: slideHtmls },
+      });
+
+      if (error) throw new Error(error.message);
+      if (!data?.images?.length) throw new Error('No images returned');
+
+      // Check if browserless token is configured
+      if (data.images[0] === 'NO_TOKEN') {
+        throw new Error(
+          'BROWSERLESS_TOKEN not set in Supabase Edge Function secrets. ' +
+          'Add it at: supabase.com → your project → Edge Functions → Secrets'
         );
-        setTimeout(resolve, 2500);
+      }
+
+      toast.info('Assembling PDF...');
+
+      // Step 3: Build PDF from returned images
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [1456, 816],
+        compress: true,
       });
-      
-      // Wait for all images
-      const imgs = container.querySelectorAll('img');
-      await Promise.all(Array.from(imgs).map(img =>
-        img.complete ? Promise.resolve() :
-          new Promise<void>(r => { img.onload = () => r(); img.onerror = () => r(); })
-      ));
-      
-      await document.fonts.ready;
-      
-      const canvas = await html2canvas(container, {
-        width: 1456,
-        height: 816,
-        scale: 1,            // NEVER scale:2 — causes black canvas
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: theme.backgroundColor,
-        imageTimeout: 20000,
-        onclone: (doc) => {
-          const style = doc.createElement('style');
-          style.textContent = fontLink.outerHTML;
-          doc.head.appendChild(style);
-        }
+
+      data.images.forEach((imgBase64: string, i: number) => {
+        if (i > 0) pdf.addPage([1456, 816], 'landscape');
+        pdf.addImage(imgBase64, 'JPEG', 0, 0, 1456, 816);
       });
+
+      const filename = (stored.title || 'presentation')
+        .replace(/[^a-z0-9]/gi, '_')
+        .toLowerCase();
+      pdf.save(`${filename}.pdf`);
+      toast.success('PDF downloaded!');
+
+    } catch (err: any) {
+      console.error('Export error:', err);
       
-      pdf.addImage(
-        canvas.toDataURL('image/jpeg', 0.93),
-        'JPEG', 0, 0, 1456, 816
-      );
-      
-      root.unmount();
-      document.body.removeChild(container);
+      // If server approach fails, fall back to basic client-side
+      toast.error('Export failed: ' + (err.message || 'unknown'));
     }
-    
-    document.head.removeChild(fontLink);
-    pdf.save(`${stored?.title || 'presentation'}.pdf`);
-    toast.success('PDF downloaded!');
+
     setExporting(false);
   };
 
@@ -323,12 +295,29 @@ export default function PresentationPreview() {
       {/* Canvas */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 16px 16px', gap: 16 }}>
         <div style={{ width: '100%', maxWidth: 800, margin: '0 auto', position: 'relative' }}>
-          <div ref={containerRef} style={{ width: '100%', overflow: 'hidden', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', opacity: fontsLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}>
-            <div style={{ width: '1456px', height: '816px', transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-              <SB data={activeSlide} theme={theme} photos={photos} />
+          <div style={{
+            width: '100%',
+            paddingTop: '56.04%',
+            position: 'relative',
+            borderRadius: 12,
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+            opacity: fontsLoaded ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+          }}>
+            <div ref={containerRef} style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                width: '1456px', height: '816px',
+                transform: `scale(${scale})`,
+                transformOrigin: 'top left',
+                position: 'absolute', top: 0, left: 0,
+              }}>
+                <SB data={activeSlide} theme={theme} photos={photos} pageNumber={activeSlideIdx + 1} />
+              </div>
             </div>
-            {/* Spacer to maintain aspect ratio */}
-            <div style={{ height: `${816 * scale}px` }} />
           </div>
           <button onClick={() => { haptic(); setEditingSlideIndex(activeSlideIdx); }} style={{ position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: '50%', backgroundColor: theme.accentColor, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -345,8 +334,8 @@ export default function PresentationPreview() {
         {/* Thumbs flex wrap, not scaled down layout */}
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
           {slides.map((s, i) => { const T = getSlideComponent(s.layout); return (
-            <button key={i} onClick={() => { haptic(); setActiveSlideIdx(i); }} style={{ flexShrink: 0, width: 145, height: 81, borderRadius: 8, overflow: 'hidden', border: activeSlideIdx === i ? `2px solid ${theme.accentColor}` : '2px solid #EBEBEB', cursor: 'pointer', opacity: activeSlideIdx === i ? 1 : 0.6, background: 'none', padding: 0 }}>
-              <div style={{ transform: `scale(${145/1456})`, transformOrigin: 'top left', width: 1456, height: 816, pointerEvents: 'none' }}><T data={s} theme={theme} photos={photos} /></div>
+            <button key={i} onClick={() => { haptic(); setActiveSlideIdx(i); }} style={{ flexShrink: 0, width: 145, height: 81, borderRadius: 8, overflow: 'hidden', border: activeSlideIdx === i ? `2px solid ${theme.accentColor}` : '2px solid #EBEBEB', cursor: 'pointer', opacity: activeSlideIdx === i ? 1 : 0.6, background: 'none', padding: 0, position: 'relative' }}>
+              <div style={{ transform: `scale(${145/1456})`, transformOrigin: 'top left', width: 1456, height: 816, pointerEvents: 'none', position: 'absolute', top: 0, left: 0 }}><T data={s} theme={theme} photos={photos} pageNumber={i + 1} /></div>
             </button>); })}
         </div>
       </div>

@@ -1,7 +1,12 @@
 import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; slideHeight?: number; }
+interface Props {
+  data: SlideData;
+  theme: ThemeConfig;
+  photos: PresentationPhoto[];
+  pageNumber?: number;
+}
 
 function findPhotos(photos: PresentationPhoto[], tags: string[]): string[] {
   if (photos.length === 0) return [];
@@ -29,13 +34,13 @@ export default function GalleryMasonry({ data, theme, photos, slideHeight }: Pro
   return (
     <div style={{ width: '1080px', height: `${h}px`, boxSizing: 'border-box', position: 'relative', overflow: 'hidden', fontFamily: theme.bodyFont, backgroundColor: theme.backgroundColor }}>
       <div style={{ position: 'absolute', left: '40px', top: '40px', width: '580px', height: `${p1H}px`, borderRadius: '12px', overflow: 'hidden' }}>
-        {imgs[0] ? <img src={imgs[0]} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '580px', height: `${p1H}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '580px', minHeight: `${p1H}px` }} /> : placeholder(580, p1H)}
+        {imgs[0] ? <img src={imgs[0]} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '580px', height: `${p1H}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '580px', minHeight: `${p1H}px` }} / style={{ objectPosition: 'center center', display: 'block' }}> : placeholder(580, p1H)}
       </div>
       <div style={{ position: 'absolute', left: '640px', top: '40px', width: '400px', height: `${p2H}px`, borderRadius: '12px', overflow: 'hidden' }}>
-        {imgs[1] ? <img src={imgs[1]} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '400px', height: `${p2H}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '400px', minHeight: `${p2H}px` }} /> : placeholder(400, p2H)}
+        {imgs[1] ? <img src={imgs[1]} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '400px', height: `${p2H}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '400px', minHeight: `${p2H}px` }} / style={{ objectPosition: 'center center', display: 'block' }}> : placeholder(400, p2H)}
       </div>
       <div style={{ position: 'absolute', left: '640px', top: `${p3Top}px`, width: '400px', height: `${p2H}px`, borderRadius: '12px', overflow: 'hidden' }}>
-        {imgs[2] ? <img src={imgs[2]} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '400px', height: `${p2H}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '400px', minHeight: `${p2H}px` }} /> : placeholder(400, p2H)}
+        {imgs[2] ? <img src={imgs[2]} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '400px', height: `${p2H}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '400px', minHeight: `${p2H}px` }} / style={{ objectPosition: 'center center', display: 'block' }}> : placeholder(400, p2H)}
       </div>
       {/* Bottom caption */}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${captionH}px`, background: `linear-gradient(to top, ${theme.backgroundColor} 60%, transparent)`, padding: '0 60px', display: 'flex', alignItems: 'flex-end', paddingBottom: '48px', boxSizing: 'border-box' }}>

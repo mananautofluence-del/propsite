@@ -1,7 +1,12 @@
 import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; slideHeight?: number; }
+interface Props {
+  data: SlideData;
+  theme: ThemeConfig;
+  photos: PresentationPhoto[];
+  pageNumber?: number;
+}
 
 function findPhoto(photos: PresentationPhoto[], tags: string[]): string {
   for (const t of tags) { const f = photos.find(p => p.tag === t); if (f) return f.url; }
@@ -19,7 +24,7 @@ export default function MagazineSplit({ data, theme, photos, slideHeight }: Prop
     <div style={{ width: '1080px', height: `${h}px`, boxSizing: 'border-box', position: 'relative', overflow: 'hidden', fontFamily: theme.bodyFont }}>
       {/* Left — image */}
       <div style={{ position: 'absolute', left: 0, top: 0, width: '540px', height: `${h}px`, overflow: 'hidden' }}>
-        {img && <img src={img} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '540px', height: `${h}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '540px', minHeight: `${h}px` }} />}
+        {img && <img src={img} alt="" crossOrigin="anonymous" style={{ position: 'absolute', top: 0, left: 0, width: '540px', height: `${h}px`, objectFit: 'cover', objectPosition: 'center', display: 'block', maxWidth: 'none', minWidth: '540px', minHeight: `${h}px` }} / style={{ objectPosition: 'center center', display: 'block' }}>}
       </div>
       {/* Accent line */}
       <div style={{ position: 'absolute', left: '540px', top: 0, width: '3px', height: `${h}px`, backgroundColor: theme.accentColor, zIndex: 2 }} />

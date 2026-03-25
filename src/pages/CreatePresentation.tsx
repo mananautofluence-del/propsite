@@ -136,6 +136,10 @@ stats: For "stats-two-col" ONLY. Exactly 2 stats.
 imageTags: Use ONLY the exact tag strings provided to you.
   Slides with no photos (stats-two-col, contact-split): use []
   Image slides: pick from the available tags list
+  CRITICAL: Never use the same photo tag twice in one 
+  imageTags array. For two-image layouts you MUST provide 
+  two different tags. If only one photo exists, use 
+  single-image layouts only.
 
 contactInfo on "contact-split":
   Fill name, phone, agency, rera from what the broker provided.
@@ -187,12 +191,12 @@ ${JSON.stringify(selectedTheme, null, 2)}`;
   // === STEP 3: GENERATING ===
   if (step === 3) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#0A0A0A', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid #222', borderTopColor: '#C9A84C', animation: 'spin 1s linear infinite', marginBottom: 24 }} />
-        <p style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 600, fontFamily: '"Playfair Display", serif', textAlign: 'center', marginBottom: 8 }}>{generationStatus}</p>
-        <p style={{ color: '#555', fontSize: 13, fontFamily: '"DM Sans",sans-serif' }}>This takes 10-20 seconds</p>
-        <div style={{ width: 240, height: 3, backgroundColor: '#222', marginTop: 24, overflow: 'hidden', borderRadius: 2 }}>
-          <div style={{ height: '100%', backgroundColor: '#C9A84C', animation: 'progress 15s ease-in-out forwards' }} />
+      <div style={{ minHeight: '100vh', backgroundColor: '#F7F7F7', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid #E5E5E5', borderTopColor: '#111111', animation: 'spin 1s linear infinite', marginBottom: 24 }} />
+        <p style={{ color: '#111111', fontSize: 18, fontWeight: 600, fontFamily: '"Playfair Display", serif', textAlign: 'center', marginBottom: 8 }}>{generationStatus}</p>
+        <p style={{ color: '#111111', fontSize: 13, fontFamily: '"DM Sans",sans-serif', opacity: 0.6 }}>This takes 10-20 seconds</p>
+        <div style={{ width: 240, height: 3, backgroundColor: '#E5E5E5', marginTop: 24, overflow: 'hidden', borderRadius: 2 }}>
+          <div style={{ height: '100%', backgroundColor: '#111111', animation: 'progress 15s ease-in-out forwards' }} />
         </div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes progress{0%{width:0%}100%{width:95%}}`}</style>
       </div>

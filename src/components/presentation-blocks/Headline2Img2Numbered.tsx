@@ -2,14 +2,32 @@ import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 import SlideShell from './SlideShell';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
-
-function getPhoto(photos: PresentationPhoto[], tags: string[], fallbackIndex = 0): string {
-  for (const t of tags) { const f = photos.find(p => p.tag === t); if (f) return f.url; }
-  return photos[fallbackIndex]?.url || photos[0]?.url || '';
+interface Props {
+  data: SlideData;
+  theme: ThemeConfig;
+  photos: PresentationPhoto[];
+  pageNumber?: number;
 }
 
-export default function Headline2Img2Numbered({ data, theme, photos }: Props) {
+function getPhotos(photos: PresentationPhoto[], tags: string[], count: number): string[] {
+  const result: string[] = [];
+  const used = new Set<string>();
+  for (const tag of (tags || [])) {
+    if (result.length >= count) break;
+    const match = photos.find(p => p.tag === tag && !used.has(p.url));
+    if (match) { result.push(match.url); used.add(match.url); }
+  }
+  for (const photo of photos) {
+    if (result.length >= count) break;
+    if (!used.has(photo.url)) { result.push(photo.url); used.add(photo.url); }
+  }
+  return result;
+}
+function getPhoto(photos: PresentationPhoto[], tags: string[]): string {
+  return getPhotos(photos, tags || [], 1)[0] || '';
+}
+
+export default function Headline2Img2Numbered({ data, theme, photos, pageNumber }: Props) {
   const img1 = getPhoto(photos, data.imageTags || [], 0);
   const img2 = getPhoto(photos, data.imageTags || [], 1);
   const items = (data.numberedItems || []).slice(0, 2);
@@ -87,7 +105,7 @@ export default function Headline2Img2Numbered({ data, theme, photos }: Props) {
             <img src={img1} alt="" crossOrigin="anonymous" style={{
               flex: 1, width: '100%', objectFit: 'cover',
               borderRadius: '16px', display: 'block'
-            }} />
+            , objectPosition: 'center center'}} />
           ) : (
             <div style={{ flex: 1, width: '100%', borderRadius: '16px', backgroundColor: `${theme.accentColor}22` }} />
           )}
@@ -95,7 +113,7 @@ export default function Headline2Img2Numbered({ data, theme, photos }: Props) {
             <img src={img2} alt="" crossOrigin="anonymous" style={{
               flex: 1, width: '100%', objectFit: 'cover',
               borderRadius: '16px', display: 'block'
-            }} />
+            , objectPosition: 'center center'}} />
           ) : (
             <div style={{ flex: 1, width: '100%', borderRadius: '16px', backgroundColor: `${theme.accentColor}22` }} />
           )}
