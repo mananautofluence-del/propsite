@@ -64,4 +64,5 @@ export interface StoredPresentation {
   photo_tags: string[];
   created_at: string;
   status: string;
+  dimension?: '1:1' | '9:16';
 }

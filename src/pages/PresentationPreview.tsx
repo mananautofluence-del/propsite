@@ -100,6 +100,7 @@ export default function PresentationPreview() {
   const [isRewriting, setIsRewriting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [originalJson, setOriginalJson] = useState('');
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
     try {
@@ -120,11 +121,18 @@ export default function PresentationPreview() {
 
   useEffect(() => {
     if (!presentationData?.theme) return;
+    setFontsLoaded(false);
     const { headingFont, bodyFont } = presentationData.theme;
     const families = [...new Set([headingFont, bodyFont])].filter(Boolean).map(f => f.replace(/ /g, '+')).join('&family=');
     let link = document.getElementById('gfonts') as HTMLLinkElement | null;
     if (!link) { link = document.createElement('link'); link.id = 'gfonts'; link.rel = 'stylesheet'; document.head.appendChild(link); }
-    link.href = `https://fonts.googleapis.com/css2?family=${families}:wght@400;500;600;700;800&display=swap`;
+    link.href = `https://fonts.googleapis.com/css2?family=${families}:wght@400;500;600;700;800&display=block`;
+    link.onload = () => {
+      document.fonts.ready.then(() => setFontsLoaded(true));
+    };
+    // Fallback: mark fonts loaded after 3 seconds even if onload doesn't fire
+    const timer = setTimeout(() => setFontsLoaded(true), 3000);
+    return () => clearTimeout(timer);
   }, [presentationData?.theme]);
 
   useEffect(() => {
@@ -189,54 +197,93 @@ export default function PresentationPreview() {
     setIsRegenerating(false); setRegenInstruction('');
   };
 
+  const isStory = (stored as any)?.dimension === '9:16';
+  const slideW = 1080;
+  const slideH = isStory ? 1920 : 1080;
+
   const handleExportPDF = async () => {
     if (!presentationData) return;
     setExporting(true);
-    toast.info('Generating PDF... please wait');
+    toast.info('Generating PDF... do not close this page');
+
     try {
       const { theme, slides } = presentationData;
-      const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [1080, 1080] });
+
+      // Inject Google Fonts via @import and wait for them
+      const fontFamilies = [...new Set([theme.headingFont, theme.bodyFont])]
+        .map(f => `family=${f.replace(/ /g, '+')}:wght@400;600;700;800`)
+        .join('&');
+      const styleEl = document.createElement('style');
+      styleEl.textContent = `
+        @import url('https://fonts.googleapis.com/css2?${fontFamilies}&display=block');
+        * { -webkit-font-smoothing: antialiased; }
+      `;
+      document.head.appendChild(styleEl);
+
+      await document.fonts.ready;
+      await new Promise(r => setTimeout(r, 2000));
+
+      const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [slideW, slideH] });
 
       for (let i = 0; i < slides.length; i++) {
-        if (i > 0) pdf.addPage([1080, 1080]);
+        if (i > 0) pdf.addPage([slideW, slideH]);
         const SlideBlock = getSlideComponent(slides[i].layout);
 
         const container = document.createElement('div');
-        container.style.cssText = [
-          'position:fixed', 'left:-9999px', 'top:0',
-          'width:1080px', 'height:1080px', 'overflow:hidden',
-          'transform:none', 'zoom:1',
-          'background:' + theme.backgroundColor,
-        ].join(';');
+        container.setAttribute('data-pdf-export', 'true');
+        container.style.cssText = `
+          position: fixed; left: -9999px; top: 0;
+          width: ${slideW}px; height: ${slideH}px;
+          overflow: hidden; transform: none !important; zoom: 1;
+          background: ${theme.backgroundColor};
+          font-family: '${theme.bodyFont}', sans-serif;
+        `;
         document.body.appendChild(container);
+
+        const containerStyle = document.createElement('style');
+        containerStyle.textContent = `[data-pdf-export="true"] * { font-synthesis: none; -webkit-font-smoothing: antialiased; }`;
+        container.appendChild(containerStyle);
 
         const root = createRoot(container);
         await new Promise<void>(resolve => {
-          root.render(
-            <SlideBlock data={slides[i]} theme={theme} photos={photos} />
-          );
-          setTimeout(resolve, 1500);
+          root.render(<SlideBlock data={slides[i]} theme={theme} photos={photos} slideHeight={slideH} />);
+          setTimeout(resolve, 2500);
         });
 
+        // Wait for all images to load
+        const images = container.querySelectorAll('img');
+        await Promise.all(
+          Array.from(images).map(img =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>(r => { img.onload = () => r(); img.onerror = () => r(); })
+          )
+        );
+        await document.fonts.ready;
+
         const canvas = await html2canvas(container, {
-          width: 1080, height: 1080, scale: 1,
+          width: slideW, height: slideH, scale: 1,
           useCORS: true, allowTaint: true, logging: false,
           backgroundColor: theme.backgroundColor,
           imageTimeout: 20000,
+          onclone: (clonedDoc) => {
+            const clonedStyle = clonedDoc.createElement('style');
+            clonedStyle.textContent = `@import url('https://fonts.googleapis.com/css2?${fontFamilies}&display=block');`;
+            clonedDoc.head.appendChild(clonedStyle);
+          }
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(imgData, 'JPEG', 0, 0, 1080, 1080);
-
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, slideW, slideH);
         root.unmount();
         document.body.removeChild(container);
       }
 
+      document.head.removeChild(styleEl);
       pdf.save(`${stored?.title || 'presentation'}.pdf`);
       toast.success('PDF downloaded!');
-    } catch (err) {
-      console.error('PDF export error:', err);
-      toast.error('Export failed — try again');
+    } catch (err: any) {
+      console.error('PDF error:', err);
+      toast.error('Export failed: ' + (err.message || 'unknown error'));
     }
     setExporting(false);
   };
@@ -285,9 +332,9 @@ export default function PresentationPreview() {
       {/* Canvas */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 16px 16px', gap: 16 }}>
         <div style={{ width: '100%', maxWidth: 540, margin: '0 auto', position: 'relative' }}>
-          <div style={{ width: '100%', aspectRatio: '1/1', position: 'relative', overflow: 'hidden', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)' }}>
-            <div id="pf" style={{ position: 'absolute', top: 0, left: 0, width: 1080, height: 1080, transform: 'scale(var(--s,0.5))', transformOrigin: 'top left', pointerEvents: 'none' }}>
-              <SB data={activeSlide} theme={theme} photos={photos} />
+          <div style={{ width: '100%', aspectRatio: isStory ? '9/16' : '1/1', position: 'relative', overflow: 'hidden', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', opacity: fontsLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+            <div id="pf" style={{ position: 'absolute', top: 0, left: 0, width: 1080, height: slideH, transform: 'scale(var(--s,0.5))', transformOrigin: 'top left', pointerEvents: 'none' }}>
+              <SB data={activeSlide} theme={theme} photos={photos} slideHeight={slideH} />
             </div>
           </div>
           <button onClick={() => { haptic(); setEditingSlideIndex(activeSlideIdx); }} style={{ position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: '50%', backgroundColor: theme.accentColor, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10 }}>
@@ -306,7 +353,7 @@ export default function PresentationPreview() {
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
           {slides.map((s, i) => { const T = getSlideComponent(s.layout); return (
             <button key={i} onClick={() => { haptic(); setActiveSlideIdx(i); }} style={{ flexShrink: 0, width: 64, height: 64, borderRadius: 8, overflow: 'hidden', border: activeSlideIdx === i ? `2px solid ${theme.accentColor}` : '2px solid #EBEBEB', cursor: 'pointer', opacity: activeSlideIdx === i ? 1 : 0.6, background: 'none', padding: 0 }}>
-              <div style={{ transform: 'scale(0.0593)', transformOrigin: 'top left', width: 1080, height: 1080, pointerEvents: 'none' }}><T data={s} theme={theme} photos={photos} /></div>
+              <div style={{ transform: `scale(${64/1080})`, transformOrigin: 'top left', width: 1080, height: slideH, pointerEvents: 'none' }}><T data={s} theme={theme} photos={photos} slideHeight={slideH} /></div>
             </button>); })}
         </div>
       </div>

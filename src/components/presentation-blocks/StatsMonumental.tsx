@@ -1,7 +1,7 @@
 import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
+interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; slideHeight?: number; }
 
 function getStatFontSize(value: string): string {
   const len = value.replace(/[^a-zA-Z0-9]/g, '').length;
@@ -12,12 +12,13 @@ function getStatFontSize(value: string): string {
   return '56px';
 }
 
-export default function StatsMonumental({ data, theme }: Props) {
+export default function StatsMonumental({ data, theme, slideHeight }: Props) {
+  const h = slideHeight || 1080;
   const stats = (data.stats || []).slice(0, 3);
 
   return (
     <div style={{
-      width: '1080px', height: '1080px',
+      width: '1080px', height: `${h}px`,
       boxSizing: 'border-box', position: 'relative',
       overflow: 'hidden', fontFamily: theme.bodyFont,
       backgroundColor: theme.backgroundColor,

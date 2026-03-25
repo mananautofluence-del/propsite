@@ -1,9 +1,10 @@
 import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
+interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; slideHeight?: number; }
 
-export default function VisionQuote({ data, theme }: Props) {
+export default function VisionQuote({ data, theme, slideHeight }: Props) {
+  const h = slideHeight || 1080;
   const quoteText = data.pullQuote || data.headline || '';
   const fontSize = quoteText.length <= 50 ? '80px'
     : quoteText.length <= 80 ? '64px'
@@ -14,7 +15,7 @@ export default function VisionQuote({ data, theme }: Props) {
 
   return (
     <div style={{
-      width: '1080px', height: '1080px',
+      width: '1080px', height: `${h}px`,
       boxSizing: 'border-box', position: 'relative',
       overflow: 'hidden', fontFamily: theme.bodyFont,
       backgroundColor: theme.backgroundColor,

@@ -24,6 +24,7 @@ export default function CreatePresentation() {
   }>({ fullName: '', phone: '', agencyName: '', reraNumber: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [generationStatus, setGenerationStatus] = useState('');
+  const [slideDimension, setSlideDimension] = useState<'1:1' | '9:16'>('1:1');
 
   useEffect(() => {
     if (!user) return;
@@ -165,7 +166,8 @@ ${JSON.stringify(selectedTheme, null, 2)}`;
         title: presentation.slides[0]?.headline || 'Presentation',
         presentation, photo_urls: taggedPhotos.map(p => p.url),
         photo_tags: taggedPhotos.map(p => p.tag),
-        created_at: new Date().toISOString(), status: 'live'
+        created_at: new Date().toISOString(), status: 'live',
+        dimension: slideDimension,
       };
       const existing = JSON.parse(localStorage.getItem('propsite_presentations') || '[]');
       existing.push(stored);
@@ -283,6 +285,34 @@ ${JSON.stringify(selectedTheme, null, 2)}`;
             <input value={brokerProfile.phone} onChange={e => setBrokerProfile(p => ({ ...p, phone: e.target.value }))} className="border border-[#DDDCDC] rounded-lg h-11 px-3 text-[14px] focus:outline-none focus:border-[#1A5C3A]" placeholder="Phone" />
             <input value={brokerProfile.agencyName} onChange={e => setBrokerProfile(p => ({ ...p, agencyName: e.target.value }))} className="border border-[#DDDCDC] rounded-lg h-11 px-3 text-[14px] focus:outline-none focus:border-[#1A5C3A]" placeholder="Agency Name" />
             <input value={brokerProfile.reraNumber} onChange={e => setBrokerProfile(p => ({ ...p, reraNumber: e.target.value }))} className="border border-[#DDDCDC] rounded-lg h-11 px-3 text-[14px] focus:outline-none focus:border-[#1A5C3A]" placeholder="RERA Number" />
+          </div>
+        </div>
+        {/* Slide Format Selector */}
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111111', marginBottom: 12, fontFamily: 'DM Sans, sans-serif' }}>Slide Format</h2>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {(['1:1', '9:16'] as const).map(dim => (
+              <button key={dim} onClick={() => setSlideDimension(dim)} style={{
+                flex: 1, height: 72, borderRadius: 12,
+                border: slideDimension === dim ? '2px solid #1A5C3A' : '1px solid #DDDCDC',
+                backgroundColor: slideDimension === dim ? '#F0F7F3' : '#FAFAFA',
+                cursor: 'pointer', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}>
+                <div style={{
+                  width: dim === '1:1' ? 28 : 18,
+                  height: dim === '1:1' ? 28 : 32,
+                  border: `2px solid ${slideDimension === dim ? '#1A5C3A' : '#BBBBBB'}`,
+                  borderRadius: 3,
+                }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: slideDimension === dim ? '#1A5C3A' : '#555555', fontFamily: 'DM Sans, sans-serif' }}>
+                  {dim === '1:1' ? '1:1 Square' : '9:16 Story'}
+                </span>
+                <span style={{ fontSize: 10, color: '#AAAAAA', fontFamily: 'DM Sans, sans-serif' }}>
+                  {dim === '1:1' ? 'Instagram Post' : 'Reels / Stories'}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
         {/* Next */}

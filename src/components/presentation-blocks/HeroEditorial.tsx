@@ -1,7 +1,7 @@
 import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
+interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; slideHeight?: number; }
 
 function findPhoto(photos: PresentationPhoto[], tags: string[]): string {
   for (const t of tags) {
@@ -11,17 +11,17 @@ function findPhoto(photos: PresentationPhoto[], tags: string[]): string {
   return photos[0]?.url || '';
 }
 
-export default function HeroEditorial({ data, theme, photos }: Props) {
+export default function HeroEditorial({ data, theme, photos, slideHeight }: Props) {
+  const h = slideHeight || 1080;
   const img = findPhoto(photos, data.imageTags || ['interior', 'living']);
   const stats = data.stats || [];
   const headlineLen = (data.headline || '').length;
-  const headlineFontSize = headlineLen <= 15 ? '72px'
-    : headlineLen <= 25 ? '58px' : '46px';
+  const headlineFontSize = headlineLen <= 15 ? '72px' : headlineLen <= 25 ? '58px' : '46px';
 
   return (
-    <div style={{ width: '1080px', height: '1080px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden', fontFamily: theme.bodyFont }}>
+    <div style={{ width: '1080px', height: `${h}px`, boxSizing: 'border-box', position: 'relative', overflow: 'hidden', fontFamily: theme.bodyFont }}>
       {/* Left panel */}
-      <div style={{ position: 'absolute', left: 0, top: 0, width: '520px', height: '1080px', backgroundColor: theme.backgroundColor, padding: '80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, width: '520px', height: `${h}px`, backgroundColor: theme.backgroundColor, padding: '80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
         {data.eyebrow && <div style={{ textTransform: 'uppercase' as const, letterSpacing: '6px', fontSize: '11px', color: theme.accentColor, fontFamily: theme.bodyFont }}>{data.eyebrow}</div>}
         {data.headline && <div style={{ fontSize: headlineFontSize, lineHeight: '0.95', fontFamily: theme.headingFont, color: theme.textColor, marginTop: '24px', marginBottom: '32px', fontWeight: 700 }}>{data.headline}</div>}
         <div style={{ width: '48px', height: '1px', backgroundColor: theme.accentColor }} />
@@ -35,8 +35,14 @@ export default function HeroEditorial({ data, theme, photos }: Props) {
         </div>
       </div>
       {/* Right panel */}
-      <div style={{ position: 'absolute', left: '520px', top: 0, width: '560px', height: '1080px', overflow: 'hidden' }}>
-        {img && <img src={img} alt="" style={{ width: '560px', height: '1080px', objectFit: 'cover' }} />}
+      <div style={{ position: 'absolute', left: '520px', top: 0, width: '560px', height: `${h}px`, overflow: 'hidden' }}>
+        {img && <img src={img} alt="" crossOrigin="anonymous" style={{
+          position: 'absolute', top: 0, left: 0,
+          width: '560px', height: `${h}px`,
+          objectFit: 'cover', objectPosition: 'center',
+          display: 'block', maxWidth: 'none',
+          minWidth: '560px', minHeight: `${h}px`,
+        }} />}
         <div style={{ position: 'absolute', left: 0, top: '80px', bottom: '80px', width: '1px', backgroundColor: theme.accentColor }} />
       </div>
     </div>

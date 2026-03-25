@@ -1,9 +1,10 @@
 import React from 'react';
 import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTypes';
 
-interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; }
+interface Props { data: SlideData; theme: ThemeConfig; photos: PresentationPhoto[]; slideHeight?: number; }
 
-export default function ContactMinimal({ data, theme }: Props) {
+export default function ContactMinimal({ data, theme, slideHeight }: Props) {
+  const h = slideHeight || 1080;
   const c = data.contactInfo;
   const initials = c?.name
     ? c.name.trim().split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
@@ -11,7 +12,7 @@ export default function ContactMinimal({ data, theme }: Props) {
 
   return (
     <div style={{
-      width: '1080px', height: '1080px',
+      width: '1080px', height: `${h}px`,
       boxSizing: 'border-box', position: 'relative',
       overflow: 'hidden', fontFamily: theme.bodyFont,
       backgroundColor: theme.backgroundColor,
