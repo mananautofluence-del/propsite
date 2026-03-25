@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { StoredPresentation, SlideData, ThemeConfig, PresentationPhoto, GenerativePresentation, SlideLayout } from '@/lib/presentationTypes';
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
@@ -7,78 +7,81 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { createRoot } from 'react-dom/client';
 
-import HeroCinematic from '@/components/presentation-blocks/HeroCinematic';
-import HeroEditorial from '@/components/presentation-blocks/HeroEditorial';
-import BentoGridFeatures from '@/components/presentation-blocks/BentoGridFeatures';
-import MagazineSplit from '@/components/presentation-blocks/MagazineSplit';
-import StatsMonumental from '@/components/presentation-blocks/StatsMonumental';
-import VisionQuote from '@/components/presentation-blocks/VisionQuote';
-import GalleryMasonry from '@/components/presentation-blocks/GalleryMasonry';
-import ContactMinimal from '@/components/presentation-blocks/ContactMinimal';
+import CoverEditorial from '@/components/presentation-blocks/CoverEditorial';
+import StatsTwoCol from '@/components/presentation-blocks/StatsTwoCol';
+import ContentImageBottom from '@/components/presentation-blocks/ContentImageBottom';
+import HeadlineTwoImages from '@/components/presentation-blocks/HeadlineTwoImages';
+import HeadlineNumberedList from '@/components/presentation-blocks/HeadlineNumberedList';
+import HeadlineTwoColImages from '@/components/presentation-blocks/HeadlineTwoColImages';
+import ImagesTopHeadlineBottom from '@/components/presentation-blocks/ImagesTopHeadlineBottom';
+import CenteredNumberedCols from '@/components/presentation-blocks/CenteredNumberedCols';
+import ImageLeftHeadlineNumbered from '@/components/presentation-blocks/ImageLeftHeadlineNumbered';
+import HeadlineBodyImageNumbered from '@/components/presentation-blocks/HeadlineBodyImageNumbered';
+import Headline2x2Numbered from '@/components/presentation-blocks/Headline2x2Numbered';
+import Headline2Img2Numbered from '@/components/presentation-blocks/Headline2Img2Numbered';
+import TwoImagesHeadlineNumbered from '@/components/presentation-blocks/TwoImagesHeadlineNumbered';
+import ImageTopHeadlineNumbered from '@/components/presentation-blocks/ImageTopHeadlineNumbered';
+import ContactSplit from '@/components/presentation-blocks/ContactSplit';
 
-// Map old V1 layout names → new V2 names
 const LAYOUT_MIGRATION: Record<string, string> = {
-  'hero-cover': 'hero-cinematic',
-  'split-left-image': 'hero-editorial',
-  'split-right-image': 'magazine-split',
-  'features-grid': 'bento-grid-features',
-  'full-gallery': 'gallery-masonry',
-  'contact-card': 'contact-minimal',
+  'hero-cinematic': 'cover-editorial', 'hero-editorial': 'cover-editorial',
+  'bento-grid-features': 'headline-2x2-numbered', 'magazine-split': 'content-image-bottom',
+  'stats-monumental': 'stats-two-col', 'vision-quote': 'stats-two-col', 
+  'gallery-masonry': 'two-images-headline-numbered', 'contact-minimal': 'contact-split',
 };
 
-function migrateLayout(layout: string): string {
-  return LAYOUT_MIGRATION[layout] || layout;
-}
+function migrateLayout(layout: string): string { return LAYOUT_MIGRATION[layout] || layout; }
 
-function getSlideComponent(layout: string) {
-  const resolved = migrateLayout(layout);
-  switch (resolved) {
-    case 'hero-cinematic': return HeroCinematic;
-    case 'hero-editorial': return HeroEditorial;
-    case 'bento-grid-features': return BentoGridFeatures;
-    case 'magazine-split': return MagazineSplit;
-    case 'stats-monumental': return StatsMonumental;
-    case 'vision-quote': return VisionQuote;
-    case 'gallery-masonry': return GalleryMasonry;
-    case 'contact-minimal': return ContactMinimal;
-    default: return HeroCinematic;
-  }
-}
-
-// Migrate old presentation data to new format
-function migratePresentation(pres: any): GenerativePresentation {
-  const theme = pres.theme || {
-    backgroundColor: '#F2EDE4', textColor: '#1C2B1E', accentColor: '#8B6E4E',
-    headingFont: 'Cormorant Garamond', bodyFont: 'DM Sans',
+function getSlideComponent(layout: SlideLayout) {
+  const map: Record<string, React.ComponentType<any>> = {
+    'cover-editorial': CoverEditorial,
+    'stats-two-col': StatsTwoCol,
+    'content-image-bottom': ContentImageBottom,
+    'headline-two-images': HeadlineTwoImages,
+    'headline-numbered-list': HeadlineNumberedList,
+    'headline-two-col-images': HeadlineTwoColImages,
+    'images-top-headline-bottom': ImagesTopHeadlineBottom,
+    'centered-numbered-cols': CenteredNumberedCols,
+    'image-left-headline-numbered': ImageLeftHeadlineNumbered,
+    'headline-body-image-numbered': HeadlineBodyImageNumbered,
+    'headline-2x2-numbered': Headline2x2Numbered,
+    'headline-2img-2numbered': Headline2Img2Numbered,
+    'two-images-headline-numbered': TwoImagesHeadlineNumbered,
+    'image-top-headline-numbered': ImageTopHeadlineNumbered,
+    'contact-split': ContactSplit,
   };
-  const slides = (pres.slides || []).map((s: any, i: number) => ({
-    ...s,
-    id: s.id || `slide-${i}`,
-    layout: migrateLayout(s.layout || 'hero-cinematic'),
-    imageTags: s.imageTags || [],
-    eyebrow: s.eyebrow || '',
-  }));
+  return map[layout] || CoverEditorial;
+}
+
+function migratePresentation(pres: any): GenerativePresentation {
+  const theme = pres.theme || { backgroundColor: '#F2EDE4', textColor: '#1C2B1E', accentColor: '#8B6E4E', headingFont: 'Cormorant Garamond', bodyFont: 'DM Sans' };
+  const slides = (pres.slides || []).map((s: any, i: number) => ({ ...s, id: s.id || `slide-${i}`, layout: migrateLayout(s.layout || 'cover-editorial'), imageTags: s.imageTags || [], eyebrow: s.eyebrow || '' }));
   return { theme, slides };
 }
 
 const LAYOUTS: { id: SlideLayout; label: string }[] = [
-  { id: 'hero-cinematic', label: '🎬 Cinematic' },
-  { id: 'hero-editorial', label: '📰 Editorial' },
-  { id: 'bento-grid-features', label: '⊞ Bento' },
-  { id: 'magazine-split', label: '◧ Magazine' },
-  { id: 'stats-monumental', label: '◉ Stats' },
-  { id: 'vision-quote', label: '❝ Quote' },
-  { id: 'gallery-masonry', label: '🖼 Gallery' },
-  { id: 'contact-minimal', label: '👤 Contact' },
+  { id: 'cover-editorial', label: 'Cover' },
+  { id: 'stats-two-col', label: 'Stats' },
+  { id: 'content-image-bottom', label: 'Content + Image' },
+  { id: 'headline-two-images', label: 'Headline + 2 Img' },
+  { id: 'headline-numbered-list', label: 'Numbered List' },
+  { id: 'headline-two-col-images', label: '2 Col Images' },
+  { id: 'images-top-headline-bottom', label: 'Images Top' },
+  { id: 'centered-numbered-cols', label: 'Centered Cols' },
+  { id: 'image-left-headline-numbered', label: 'Image Left' },
+  { id: 'headline-body-image-numbered', label: 'Complex Grid' },
+  { id: 'headline-2x2-numbered', label: '2x2 Grid' },
+  { id: 'headline-2img-2numbered', label: '2 Img 2 Nums' },
+  { id: 'two-images-headline-numbered', label: '2 Img Left' },
+  { id: 'image-top-headline-numbered', label: 'Image Top' },
+  { id: 'contact-split', label: 'Contact' },
 ];
 
 const THEME_PRESETS: (ThemeConfig & { name: string })[] = [
-  { name: 'Quiet Luxury', backgroundColor: '#F2EDE4', textColor: '#1C2B1E', accentColor: '#8B6E4E', headingFont: 'Cormorant Garamond', bodyFont: 'DM Sans' },
-  { name: 'Penthouse Gold', backgroundColor: '#0D0D0D', textColor: '#F5F0E8', accentColor: '#C9A84C', headingFont: 'Playfair Display', bodyFont: 'Plus Jakarta Sans' },
-  { name: 'Minimalist', backgroundColor: '#F8F8F8', textColor: '#111111', accentColor: '#9A9A9A', headingFont: 'DM Serif Display', bodyFont: 'Outfit' },
-  { name: 'Coastal', backgroundColor: '#FDF6EC', textColor: '#1A2C3D', accentColor: '#C4714A', headingFont: 'Fraunces', bodyFont: 'Jost' },
-  { name: 'Midnight Sage', backgroundColor: '#0F1A14', textColor: '#E8F0EB', accentColor: '#4A7C59', headingFont: 'Cormorant Garamond', bodyFont: 'DM Sans' },
-  { name: 'Ocean Deep', backgroundColor: '#0A1628', textColor: '#F0F4F8', accentColor: '#2D8B9F', headingFont: 'Libre Baskerville', bodyFont: 'Outfit' },
+  { name: 'Classic Warm', backgroundColor: '#F5F0E8', textColor: '#1A1A1A', accentColor: '#8B7355', headingFont: 'Cormorant Garamond', bodyFont: 'DM Sans' },
+  { name: 'Modern Dark', backgroundColor: '#111111', textColor: '#F5F0E8', accentColor: '#C9A84C', headingFont: 'Playfair Display', bodyFont: 'Plus Jakarta Sans' },
+  { name: 'Clean White', backgroundColor: '#FFFFFF', textColor: '#111111', accentColor: '#333333', headingFont: 'DM Serif Display', bodyFont: 'Outfit' },
+  { name: 'Coastal Warm', backgroundColor: '#FDF8F2', textColor: '#1A2C3D', accentColor: '#C4714A', headingFont: 'Fraunces', bodyFont: 'Jost' },
 ];
 const HEADING_FONTS = ['Cormorant Garamond', 'Playfair Display', 'DM Serif Display', 'Fraunces', 'Libre Baskerville'];
 const BODY_FONTS = ['DM Sans', 'Plus Jakarta Sans', 'Outfit', 'Jost', 'Inter'];
@@ -101,6 +104,9 @@ export default function PresentationPreview() {
   const [hasChanges, setHasChanges] = useState(false);
   const [originalJson, setOriginalJson] = useState('');
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
     try {
@@ -108,13 +114,8 @@ export default function PresentationPreview() {
       const found = all.find((p: any) => p.id === id);
       if (found) {
         const migrated = migratePresentation(found.presentation);
-        setStored(found);
-        setPresentationData(migrated);
-        setOriginalJson(JSON.stringify(migrated));
-      } else {
-        toast.error('Not found');
-        navigate('/dashboard/presentations');
-      }
+        setStored(found); setPresentationData(migrated); setOriginalJson(JSON.stringify(migrated));
+      } else { toast.error('Not found'); navigate('/dashboard/presentations'); }
     } catch { navigate('/dashboard/presentations'); }
     setLoading(false);
   }, [id, navigate]);
@@ -124,31 +125,26 @@ export default function PresentationPreview() {
     setFontsLoaded(false);
     const { headingFont, bodyFont } = presentationData.theme;
     const families = [...new Set([headingFont, bodyFont])].filter(Boolean).map(f => f.replace(/ /g, '+')).join('&family=');
-    let link = document.getElementById('gfonts') as HTMLLinkElement | null;
-    if (!link) { link = document.createElement('link'); link.id = 'gfonts'; link.rel = 'stylesheet'; document.head.appendChild(link); }
-    link.href = `https://fonts.googleapis.com/css2?family=${families}:wght@400;500;600;700;800&display=block`;
-    link.onload = () => {
-      document.fonts.ready.then(() => setFontsLoaded(true));
-    };
-    // Fallback: mark fonts loaded after 3 seconds even if onload doesn't fire
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${families}:wght@400;500;600;700;800&display=swap`;
+    link.onload = () => { document.fonts.ready.then(() => setFontsLoaded(true)); };
+    document.head.appendChild(link);
     const timer = setTimeout(() => setFontsLoaded(true), 3000);
     return () => clearTimeout(timer);
   }, [presentationData?.theme]);
 
   useEffect(() => {
-    const r = () => {
-      requestAnimationFrame(() => {
-        const c = document.getElementById('pf');
-        if (c?.parentElement) {
-          const scale = c.parentElement.clientWidth / 1080;
-          c.style.setProperty('--s', scale.toString());
-        }
-      });
+    const update = () => {
+      if (containerRef.current) {
+        const w = containerRef.current.offsetWidth;
+        setScale(w / 1456);
+      }
     };
-    r();
-    window.addEventListener('resize', r);
-    return () => window.removeEventListener('resize', r);
-  }, [activeSlideIdx, presentationData]);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   useEffect(() => { document.body.style.overflow = (editingSlideIndex !== null || showThemeEditor || showRegenSheet) ? 'hidden' : ''; return () => { document.body.style.overflow = ''; }; }, [editingSlideIndex, showThemeEditor, showRegenSheet]);
   useEffect(() => { if (presentationData && originalJson) setHasChanges(JSON.stringify(presentationData) !== originalJson); }, [presentationData, originalJson]);
@@ -161,12 +157,8 @@ export default function PresentationPreview() {
 
   const photos: PresentationPhoto[] = (stored?.photo_urls || []).map((url, i) => ({ url, tag: stored?.photo_tags?.[i] || 'other', orderIndex: i }));
 
-  const updateSlide = (index: number, updates: Partial<SlideData>) => {
-    setPresentationData(prev => prev ? ({ ...prev, slides: prev.slides.map((s, i) => i === index ? { ...s, ...updates } : s) }) : prev);
-  };
-  const updateTheme = (updates: Partial<ThemeConfig>) => {
-    setPresentationData(prev => prev ? ({ ...prev, theme: { ...prev.theme, ...updates } }) : prev);
-  };
+  const updateSlide = (index: number, updates: Partial<SlideData>) => { setPresentationData(prev => prev ? ({ ...prev, slides: prev.slides.map((s, i) => i === index ? { ...s, ...updates } : s) }) : prev); };
+  const updateTheme = (updates: Partial<ThemeConfig>) => { setPresentationData(prev => prev ? ({ ...prev, theme: { ...prev.theme, ...updates } }) : prev); };
 
   const rewriteSlide = async (index: number) => {
     const K = import.meta.env.VITE_CLAUDE_API_KEY; if (!K || !presentationData) return;
@@ -176,7 +168,7 @@ export default function PresentationPreview() {
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2000, system: 'Rewrite ONLY text fields of this slide JSON to be more evocative and premium. Keep layout, id, imageTags. Output ONLY the JSON.', messages: [{ role: 'user', content: JSON.stringify(presentationData.slides[index]) }] }) });
       const d = await r.json(); const t = (d.content?.[0]?.text || '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const ns = JSON.parse(t) as SlideData;
-      updateSlide(index, { headline: ns.headline, subheadline: ns.subheadline, bodyText: ns.bodyText, pullQuote: ns.pullQuote, bulletPoints: ns.bulletPoints, eyebrow: ns.eyebrow, stats: ns.stats, bentoBoxes: ns.bentoBoxes });
+      updateSlide(index, { headline: ns.headline, subheadline: ns.subheadline, bodyText: ns.bodyText });
       toast.success('Rewritten!');
     } catch { toast.error('Rewrite failed'); }
     setIsRewriting(false);
@@ -188,7 +180,7 @@ export default function PresentationPreview() {
     try {
       const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': K, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 8000,
-          system: `Regenerate this presentation. User wants: "${regenInstruction}". Keep property facts. Output ONLY valid JSON: { theme: ThemeConfig, slides: SlideData[] }. Layouts: hero-cinematic, hero-editorial, bento-grid-features, magazine-split, stats-monumental, vision-quote, gallery-masonry, contact-minimal. 6-8 slides. First=hero, Last=contact-minimal.`,
+          system: `Regenerate this presentation. User wants: "${regenInstruction}". Keep property facts. Output ONLY valid JSON: { theme: ThemeConfig, slides: SlideData[] }. Layouts from presentationTypes ONLY. 6-8 slides. VARY layouts. Never repeat same layout consecutively.`,
           messages: [{ role: 'user', content: JSON.stringify(presentationData) }] }) });
       const d = await r.json(); const t = (d.content?.[0]?.text || '').replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const np = JSON.parse(t) as GenerativePresentation;
@@ -197,94 +189,93 @@ export default function PresentationPreview() {
     setIsRegenerating(false); setRegenInstruction('');
   };
 
-  const isStory = (stored as any)?.dimension === '9:16';
-  const slideW = 1080;
-  const slideH = isStory ? 1920 : 1080;
-
   const handleExportPDF = async () => {
     if (!presentationData) return;
     setExporting(true);
-    toast.info('Generating PDF... do not close this page');
-
-    try {
-      const { theme, slides } = presentationData;
-
-      // Inject Google Fonts via @import and wait for them
-      const fontFamilies = [...new Set([theme.headingFont, theme.bodyFont])]
-        .map(f => `family=${f.replace(/ /g, '+')}:wght@400;600;700;800`)
-        .join('&');
-      const styleEl = document.createElement('style');
-      styleEl.textContent = `
-        @import url('https://fonts.googleapis.com/css2?${fontFamilies}&display=block');
-        * { -webkit-font-smoothing: antialiased; }
+    toast.info('Generating PDF — do not close this page');
+    
+    const { theme, slides } = presentationData;
+    
+    // Inject fonts before capture
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    const fontFamilies = [theme.headingFont, theme.bodyFont]
+      .filter(Boolean)
+      .map(f => `family=${f.replace(/ /g, '+')}:wght@400;500;600;700;800`)
+      .join('&');
+    fontLink.href = `https://fonts.googleapis.com/css2?${fontFamilies}&display=block`;
+    document.head.appendChild(fontLink);
+    
+    // Wait for fonts
+    await new Promise(r => setTimeout(r, 2000));
+    await document.fonts.ready;
+    
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'px',
+      format: [1456, 816],
+    });
+    
+    for (let i = 0; i < slides.length; i++) {
+      if (i > 0) pdf.addPage([1456, 816], 'landscape');
+      const SlideBlock = getSlideComponent(slides[i].layout);
+      
+      const container = document.createElement('div');
+      container.style.cssText = `
+        position:fixed; left:-9999px; top:0;
+        width:1456px; height:816px;
+        overflow:hidden; transform:none; zoom:1;
+        background:${theme.backgroundColor};
       `;
-      document.head.appendChild(styleEl);
-
-      await document.fonts.ready;
-      await new Promise(r => setTimeout(r, 2000));
-
-      const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [slideW, slideH] });
-
-      for (let i = 0; i < slides.length; i++) {
-        if (i > 0) pdf.addPage([slideW, slideH]);
-        const SlideBlock = getSlideComponent(slides[i].layout);
-
-        const container = document.createElement('div');
-        container.setAttribute('data-pdf-export', 'true');
-        container.style.cssText = `
-          position: fixed; left: -9999px; top: 0;
-          width: ${slideW}px; height: ${slideH}px;
-          overflow: hidden; transform: none !important; zoom: 1;
-          background: ${theme.backgroundColor};
-          font-family: '${theme.bodyFont}', sans-serif;
-        `;
-        document.body.appendChild(container);
-
-        const containerStyle = document.createElement('style');
-        containerStyle.textContent = `[data-pdf-export="true"] * { font-synthesis: none; -webkit-font-smoothing: antialiased; }`;
-        container.appendChild(containerStyle);
-
-        const root = createRoot(container);
-        await new Promise<void>(resolve => {
-          root.render(<SlideBlock data={slides[i]} theme={theme} photos={photos} slideHeight={slideH} />);
-          setTimeout(resolve, 2500);
-        });
-
-        // Wait for all images to load
-        const images = container.querySelectorAll('img');
-        await Promise.all(
-          Array.from(images).map(img =>
-            img.complete
-              ? Promise.resolve()
-              : new Promise<void>(r => { img.onload = () => r(); img.onerror = () => r(); })
-          )
+      document.body.appendChild(container);
+      
+      const root = createRoot(container);
+      await new Promise<void>(resolve => {
+        root.render(
+          React.createElement(SlideBlock, { 
+            data: slides[i], theme, photos 
+          })
         );
-        await document.fonts.ready;
-
-        const canvas = await html2canvas(container, {
-          width: slideW, height: slideH, scale: 1,
-          useCORS: true, allowTaint: true, logging: false,
-          backgroundColor: theme.backgroundColor,
-          imageTimeout: 20000,
-          onclone: (clonedDoc) => {
-            const clonedStyle = clonedDoc.createElement('style');
-            clonedStyle.textContent = `@import url('https://fonts.googleapis.com/css2?${fontFamilies}&display=block');`;
-            clonedDoc.head.appendChild(clonedStyle);
-          }
-        });
-
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, slideW, slideH);
-        root.unmount();
-        document.body.removeChild(container);
-      }
-
-      document.head.removeChild(styleEl);
-      pdf.save(`${stored?.title || 'presentation'}.pdf`);
-      toast.success('PDF downloaded!');
-    } catch (err: any) {
-      console.error('PDF error:', err);
-      toast.error('Export failed: ' + (err.message || 'unknown error'));
+        setTimeout(resolve, 2500);
+      });
+      
+      // Wait for all images
+      const imgs = container.querySelectorAll('img');
+      await Promise.all(Array.from(imgs).map(img =>
+        img.complete ? Promise.resolve() :
+          new Promise<void>(r => { img.onload = () => r(); img.onerror = () => r(); })
+      ));
+      
+      await document.fonts.ready;
+      
+      const canvas = await html2canvas(container, {
+        width: 1456,
+        height: 816,
+        scale: 1,            // NEVER scale:2 — causes black canvas
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: theme.backgroundColor,
+        imageTimeout: 20000,
+        onclone: (doc) => {
+          const style = doc.createElement('style');
+          style.textContent = fontLink.outerHTML;
+          doc.head.appendChild(style);
+        }
+      });
+      
+      pdf.addImage(
+        canvas.toDataURL('image/jpeg', 0.93),
+        'JPEG', 0, 0, 1456, 816
+      );
+      
+      root.unmount();
+      document.body.removeChild(container);
     }
+    
+    document.head.removeChild(fontLink);
+    pdf.save(`${stored?.title || 'presentation'}.pdf`);
+    toast.success('PDF downloaded!');
     setExporting(false);
   };
 
@@ -317,8 +308,8 @@ export default function PresentationPreview() {
           <span style={{ fontFamily: theme.headingFont, fontSize: 15, fontWeight: 600, color: '#111', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stored?.title || 'Presentation'}</span>
           <span style={{ backgroundColor: '#F0F0F0', borderRadius: 999, padding: '3px 10px', fontSize: 12, color: '#555', fontWeight: 600 }}>{activeSlideIdx + 1}/{slides.length}</span>
         </div>
-        <button onClick={handleExportPDF} disabled={exporting} style={{ background: '#1A5C3A', color: '#fff', fontSize: 13, fontWeight: 600, height: 32, padding: '0 14px', borderRadius: 8, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: exporting ? 0.5 : 1, position: 'relative' }}>
-          {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} PDF
+        <button onClick={() => { haptic(); handleExportPDF(); }} disabled={exporting} style={{ background: '#1A5C3A', color: '#fff', fontSize: 13, fontWeight: 600, height: 32, padding: '0 14px', borderRadius: 8, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: exporting ? 0.5 : 1, position: 'relative' }}>
+          {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} Export
           {hasChanges && <div style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444' }} />}
         </button>
       </div>
@@ -331,11 +322,13 @@ export default function PresentationPreview() {
 
       {/* Canvas */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 16px 16px', gap: 16 }}>
-        <div style={{ width: '100%', maxWidth: 540, margin: '0 auto', position: 'relative' }}>
-          <div style={{ width: '100%', aspectRatio: isStory ? '9/16' : '1/1', position: 'relative', overflow: 'hidden', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', opacity: fontsLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}>
-            <div id="pf" style={{ position: 'absolute', top: 0, left: 0, width: 1080, height: slideH, transform: 'scale(var(--s,0.5))', transformOrigin: 'top left', pointerEvents: 'none' }}>
-              <SB data={activeSlide} theme={theme} photos={photos} slideHeight={slideH} />
+        <div style={{ width: '100%', maxWidth: 800, margin: '0 auto', position: 'relative' }}>
+          <div ref={containerRef} style={{ width: '100%', overflow: 'hidden', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', opacity: fontsLoaded ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+            <div style={{ width: '1456px', height: '816px', transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+              <SB data={activeSlide} theme={theme} photos={photos} />
             </div>
+            {/* Spacer to maintain aspect ratio */}
+            <div style={{ height: `${816 * scale}px` }} />
           </div>
           <button onClick={() => { haptic(); setEditingSlideIndex(activeSlideIdx); }} style={{ position: 'absolute', bottom: 16, right: 16, width: 44, height: 44, borderRadius: '50%', backgroundColor: theme.accentColor, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -349,11 +342,11 @@ export default function PresentationPreview() {
           <button onClick={() => { haptic(); setActiveSlideIdx(Math.min(slides.length - 1, activeSlideIdx + 1)); }} disabled={activeSlideIdx === slides.length - 1} style={{ width: 40, height: 40, borderRadius: '50%', background: '#fff', border: '1px solid #EBEBEB', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: activeSlideIdx === slides.length - 1 ? 0.3 : 1 }}><ChevronRight size={18} /></button>
         </div>
 
-        {/* Thumbs */}
+        {/* Thumbs flex wrap, not scaled down layout */}
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 0', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
           {slides.map((s, i) => { const T = getSlideComponent(s.layout); return (
-            <button key={i} onClick={() => { haptic(); setActiveSlideIdx(i); }} style={{ flexShrink: 0, width: 64, height: 64, borderRadius: 8, overflow: 'hidden', border: activeSlideIdx === i ? `2px solid ${theme.accentColor}` : '2px solid #EBEBEB', cursor: 'pointer', opacity: activeSlideIdx === i ? 1 : 0.6, background: 'none', padding: 0 }}>
-              <div style={{ transform: `scale(${64/1080})`, transformOrigin: 'top left', width: 1080, height: slideH, pointerEvents: 'none' }}><T data={s} theme={theme} photos={photos} slideHeight={slideH} /></div>
+            <button key={i} onClick={() => { haptic(); setActiveSlideIdx(i); }} style={{ flexShrink: 0, width: 145, height: 81, borderRadius: 8, overflow: 'hidden', border: activeSlideIdx === i ? `2px solid ${theme.accentColor}` : '2px solid #EBEBEB', cursor: 'pointer', opacity: activeSlideIdx === i ? 1 : 0.6, background: 'none', padding: 0 }}>
+              <div style={{ transform: `scale(${145/1456})`, transformOrigin: 'top left', width: 1456, height: 816, pointerEvents: 'none' }}><T data={s} theme={theme} photos={photos} /></div>
             </button>); })}
         </div>
       </div>
@@ -369,23 +362,17 @@ export default function PresentationPreview() {
             <button onClick={() => setEditingSlideIndex(null)} style={{ width: 32, height: 32, borderRadius: 8, background: '#333', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color="#888" /></button>
           </div>
           <SL t="Content" />
-          {es.eyebrow !== undefined && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Eyebrow</div><input style={inputStyle} value={es.eyebrow || ''} onChange={e => updateSlide(editingSlideIndex, { eyebrow: e.target.value })} /></div>}
           {es.headline !== undefined && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Headline</div><textarea rows={2} style={inputStyle} value={es.headline || ''} onChange={e => updateSlide(editingSlideIndex, { headline: e.target.value })} /></div>}
-          {es.subheadline !== undefined && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Subheadline</div><textarea rows={1} style={inputStyle} value={es.subheadline || ''} onChange={e => updateSlide(editingSlideIndex, { subheadline: e.target.value })} /></div>}
           {es.bodyText !== undefined && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Body</div><textarea rows={3} style={inputStyle} value={es.bodyText || ''} onChange={e => updateSlide(editingSlideIndex, { bodyText: e.target.value })} /></div>}
-          {es.pullQuote !== undefined && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Pull Quote</div><textarea rows={2} style={inputStyle} value={es.pullQuote || ''} onChange={e => updateSlide(editingSlideIndex, { pullQuote: e.target.value })} /></div>}
-          {es.bulletPoints && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Bullets</div>
-            {es.bulletPoints.map((bp, bi) => <div key={bi} style={{ display: 'flex', gap: 8, marginBottom: 6 }}><input style={{ ...inputStyle, flex: 1 }} value={bp} onChange={e => { const n = [...(es.bulletPoints || [])]; n[bi] = e.target.value; updateSlide(editingSlideIndex, { bulletPoints: n }); }} /><button onClick={() => { haptic(); updateSlide(editingSlideIndex, { bulletPoints: (es.bulletPoints || []).filter((_, j) => j !== bi) }); }} style={{ width: 44, height: 44, borderRadius: 10, background: '#2A2A2A', border: '1px solid #333', color: '#888', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button></div>)}
-            <button onClick={() => { haptic(); updateSlide(editingSlideIndex, { bulletPoints: [...(es.bulletPoints || []), ''] }); }} style={{ width: '100%', padding: 10, borderRadius: 10, background: '#2A2A2A', border: '1px solid #333', color: theme.accentColor, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>+ Add</button>
+          {es.stats && <div style={{ marginBottom: 12 }}><div style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Stats</div>
+            {es.stats.map((st, si) => <div key={si} style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', background: '#222', padding: 12, borderRadius: 8 }}>
+              <input style={inputStyle} placeholder={"Value e.g. '30M'"} value={st.value} onChange={e => { const n = [...(es.stats || [])]; n[si].value = e.target.value; updateSlide(editingSlideIndex, { stats: n }); }} />
+              <input style={inputStyle} placeholder="Label" value={st.label} onChange={e => { const n = [...(es.stats || [])]; n[si].label = e.target.value; updateSlide(editingSlideIndex, { stats: n }); }} />
+            </div>)}
           </div>}
           <SL t="Layout" />
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, WebkitOverflowScrolling: 'touch' }}>
-            {LAYOUTS.map(l => <button key={l.id} onClick={() => {
-              haptic();
-              const updates: Partial<SlideData> = { layout: l.id };
-              if (l.id === 'vision-quote' && !es.pullQuote) updates.pullQuote = (es.headline || '') + ' ' + (es.subheadline || '');
-              updateSlide(editingSlideIndex, updates);
-            }} style={{ flexShrink: 0, padding: '10px 16px', borderRadius: 999, fontSize: 13, cursor: 'pointer', border: 'none', fontWeight: 500, backgroundColor: es.layout === l.id ? theme.accentColor : '#2A2A2A', color: es.layout === l.id ? '#FFF' : '#888' }}>{l.label}</button>)}
+            {LAYOUTS.map(l => <button key={l.id} onClick={() => { haptic(); updateSlide(editingSlideIndex, { layout: l.id }); }} style={{ flexShrink: 0, padding: '10px 16px', borderRadius: 999, fontSize: 13, cursor: 'pointer', border: 'none', fontWeight: 500, backgroundColor: es.layout === l.id ? theme.accentColor : '#2A2A2A', color: es.layout === l.id ? '#FFF' : '#888' }}>{l.label}</button>)}
           </div>
           {photos.length > 0 && <><SL t="Photos" /><div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, WebkitOverflowScrolling: 'touch' }}>
             {photos.map((p, pi) => { const sel = (es.imageTags || []).includes(p.tag); return (
@@ -413,9 +400,9 @@ export default function PresentationPreview() {
         <SL t="Presets" />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
           {THEME_PRESETS.map((p, i) => { const a = theme.backgroundColor === p.backgroundColor && theme.accentColor === p.accentColor; return (
-            <button key={i} onClick={() => { haptic(); updateTheme(p); }} style={{ width: 'calc(33.333% - 7px)', background: '#2A2A2A', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', padding: 0, border: a ? `2px solid ${p.accentColor}` : '2px solid #333' }}>
+            <button key={i} onClick={() => { haptic(); updateTheme(p); }} style={{ width: 'calc(50% - 5px)', background: '#2A2A2A', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', padding: 0, border: a ? `2px solid ${p.accentColor}` : '2px solid #333' }}>
               <div style={{ height: 48, background: `linear-gradient(135deg,${p.backgroundColor} 0%,${p.accentColor} 100%)` }} />
-              <div style={{ padding: '8px 6px', fontSize: 10, color: '#CCC', fontWeight: 500, textAlign: 'center' }}>{p.name}{a ? ' ✓' : ''}</div>
+              <div style={{ padding: '8px 6px', fontSize: 12, color: '#CCC', fontWeight: 500, textAlign: 'center' }}>{p.name}{a ? ' ✓' : ''}</div>
             </button>); })}
         </div>
         <SL t="Colors" />
