@@ -112,23 +112,22 @@ export default function CreatePresentation() {
 - Tone: confident, premium, trustworthy
 - This is a high-value property for discerning buyers`;
 
-    // CORRECT: multipart/form-data using FormData
-    const formData = new FormData();
-    formData.append('content', prompt);
-    formData.append('n_slides', String(slides));
-    formData.append('language', 'English');
-    formData.append('theme', theme); // already mapped to correct value
-    formData.append('export_as', 'pptx');
-
     toast.info('Activating AI Art Director...');
 
     const res = await fetch(
       `${RAILWAY_URL}/api/v1/ppt/presentation/generate`,
       {
         method: 'POST',
-        // DO NOT set Content-Type header — FormData sets it automatically
-        // with the correct boundary
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: prompt,
+          n_slides: slides,
+          language: 'English',
+          theme: theme,
+          export_as: 'pptx',
+        }),
       }
     );
 
