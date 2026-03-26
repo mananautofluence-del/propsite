@@ -81,7 +81,7 @@ export default function HeadlineBodyImageNumbered({ data, theme, photos, pageNum
         }}>
           {items.map((item, i) => (
             <React.Fragment key={i}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                 <div style={{
                   width: '56px', height: '56px',
                   border: `2px solid ${theme.textColor}`,

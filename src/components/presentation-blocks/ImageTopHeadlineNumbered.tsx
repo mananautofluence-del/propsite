@@ -49,7 +49,7 @@ export default function ImageTopHeadlineNumbered({ data, theme, photos, pageNumb
         
         <div style={{ width: '380px', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center' }}>
           {items.map((item, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div style={{
                 width: '40px', height: '40px',
                 border: `2px solid ${theme.textColor}`, borderRadius: '50%',

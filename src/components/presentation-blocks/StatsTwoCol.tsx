@@ -37,7 +37,7 @@ export default function StatsTwoCol({ data, theme, pageNumber }: Props) {
         fontSize: getValueFontSize(s.value),
         fontWeight: 700,
         color: theme.textColor,
-        lineHeight: 0.9,
+        lineHeight: 1,
         letterSpacing: '-0.03em',
         whiteSpace: 'nowrap',
       }}>

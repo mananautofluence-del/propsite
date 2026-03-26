@@ -5,7 +5,7 @@ import { StoredPresentation, SlideData, ThemeConfig, PresentationPhoto, Generati
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import { supabase } from '@/integrations/supabase/client';
 
 import CoverEditorial from '@/components/presentation-blocks/CoverEditorial';
@@ -263,27 +263,16 @@ export default function PresentationPreview() {
 
         // Capture — container is at position fixed top:0 left:0
         // so x:0 y:0 maps exactly to the slide content
-        const canvas = await html2canvas(container, {
+        const dataUrl = await htmlToImage.toJpeg(container, {
+          quality: 0.95,
           width: 1456,
           height: 816,
-          scale: 1,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
           backgroundColor: theme.backgroundColor,
-          imageTimeout: 8000,
-          x: 0,
-          y: 0,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 1456,
-          windowHeight: 816,
+          pixelRatio: 1,
+          skipFonts: false,
         });
 
-        pdf.addImage(
-          canvas.toDataURL('image/jpeg', 0.95),
-          'JPEG', 0, 0, 1456, 816
-        );
+        pdf.addImage(dataUrl, 'JPEG', 0, 0, 1456, 816);
 
         // Clean up
         slideRoot.unmount();

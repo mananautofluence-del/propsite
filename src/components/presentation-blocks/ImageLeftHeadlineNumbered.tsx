@@ -75,7 +75,7 @@ export default function ImageLeftHeadlineNumbered({ data, theme, photos, pageNum
 
           {items.map((item, i) => (
             <div key={i}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <div style={{
                   width: '52px', height: '52px',
                   border: `1.5px solid ${theme.textColor}`,

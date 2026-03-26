@@ -80,7 +80,7 @@ export default function HeadlineNumberedList({ data, theme, pageNumber }: Props)
             <div key={i}>
               <div style={{
                 display: 'flex',
-                alignItems: 'flex-start',
+                alignItems: 'center',
                 gap: '24px',
               }}>
                 {/* Number circle */}

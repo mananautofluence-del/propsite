@@ -28,8 +28,7 @@ function getPhoto(photos: PresentationPhoto[], tags: string[]): string {
 }
 
 export default function Headline2Img2Numbered({ data, theme, photos, pageNumber }: Props) {
-  const img1 = getPhoto(photos, data.imageTags || [], 0);
-  const img2 = getPhoto(photos, data.imageTags || [], 1);
+  const [img1, img2] = getPhotos(photos, data.imageTags || [], 2);
   const items = (data.numberedItems || []).slice(0, 2);
 
   return (
@@ -53,7 +52,7 @@ export default function Headline2Img2Numbered({ data, theme, photos, pageNumber 
           <div style={{ flex: 1 }}>
             {items.map((item, i) => (
               <React.Fragment key={i}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                   <div style={{
                     width: '48px', height: '48px',
                     border: `2px solid ${theme.textColor}`, borderRadius: '50%',
