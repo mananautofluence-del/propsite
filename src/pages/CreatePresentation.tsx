@@ -13,7 +13,7 @@ const THEMES = [
   { label: 'Glass & Steel', value: 'royal_blue' },
 ];
 
-const SLIDE_COUNTS = [6, 7, 8];
+const SLIDE_COUNTS = [3, 4, 5];
 
 export default function CreatePresentation() {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ export default function CreatePresentation() {
 
   // Generation Settings
   const [theme, setTheme] = useState('cream');
-  const [slides, setSlides] = useState(7);
+  const [slides, setSlides] = useState(5);
   
   const [result, setResult] = useState<{ downloadUrl: string; editUrl: string; presentationId: string } | null>(null);
 
@@ -110,9 +110,10 @@ export default function CreatePresentation() {
 - Keep text concise and highly impactful
 - Use Indian price formatting (Lakhs/Crores)
 - Tone: confident, premium, trustworthy
-- This is a high-value property for discerning buyers`;
+- This is a high-value property for discerning buyers
+- STRICT RULE: DO NOT search for, generate, or add any stock images (no Pexels). ONLY use the images provided in the "Property Photos" section above.`;
 
-    toast.info('Activating AI Art Director...');
+    toast.info('Activating AI Art Director (Speed Mode)...');
 
     const res = await fetch(
       `${HUGGINGFACE_URL}/api/v1/ppt/presentation/generate`,
