@@ -123,7 +123,7 @@ export default function CreatePresentation() {
     toast.info('Activating AI Art Director...');
 
     const res = await fetch(
-      `${RAILWAY_URL}/api/v1/ppt/generate/presentation`,
+      `${RAILWAY_URL}/api/v1/ppt/presentation/generate`,
       {
         method: 'POST',
         // DO NOT set Content-Type header — FormData sets it automatically
