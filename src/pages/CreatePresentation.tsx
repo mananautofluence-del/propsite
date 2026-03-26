@@ -5,10 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const THEMES = [
-  { label: 'Warm', value: 'cream' },
-  { label: 'Dark', value: 'dark' },
-  { label: 'Light', value: 'light' },
-  { label: 'Blue', value: 'royal_blue' },
+  { label: 'Warm', value: 'edge-yellow' },
+  { label: 'Dark', value: 'professional-dark' },
+  { label: 'Light', value: 'light-rose' },
+  { label: 'Blue', value: 'professional-blue' },
 ];
 
 const SLIDE_COUNTS = [6, 7, 8];
@@ -17,7 +17,7 @@ export default function CreatePresentation() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'A' | 'B' | 'C'>('A');
   const [propertyText, setPropertyText] = useState('');
-  const [theme, setTheme] = useState('cream');
+  const [theme, setTheme] = useState('edge-yellow');
   const [slides, setSlides] = useState(7);
   
   const [result, setResult] = useState<{ downloadUrl: string; editUrl: string; presentationId: string } | null>(null);
