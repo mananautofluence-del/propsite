@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, FileDown, ExternalLink, FileType2 } from 'lucide-react';
+import { ArrowLeft, Loader2, FileType2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const THEMES = [
-  { label: 'Warm', value: 'edge-yellow' },
-  { label: 'Dark', value: 'professional-dark' },
-  { label: 'Light', value: 'light-rose' },
-  { label: 'Blue', value: 'professional-blue' },
+  { label: 'Signature Aura', value: 'edge-yellow' },
+  { label: 'Midnight Estate', value: 'professional-dark' },
+  { label: 'Editorial Cream', value: 'light-rose' },
+  { label: 'Glass & Steel', value: 'professional-blue' },
 ];
 
 const SLIDE_COUNTS = [6, 7, 8];
@@ -21,39 +21,37 @@ export default function CreatePresentation() {
   const [slides, setSlides] = useState(7);
   
   const [result, setResult] = useState<{ downloadUrl: string; editUrl: string; presentationId: string } | null>(null);
-  const [isPdfLoading, setIsPdfLoading] = useState(false);
 
-  async function generatePresentation(format: 'pptx' | 'pdf') {
+  async function generatePresentation() {
     const prompt = `Create a professional real estate property presentation for Indian real estate brokers.\n\nProperty Details:\n${propertyText}\n\nRequirements:\n- Elegant, clean and professional design\n- Include slides for: property overview, key highlights, features and amenities, location advantages, photo showcase, contact details\n- Keep text concise and impactful\n- Use Indian price formatting (Lakhs/Crores)\n- Tone: confident, trustworthy, premium`;
 
-    const key = import.meta.env.VITE_PRESENTON_KEY;
-    if (!key) throw new Error('Presenton API Key is missing from .env');
+    const apiUrl = import.meta.env.VITE_PRESENTON_API_URL;
+    if (!apiUrl) throw new Error('VITE_PRESENTON_API_URL is missing from .env');
 
-    const res = await fetch('https://api.presenton.ai/api/v1/ppt/presentation/generate', {
+    const res = await fetch(`${apiUrl}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`
       },
       body: JSON.stringify({
         content: prompt,
         n_slides: slides,
         language: 'English',
+        template: 'modern',
         theme: theme,
-        export_as: format,
+        export_as: 'pptx',
       })
     });
 
     if (!res.ok) {
-      console.error(await res.text());
-      throw new Error('Generation failed via Presenton API');
+      throw new Error('Luxury servers are warming up. Please try again in 30 seconds.');
     }
 
     const data = await res.json();
     return {
-      downloadUrl: data.path,
-      editUrl: data.edit_path,
-      presentationId: data.presentation_id,
+      downloadUrl: data.path || data.downloadUrl,
+      editUrl: data.edit_path || '',
+      presentationId: data.presentation_id || '',
     };
   }
 
@@ -64,7 +62,7 @@ export default function CreatePresentation() {
     }
     setStep('B');
     try {
-      const resp = await generatePresentation('pptx');
+      const resp = await generatePresentation();
       setResult(resp);
 
       // Save to Supabase using the 'content' JSONB field to hold the extra data
@@ -84,50 +82,36 @@ export default function CreatePresentation() {
       
       setStep('C');
       toast.success('Presentation ready!');
+      
+      // Auto-trigger download
+      if (resp.downloadUrl) {
+        const fullUrl = resp.downloadUrl.startsWith('http') 
+          ? resp.downloadUrl 
+          : `${import.meta.env.VITE_PRESENTON_API_URL}${resp.downloadUrl}`;
+        const a = document.createElement('a');
+        a.href = fullUrl;
+        a.download = `property-presentation.pptx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     } catch (err: any) {
-      toast.error(err.message || 'Generation failed');
+      toast.error(err.message || 'Luxury servers are warming up. Please try again in 30 seconds.');
       setStep('A');
     }
   };
 
-  const handleDownloadPptx = async () => {
+  const handleDownloadPptx = () => {
     if (!result?.downloadUrl) return;
-    try {
-      const res = await fetch(result.downloadUrl);
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `property-presentation.pptx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      toast.error('Failed to download PPTX');
-    }
-  };
-
-  const handleDownloadPdf = async () => {
-    setIsPdfLoading(true);
-    toast.info('Requesting PDF render...');
-    try {
-      // Re-run the API just for the PDF export format string as requested
-      const resp = await generatePresentation('pdf');
-      const res = await fetch(resp.downloadUrl);
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `property-presentation.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      toast.success('PDF Downloaded');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to download PDF');
-    } finally {
-      setIsPdfLoading(false);
-    }
+    const fullUrl = result.downloadUrl.startsWith('http') 
+      ? result.downloadUrl 
+      : `${import.meta.env.VITE_PRESENTON_API_URL}${result.downloadUrl}`;
+    const a = document.createElement('a');
+    a.href = fullUrl;
+    a.download = `property-presentation.pptx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -197,45 +181,28 @@ export default function CreatePresentation() {
         {step === 'B' && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
             <Loader2 className="w-12 h-12 animate-spin text-[#111111] mb-6" />
-            <h2 className="text-[20px] font-bold text-[#111111] mb-2">Building your presentation...</h2>
-            <p className="text-[14px] text-[#888888]">This takes about 30 seconds</p>
+            <h2 className="text-[20px] font-bold text-[#111111] mb-2">Activating AI Art Director...</h2>
+            <p className="text-[14px] text-[#888888]">Engineering your 16:9 luxury deck. This may take 30-60 seconds.</p>
           </div>
         )}
 
         {step === 'C' && (
           <div className="flex-1 flex flex-col p-6 items-center justify-center">
-            <div className="w-16 h-16 bg-[#1A5C3A] rounded-[20px] flex items-center justify-center mb-6 shadow-sm">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <div className="w-24 h-24 bg-[#111111] rounded-full flex items-center justify-center mb-8 shadow-md">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </div>
             
-            <h2 className="text-[22px] font-bold text-[#111111] mb-10 text-center">
+            <h2 className="text-[26px] font-bold text-[#111111] mb-12 text-center">
               Your Presentation is Ready!
             </h2>
 
-            <div className="w-full flex flex-col gap-3 mb-10">
+            <div className="w-full flex flex-col gap-3 mb-12">
               <button
                 onClick={handleDownloadPptx}
-                className="w-full h-[52px] bg-[#111111] text-white rounded-[14px] font-semibold text-[15px] flex items-center justify-center gap-2 hover:bg-[#333333] transition-colors shadow-sm"
+                className="w-full h-[56px] bg-[#111111] text-white rounded-[14px] font-semibold text-[16px] flex items-center justify-center gap-2 hover:bg-[#333333] transition-colors shadow-sm"
               >
-                <FileType2 size={18} />
-                Download PPTX
-              </button>
-              
-              <button
-                onClick={() => window.open(result?.editUrl, '_blank')}
-                className="w-full h-[52px] bg-white text-[#111111] border-2 border-[#EBEBEB] rounded-[14px] font-semibold text-[15px] flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
-              >
-                <ExternalLink size={18} />
-                Edit Online
-              </button>
-
-              <button
-                onClick={handleDownloadPdf}
-                disabled={isPdfLoading}
-                className="w-full h-[52px] bg-white text-[#111111] border-2 border-[#EBEBEB] rounded-[14px] font-semibold text-[15px] flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                {isPdfLoading ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
-                {isPdfLoading ? 'Generating PDF...' : 'Download PDF'}
+                <FileType2 size={20} />
+                Download Editable PPTX
               </button>
             </div>
 
