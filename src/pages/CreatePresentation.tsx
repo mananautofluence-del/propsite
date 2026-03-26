@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, FileType2, FileDown, Camera, X, Plus, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, FileType2, FileDown, Camera, X, Plus, Sparkles, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -382,25 +382,30 @@ export default function CreatePresentation() {
             </div>
           </header>
 
-          {/* Iframe Workspace */}
-          <div className="flex-1 w-full bg-[#EAEAEA] relative overflow-hidden">
-            {result.editUrl ? (
-              <iframe 
-                src={constructDownloadUrl(result.editUrl)} 
-                className="w-full h-full border-none"
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                title="Presenton Editor Studio"
-                allowFullScreen
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-center p-6">
-                <div className="w-20 h-20 bg-white rounded-[20px] flex items-center justify-center mb-6 shadow-sm text-[#1A5C3A]">
-                  <Sparkles size={32} />
-                </div>
-                <h2 className="text-[20px] font-bold text-[#111111] mb-2">Editor Initializing...</h2>
-                <p className="text-[14px] text-[#888888]">We couldn't load the direct web iframe, but your presentation is ready.</p>
+          {/* External Workspace Portal to bypass X-Frame-Options */}
+          <div className="flex-1 w-full bg-[#EAEAEA] flex items-center justify-center p-6 bg-cover bg-center" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #F7F7F7 0%, #EAEAEA 100%)' }}>
+            <div className="bg-white p-8 rounded-[24px] max-w-md w-full text-center shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-[#EBEBEB]">
+              <div className="w-20 h-20 bg-[#F2F8F4] rounded-[20px] flex items-center justify-center mx-auto mb-6 text-[#1A5C3A] shadow-sm">
+                <Sparkles size={36} />
               </div>
-            )}
+              <h2 className="text-[22px] font-bold text-[#111111] mb-2">Your Luxury Deck is Ready</h2>
+              <p className="text-[14px] text-[#888888] mb-8 leading-relaxed">
+                The AI Art Director has finished composing your presentation. We've prepared a secure external studio for you to make live edits.
+              </p>
+              
+              {result.editUrl ? (
+                <button
+                  onClick={() => window.open(constructDownloadUrl(result.editUrl), '_blank')}
+                  className="w-full h-[56px] relative overflow-hidden bg-[#1A5C3A] text-white rounded-[16px] font-bold text-[16px] flex items-center justify-center gap-2 hover:bg-[#14482D] transition-all shadow-md active:scale-[0.98]"
+                >
+                  Enter Studio <ExternalLink size={18} />
+                </button>
+              ) : (
+                <button disabled className="w-full h-[56px] bg-gray-100 text-[#888888] rounded-[16px] font-bold text-[16px] cursor-not-allowed">
+                  Generating Links...
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
