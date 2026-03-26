@@ -104,33 +104,36 @@ export default function CreatePresentation() {
 
     prompt += `Requirements:\n- Elegant, clean and luxury design\n- Include slides for: property overview, key highlights, amenities, photo showcase, contact details\n- Keep text concise and highly impactful\n- Use Indian price formatting (Lakhs/Crores)\n- Tone: confident, premium, trustworthy`;
 
-    const apiUrl = import.meta.env.VITE_PRESENTON_API_URL || 'https://presenton-production-4e76.up.railway.app';
-    if (!apiUrl) throw new Error('VITE_PRESENTON_API_URL is missing from .env');
+    // Presenton Cloud API v3 — the correct endpoint
+    const API_URL = 'https://api.presenton.ai/api/v3/presentation/generate';
+    const API_KEY = 'sk-presenton-23ae1e7405f7b2f895c0c863e1286624dabd8b51';
 
-    toast.info('Activating AI Editor...');
+    toast.info('Activating AI Art Director...');
 
-    const res = await fetch(`${apiUrl}/api/generate`, {
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
       },
       body: JSON.stringify({
         content: prompt,
         n_slides: slides,
         language: 'English',
-        template: 'modern',
-        theme: theme,
+        standard_template: 'general',
         export_as: 'pptx',
       })
     });
 
     if (!res.ok) {
-      throw new Error('Luxury servers are warming up. Please try again in 30 seconds.');
+      const errText = await res.text();
+      console.error('Presenton API error:', res.status, errText);
+      throw new Error(`Generation failed (${res.status}). Please try again.`);
     }
 
     const data = await res.json();
     return {
-      downloadUrl: data.path || data.downloadUrl,
+      downloadUrl: data.path || '',
       editUrl: data.edit_path || '',
       presentationId: data.presentation_id || '',
     };
@@ -171,8 +174,7 @@ export default function CreatePresentation() {
 
   const constructDownloadUrl = (url: string) => {
     if (!url) return '';
-    const apiUrl = import.meta.env.VITE_PRESENTON_API_URL || 'https://presenton-production-4e76.up.railway.app';
-    return url.startsWith('http') ? url : `${apiUrl}${url}`;
+    return url;
   };
 
   const handleDownloadPptx = () => {
