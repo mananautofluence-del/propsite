@@ -104,7 +104,7 @@ export default function CreatePresentation() {
 
     prompt += `Requirements:\n- Elegant, clean and luxury design\n- Include slides for: property overview, key highlights, amenities, photo showcase, contact details\n- Keep text concise and highly impactful\n- Use Indian price formatting (Lakhs/Crores)\n- Tone: confident, premium, trustworthy`;
 
-    const apiUrl = import.meta.env.VITE_PRESENTON_API_URL;
+    const apiUrl = import.meta.env.VITE_PRESENTON_API_URL || 'https://presenton-production-4e76.up.railway.app';
     if (!apiUrl) throw new Error('VITE_PRESENTON_API_URL is missing from .env');
 
     toast.info('Activating AI Editor...');
@@ -149,7 +149,7 @@ export default function CreatePresentation() {
       // Save to Supabase
       const { data: userData } = await supabase.auth.getUser();
       if (userData.user) {
-        await supabase.from('presentations').insert({
+        await supabase.from('presentations' as any).insert({
           user_id: userData.user.id,
           title: propertyText.slice(0, 50) || 'Luxury Presentation',
           theme: theme,
@@ -171,7 +171,8 @@ export default function CreatePresentation() {
 
   const constructDownloadUrl = (url: string) => {
     if (!url) return '';
-    return url.startsWith('http') ? url : `${import.meta.env.VITE_PRESENTON_API_URL}${url}`;
+    const apiUrl = import.meta.env.VITE_PRESENTON_API_URL || 'https://presenton-production-4e76.up.railway.app';
+    return url.startsWith('http') ? url : `${apiUrl}${url}`;
   };
 
   const handleDownloadPptx = () => {
@@ -334,7 +335,7 @@ export default function CreatePresentation() {
 
           <button
             onClick={handleGenerateClick}
-            className="w-full h-[56px] relative overflow-hidden bg-[#111111] text-white rounded-[16px] font-bold text-[16px] flex items-center justify-center gap-2 hover:bg-[#333333] transition-all mt-8 shadow-md hover:shadow-lg active:scale-[0.98]"
+            className="w-full h-[56px] relative overflow-hidden bg-[#1A5C3A] text-white rounded-[16px] font-bold text-[16px] flex items-center justify-center gap-2 hover:bg-[#14482D] transition-all mt-8 shadow-md hover:shadow-lg active:scale-[0.98]"
           >
             Launch Studio Generator &rarr;
           </button>

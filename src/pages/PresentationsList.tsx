@@ -26,13 +26,13 @@ export default function PresentationsList() {
   const fetchPresentations = async () => {
     try {
       const { data, error } = await supabase
-        .from('presentations')
+        .from('presentations' as any)
         .select('*')
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPresentations(data || []);
+      setPresentations((data as any) || []);
     } catch {
       setPresentations([]);
     }
@@ -61,7 +61,7 @@ export default function PresentationsList() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-[22px] font-bold text-[#111111]">My Presentations</h1>
           <Link to="/dashboard/presentations/new"
-            className="bg-[#111111] hover:bg-[#333333] text-white rounded-[12px] h-10 px-5 flex items-center gap-1.5 text-[14px] font-semibold transition-colors">
+            className="bg-[#1A5C3A] hover:bg-[#14482D] text-white rounded-[12px] h-10 px-5 flex items-center gap-1.5 text-[14px] font-semibold transition-colors">
             <Plus size={16} /> New Presentation
           </Link>
         </div>
@@ -72,7 +72,7 @@ export default function PresentationsList() {
             <h2 className="text-[18px] font-semibold text-[#111111] mb-1">No presentations yet</h2>
             <p className="text-[14px] text-[#888888] mb-6 max-w-sm">Create your first AI-designed property presentation in 30 seconds.</p>
             <Link to="/dashboard/presentations/new"
-              className="bg-[#111111] hover:bg-[#333333] text-white rounded-[14px] h-11 px-6 flex items-center gap-1.5 text-[14px] font-semibold transition-colors">
+              className="bg-[#1A5C3A] hover:bg-[#14482D] text-white rounded-[14px] h-11 px-6 flex items-center gap-1.5 text-[14px] font-semibold transition-colors">
               <Plus size={16} /> Create Presentation
             </Link>
           </div>
