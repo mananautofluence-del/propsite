@@ -4,7 +4,7 @@ import { ArrowLeft, Loader2, FileType2, FileDown, Camera, X, Plus, Sparkles, Ext
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const RAILWAY_URL = 'https://presenton-production-4e76.up.railway.app';
+const HUGGINGFACE_URL = 'https://manan345345435-propsite.hf.space';
 
 const THEMES = [
   { label: 'Signature Aura', value: 'faint_yellow' },
@@ -115,7 +115,7 @@ export default function CreatePresentation() {
     toast.info('Activating AI Art Director...');
 
     const res = await fetch(
-      `${RAILWAY_URL}/api/v1/ppt/presentation/generate`,
+      `${HUGGINGFACE_URL}/api/v1/ppt/presentation/generate`,
       {
         method: 'POST',
         headers: {
@@ -151,12 +151,12 @@ export default function CreatePresentation() {
     const rawPath = data.path || data.file_path || '';
     const downloadUrl = rawPath.startsWith('http') 
       ? rawPath 
-      : `${RAILWAY_URL}${rawPath}`;
+      : `${HUGGINGFACE_URL}${rawPath}`;
 
     const rawEditPath = data.edit_path || '';
     const editUrl = rawEditPath.startsWith('http')
       ? rawEditPath
-      : `${RAILWAY_URL}${rawEditPath}`;
+      : `${HUGGINGFACE_URL}${rawEditPath}`;
 
     return {
       downloadUrl,
@@ -445,7 +445,7 @@ export default function CreatePresentation() {
                     } else {
                       // Fallback: open Presenton dashboard
                       window.open(
-                        `${RAILWAY_URL}/presentation/${result.presentationId}`,
+                        `${HUGGINGFACE_URL}/presentation/${result.presentationId}`,
                         '_blank'
                       );
                     }
