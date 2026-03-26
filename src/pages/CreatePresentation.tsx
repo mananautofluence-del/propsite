@@ -128,6 +128,7 @@ export default function CreatePresentation() {
           language: 'English',
           theme: theme,
           export_as: 'pptx',
+          model: 'claude-3-haiku-20240307',
         }),
       }
     );
