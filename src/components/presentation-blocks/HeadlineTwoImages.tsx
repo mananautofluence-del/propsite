@@ -3,10 +3,8 @@ import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTyp
 import SlideShell from './SlideShell';
 
 interface Props {
-  data: SlideData;
-  theme: ThemeConfig;
-  photos: PresentationPhoto[];
-  pageNumber?: number;
+  data: SlideData; theme: ThemeConfig;
+  photos: PresentationPhoto[]; pageNumber?: number;
 }
 
 function getPhotos(photos: PresentationPhoto[], tags: string[], count: number): string[] {
@@ -23,36 +21,66 @@ function getPhotos(photos: PresentationPhoto[], tags: string[], count: number): 
   }
   return result;
 }
-function getPhoto(photos: PresentationPhoto[], tags: string[]): string {
-  return getPhotos(photos, tags || [], 1)[0] || '';
-}
 
 export default function HeadlineTwoImages({ data, theme, photos, pageNumber }: Props) {
-  const img1 = getPhoto(photos, data.imageTags || [], 0);
-  const img2 = getPhoto(photos, data.imageTags || [], 1);
+  const [img1, img2] = getPhotos(photos, data.imageTags || [], 2);
+  const hl = (data.headline || '').length;
+  const headlineSize = hl <= 20 ? 64 : hl <= 35 ? 52 : 42;
+
+  const ImgBlock = ({ src }: { src: string }) => src ? (
+    <img src={src} alt="" crossOrigin="anonymous" style={{
+      flex: 1,
+      width: '50%',
+      height: '420px',
+      objectFit: 'cover',
+      objectPosition: 'center center',
+      borderRadius: '14px',
+      display: 'block',
+      minHeight: '420px',
+    }} />
+  ) : (
+    <div style={{
+      flex: 1,
+      height: '420px',
+      borderRadius: '14px',
+      backgroundColor: `${theme.accentColor}18`,
+    }} />
+  );
 
   return (
-    <SlideShell theme={theme} pageNumber={data.pageNumber} agencyName={data.agencyName}>
-      {/* TOP */}
+    <SlideShell theme={theme} pageNumber={pageNumber ?? 1} agencyName={data.agencyName}>
+      {/* Top text row */}
       <div style={{
-        height: '240px', padding: '40px 56px 24px', boxSizing: 'border-box',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: '196px',
+        padding: '32px 56px 16px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: '40px',
+        boxSizing: 'border-box',
       }}>
-        <div style={{ flex: 1, paddingRight: '40px' }}>
+        <div style={{ flex: '0 0 50%', minWidth: 0 }}>
           {data.headline && (
             <div style={{
-              fontFamily: theme.headingFont, fontSize: '72px',
-              fontWeight: 700, color: theme.textColor, lineHeight: 0.95,
+              fontFamily: theme.headingFont,
+              fontSize: `${headlineSize}px`,
+              fontWeight: 700,
+              color: theme.textColor,
+              lineHeight: 0.95,
+              letterSpacing: '-0.02em',
             }}>
               {data.headline}
             </div>
           )}
         </div>
-        <div style={{ width: '440px', flexShrink: 0 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           {data.bodyText && (
             <div style={{
-              fontSize: '18px', color: theme.textColor, opacity: 0.65,
+              fontSize: '16px',
+              color: theme.textColor,
+              opacity: 0.65,
               lineHeight: 1.6,
+              fontFamily: theme.bodyFont,
             }}>
               {data.bodyText}
             </div>
@@ -60,23 +88,16 @@ export default function HeadlineTwoImages({ data, theme, photos, pageNumber }: P
         </div>
       </div>
 
-      {/* BOTTOM */}
+      {/* Two images */}
       <div style={{
-        display: 'flex', gap: '16px', padding: '0 56px',
-        height: '420px', boxSizing: 'border-box',
+        display: 'flex',
+        gap: '14px',
+        padding: '0 56px',
+        height: '420px',
+        boxSizing: 'border-box',
       }}>
-        {img1 && (
-          <img src={img1} alt="" crossOrigin="anonymous" style={{
-            flex: 1, height: '420px', width: '100%',
-            objectFit: 'cover', borderRadius: '16px', display: 'block'
-          , objectPosition: 'center center'}} />
-        )}
-        {img2 && (
-          <img src={img2} alt="" crossOrigin="anonymous" style={{
-            flex: 1, height: '420px', width: '100%',
-            objectFit: 'cover', borderRadius: '16px', display: 'block'
-          , objectPosition: 'center center'}} />
-        )}
+        <ImgBlock src={img1} />
+        <ImgBlock src={img2} />
       </div>
     </SlideShell>
   );

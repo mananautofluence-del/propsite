@@ -3,58 +3,70 @@ import { SlideData, ThemeConfig, PresentationPhoto } from '@/lib/presentationTyp
 import SlideShell from './SlideShell';
 
 interface Props {
-  data: SlideData;
-  theme: ThemeConfig;
-  photos: PresentationPhoto[];
-  pageNumber?: number;
+  data: SlideData; theme: ThemeConfig;
+  photos: PresentationPhoto[]; pageNumber?: number;
 }
 
-function getPhotos(photos: PresentationPhoto[], tags: string[], count: number): string[] {
-  const result: string[] = [];
-  const used = new Set<string>();
-  for (const tag of (tags || [])) {
-    if (result.length >= count) break;
-    const match = photos.find(p => p.tag === tag && !used.has(p.url));
-    if (match) { result.push(match.url); used.add(match.url); }
-  }
-  for (const photo of photos) {
-    if (result.length >= count) break;
-    if (!used.has(photo.url)) { result.push(photo.url); used.add(photo.url); }
-  }
-  return result;
-}
 function getPhoto(photos: PresentationPhoto[], tags: string[]): string {
-  return getPhotos(photos, tags || [], 1)[0] || '';
+  for (const t of (tags || [])) {
+    const f = photos.find(p => p.tag === t);
+    if (f) return f.url;
+  }
+  return photos[0]?.url || '';
 }
 
 export default function ImageLeftHeadlineNumbered({ data, theme, photos, pageNumber }: Props) {
   const imgUrl = getPhoto(photos, data.imageTags || []);
   const items = (data.numberedItems || []).slice(0, 2);
+  const hl = (data.headline || '').length;
+  const headlineSize = hl <= 20 ? 64 : hl <= 35 ? 52 : 42;
 
   return (
-    <SlideShell theme={theme} pageNumber={data.pageNumber} agencyName={data.agencyName}>
-      <div style={{ display: 'flex', height: '100%' }}>
-        {/* LEFT */}
-        <div style={{ width: '580px', padding: '40px 40px 40px 56px', boxSizing: 'border-box' }}>
+    <SlideShell theme={theme} pageNumber={pageNumber ?? 1} agencyName={data.agencyName}>
+      <div style={{ display: 'flex', height: '100%', width: '100%' }}>
+        {/* Image — left */}
+        <div style={{
+          width: '520px',
+          flexShrink: 0,
+          padding: '32px 32px 32px 56px',
+          boxSizing: 'border-box',
+        }}>
           {imgUrl ? (
             <img src={imgUrl} alt="" crossOrigin="anonymous" style={{
-              width: '524px', height: '580px',
-              objectFit: 'cover', borderRadius: '16px', display: 'block'
-            , objectPosition: 'center center'}} />
+              width: '432px',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center center',
+              borderRadius: '16px',
+              display: 'block',
+            }} />
           ) : (
             <div style={{
-              width: '524px', height: '580px', borderRadius: '16px',
-              backgroundColor: `${theme.accentColor}22`
+              width: '432px', height: '100%',
+              borderRadius: '16px',
+              backgroundColor: `${theme.accentColor}22`,
             }} />
           )}
         </div>
 
-        {/* RIGHT */}
-        <div style={{ flex: 1, padding: '40px 56px 40px 40px', boxSizing: 'border-box' }}>
+        {/* Right — headline + numbered items */}
+        <div style={{
+          flex: 1,
+          minWidth: 0,
+          padding: '48px 56px 48px 40px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}>
           {data.headline && (
             <div style={{
-              fontFamily: theme.headingFont, fontSize: '72px',
-              fontWeight: 700, color: theme.textColor, lineHeight: 0.92,
+              fontFamily: theme.headingFont,
+              fontSize: `${headlineSize}px`,
+              fontWeight: 700,
+              color: theme.textColor,
+              lineHeight: 0.95,
+              letterSpacing: '-0.02em',
               marginBottom: '40px',
             }}>
               {data.headline}
@@ -62,28 +74,32 @@ export default function ImageLeftHeadlineNumbered({ data, theme, photos, pageNum
           )}
 
           {items.map((item, i) => (
-            <React.Fragment key={i}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
+            <div key={i}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px' }}>
                 <div style={{
-                  width: '56px', height: '56px',
-                  border: `2px solid ${theme.textColor}`,
+                  width: '52px', height: '52px',
+                  border: `1.5px solid ${theme.textColor}`,
                   borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '15px', fontWeight: 600, flexShrink: 0,
-                  color: theme.textColor, opacity: 0.7,
+                  fontSize: '14px', fontWeight: 600,
+                  flexShrink: 0,
+                  color: theme.textColor, opacity: 0.65,
+                  fontFamily: theme.bodyFont,
                 }}>
                   {item.number || String(i + 1).padStart(2, '0')}
                 </div>
-                <div>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{
                     fontSize: '18px', fontWeight: 700,
                     color: theme.textColor, marginBottom: '8px',
+                    fontFamily: theme.bodyFont,
                   }}>
                     {item.title}
                   </div>
                   <div style={{
-                    fontSize: '16px', color: theme.textColor,
-                    opacity: 0.6, lineHeight: 1.5,
+                    fontSize: '15px', color: theme.textColor,
+                    opacity: 0.6, lineHeight: 1.55,
+                    fontFamily: theme.bodyFont,
                   }}>
                     {item.body}
                   </div>
@@ -92,11 +108,11 @@ export default function ImageLeftHeadlineNumbered({ data, theme, photos, pageNum
               {i < items.length - 1 && (
                 <div style={{
                   width: '100%', height: '1px',
-                  backgroundColor: theme.textColor, opacity: 0.12,
+                  backgroundColor: theme.textColor, opacity: 0.1,
                   margin: '24px 0',
                 }} />
               )}
-            </React.Fragment>
+            </div>
           ))}
         </div>
       </div>

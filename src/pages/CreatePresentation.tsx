@@ -79,6 +79,17 @@ export default function CreatePresentation() {
       const SYSTEM_PROMPT = `You are an elite real estate presentation director for PropSite.
 Generate a GenerativePresentation JSON object.
 
+ABSOLUTE RULE — THEME (non-negotiable):
+The "theme" object in your JSON output MUST be copied
+EXACTLY from this selected theme. Do not change any 
+value. Do not invent colors. Do not change fonts.
+Copy it character for character:
+${JSON.stringify(selectedTheme)}
+
+ABSOLUTE RULE — NO DUPLICATE PHOTOS:
+Never put the same tag twice in one imageTags array.
+For two-image layouts provide two different tags.
+
 CRITICAL OUTPUT RULE:
 Return ONLY raw valid JSON. No markdown. No code fences.
 No explanation. Start with { and end with }.
@@ -166,6 +177,9 @@ ${JSON.stringify(selectedTheme, null, 2)}`;
       let presentation: GenerativePresentation;
       try { presentation = JSON.parse(cleanJson); } catch { throw new Error('AI returned invalid JSON. Try again.'); }
       if (!presentation.theme || !presentation.slides?.length) throw new Error('AI returned incomplete data.');
+      if (presentation.theme.headingFont === 'Fraunces') {
+        presentation.theme.headingFont = 'Playfair Display';
+      }
 
       setGenerationStatus('Saving...');
       const presId = crypto.randomUUID();

@@ -46,7 +46,7 @@ const THEMES = [
     swatchB: '#FDF8F2',
     config: {
       backgroundColor: '#FDF8F2', textColor: '#1A2C3D',
-      accentColor: '#C4714A', headingFont: 'Fraunces',
+      accentColor: '#C4714A', headingFont: 'Playfair Display',
       bodyFont: 'Jost'
     }
   },
