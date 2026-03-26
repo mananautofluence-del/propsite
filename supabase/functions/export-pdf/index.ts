@@ -59,7 +59,14 @@ Deno.serve(async (req) => {
         }
 
         const imageBuffer = await response.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+        
+        // Safely convert to base64 without blowing the V8 call stack
+        const bytes = new Uint8Array(imageBuffer);
+        let binary = '';
+        for (let j = 0; j < bytes.byteLength; j++) {
+          binary += String.fromCharCode(bytes[j]);
+        }
+        const base64 = btoa(binary);
         slideImages.push(`data:image/jpeg;base64,${base64}`);
       } else {
         // Fallback: return placeholder so client knows token is missing

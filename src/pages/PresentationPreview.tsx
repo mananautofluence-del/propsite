@@ -4,7 +4,7 @@ import { StoredPresentation, SlideData, ThemeConfig, PresentationPhoto, Generati
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
-import { slidesToHtmlStrings } from '@/lib/slideToHtml';
+import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 
 import CoverEditorial from '@/components/presentation-blocks/CoverEditorial';
@@ -106,6 +106,7 @@ export default function PresentationPreview() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const slideInnerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
@@ -195,34 +196,7 @@ export default function PresentationPreview() {
 
     try {
       const { theme, slides } = presentationData;
-      
-      toast.info('Preparing slides...');
 
-      // Step 1: Convert slides to self-contained HTML strings
-      // (photos become base64, fonts are embedded)
-      const slideHtmls = await slidesToHtmlStrings(slides, theme, photos);
-
-      toast.info('Rendering via server...');
-
-      // Step 2: Send to Edge Function for server-side rendering
-      const { data, error } = await supabase.functions.invoke('export-pdf', {
-        body: { slides: slideHtmls },
-      });
-
-      if (error) throw new Error(error.message);
-      if (!data?.images?.length) throw new Error('No images returned');
-
-      // Check if browserless token is configured
-      if (data.images[0] === 'NO_TOKEN') {
-        throw new Error(
-          'BROWSERLESS_TOKEN not set in Supabase Edge Function secrets. ' +
-          'Add it at: supabase.com → your project → Edge Functions → Secrets'
-        );
-      }
-
-      toast.info('Assembling PDF...');
-
-      // Step 3: Build PDF from returned images
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'px',
@@ -230,10 +204,72 @@ export default function PresentationPreview() {
         compress: true,
       });
 
-      data.images.forEach((imgBase64: string, i: number) => {
+      // We capture each slide by navigating to it,
+      // temporarily removing the CSS scale transform,
+      // screenshotting at full 1456×816, then restoring.
+      // Fonts and images are ALREADY loaded — no re-rendering needed.
+
+      for (let i = 0; i < slides.length; i++) {
         if (i > 0) pdf.addPage([1456, 816], 'landscape');
-        pdf.addImage(imgBase64, 'JPEG', 0, 0, 1456, 816);
-      });
+
+        // 1. Navigate to this slide
+        setActiveSlideIdx(i);
+
+        // 2. Wait for React to update the DOM
+        await new Promise(r => setTimeout(r, 300));
+
+        // 3. Get the inner slide div (the 1456×816 one)
+        const el = slideInnerRef.current;
+        if (!el) continue;
+
+        // 4. Remove the scale transform temporarily
+        //    so html2canvas sees the full 1456×816 size
+        const originalTransform = el.style.transform;
+        const originalPosition = el.style.position;
+        const originalTop = el.style.top;
+        const originalLeft = el.style.left;
+
+        el.style.transform = 'none';
+        el.style.position = 'fixed';
+        el.style.top = '0';
+        el.style.left = '0';
+        el.style.zIndex = '99999';
+
+        // 5. Small wait for browser to repaint
+        await new Promise(r => setTimeout(r, 150));
+
+        // 6. Screenshot at exact 1456×816
+        const canvas = await html2canvas(el, {
+          width: 1456,
+          height: 816,
+          scale: 1,
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: theme.backgroundColor,
+          imageTimeout: 10000,
+          x: 0,
+          y: 0,
+          scrollX: 0,
+          scrollY: 0,
+        });
+
+        // 7. Restore the transform immediately
+        el.style.transform = originalTransform;
+        el.style.position = originalPosition;
+        el.style.top = originalTop;
+        el.style.left = originalLeft;
+        el.style.zIndex = '';
+
+        // 8. Add to PDF
+        pdf.addImage(
+          canvas.toDataURL('image/jpeg', 0.95),
+          'JPEG', 0, 0, 1456, 816
+        );
+      }
+
+      // Restore user to slide they were on
+      setActiveSlideIdx(0);
 
       const filename = (stored.title || 'presentation')
         .replace(/[^a-z0-9]/gi, '_')
@@ -243,9 +279,7 @@ export default function PresentationPreview() {
 
     } catch (err: any) {
       console.error('Export error:', err);
-      
-      // If server approach fails, fall back to basic client-side
-      toast.error('Export failed: ' + (err.message || 'unknown'));
+      toast.error('Export failed: ' + (err.message || 'Try again'));
     }
 
     setExporting(false);
@@ -309,12 +343,15 @@ export default function PresentationPreview() {
               position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
               overflow: 'hidden',
             }}>
-              <div style={{
-                width: '1456px', height: '816px',
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
-                position: 'absolute', top: 0, left: 0,
-              }}>
+              <div
+                ref={slideInnerRef}
+                style={{
+                  width: '1456px', height: '816px',
+                  transform: `scale(${scale})`,
+                  transformOrigin: 'top left',
+                  position: 'absolute', top: 0, left: 0,
+                }}
+              >
                 <SB data={activeSlide} theme={theme} photos={photos} pageNumber={activeSlideIdx + 1} />
               </div>
             </div>
