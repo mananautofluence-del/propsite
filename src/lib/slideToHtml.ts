@@ -1,21 +1,5 @@
 import { SlideData, ThemeConfig, PresentationPhoto } from './presentationTypes';
 
-// Convert image URL to base64 data URI
-async function imageToBase64(url: string): Promise<string> {
-  try {
-    const response = await fetch(url, { mode: 'cors' });
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return '';
-  }
-}
-
 // Get photo URL for given tags, avoiding duplicates
 function getPhotoUrl(
   photos: PresentationPhoto[], 
@@ -38,20 +22,9 @@ export async function slidesToHtmlStrings(
   photos: PresentationPhoto[],
 ): Promise<{ html: string; backgroundColor: string }[]> {
 
-  // Step 1: Convert all photos to base64 once
-  const photoBase64Map = new Map<string, string>();
-  await Promise.all(
-    photos.map(async (photo) => {
-      const b64 = await imageToBase64(photo.url);
-      if (b64) photoBase64Map.set(photo.url, b64);
-    })
-  );
-
-  // Replace photo URLs with base64
-  const b64Photos: PresentationPhoto[] = photos.map(p => ({
-    ...p,
-    url: photoBase64Map.get(p.url) || p.url,
-  }));
+  // We skip base64 conversion! Browserless headless chrome will natively load 
+  // the raw Supabase URLs perfectly, saving us from 413 Payload Too Large errors.
+  const b64Photos = photos;
 
   // Step 2: Fetch Google Fonts CSS
   const fontFamilies = [...new Set([theme.headingFont, theme.bodyFont])]
@@ -167,7 +140,7 @@ function buildSlideContent(
   const sub = slide.subheadline || '';
 
   const imgTag = (src: string, w: number, h: number, radius = 16, extra = '') =>
-    src ? `<img src="${src}" width="${w}" height="${h}" 
+    src ? `<img src="${src}" crossorigin="anonymous" width="${w}" height="${h}" 
       style="border-radius:${radius}px;min-width:${w}px;min-height:${h}px;${extra}" />` : 
     `<div style="width:${w}px;height:${h}px;border-radius:${radius}px;background:${accent}18;"></div>`;
 
@@ -395,7 +368,7 @@ function buildSlideContent(
     }
 
     case 'contact-split': {
-      const c = slide.contactInfo || {};
+      const c: any = slide.contactInfo || {};
       const initials = (c.name || 'P').split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
       return `
         <div style="display:flex;align-items:center;height:100%;padding:0 56px;">
