@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
 import { useParams, useNavigate } from 'react-router-dom';
 import { StoredPresentation, SlideData, ThemeConfig, PresentationPhoto, GenerativePresentation, SlideLayout } from '@/lib/presentationTypes';
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
@@ -193,9 +194,14 @@ export default function PresentationPreview() {
   const handleExportPDF = async () => {
     if (!presentationData || !stored) return;
     setExporting(true);
+    toast.info('Exporting PDF...');
 
     try {
       const { theme, slides } = presentationData;
+
+      // Fonts are already loaded in the document from
+      // the existing useEffect. This resolves instantly.
+      await document.fonts.ready;
 
       const pdf = new jsPDF({
         orientation: 'landscape',
@@ -204,42 +210,60 @@ export default function PresentationPreview() {
         compress: true,
       });
 
-      // We capture each slide by navigating to it,
-      // temporarily removing the CSS scale transform,
-      // screenshotting at full 1456×816, then restoring.
-      // Fonts and images are ALREADY loaded — no re-rendering needed.
-
       for (let i = 0; i < slides.length; i++) {
         if (i > 0) pdf.addPage([1456, 816], 'landscape');
 
-        // 1. Navigate to this slide
-        setActiveSlideIdx(i);
+        // Create a clean container OUTSIDE the React tree
+        // position:fixed, off-screen, no parent overflow:hidden
+        const container = document.createElement('div');
+        container.style.cssText = [
+          'position:fixed',
+          'top:0',
+          'left:0',
+          'width:1456px',
+          'height:816px',
+          'overflow:visible',
+          'z-index:-1',        // behind everything, not visible
+          'opacity:0',         // invisible but still renders
+          'pointer-events:none',
+        ].join(';');
+        document.body.appendChild(container);
 
-        // 2. Wait for React to update the DOM
-        await new Promise(r => setTimeout(r, 300));
+        // Render this specific slide into the container
+        const slideRoot = createRoot(container);
+        const SlideComp = getSlideComponent(slides[i].layout);
 
-        // 3. Get the inner slide div (the 1456×816 one)
-        const el = slideInnerRef.current;
-        if (!el) continue;
+        await new Promise<void>(resolve => {
+          slideRoot.render(
+            React.createElement(SlideComp, {
+              data: slides[i],
+              theme,
+              photos,
+              pageNumber: i + 1,
+            })
+          );
+          // Fonts already loaded = fast paint
+          // 600ms is enough for images to load from cache/browser
+          setTimeout(resolve, 600);
+        });
 
-        // 4. Remove the scale transform temporarily
-        //    so html2canvas sees the full 1456×816 size
-        const originalTransform = el.style.transform;
-        const originalPosition = el.style.position;
-        const originalTop = el.style.top;
-        const originalLeft = el.style.left;
+        // Wait for any images in this slide
+        const imgs = Array.from(container.querySelectorAll('img'));
+        await Promise.all(imgs.map(img => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise<void>(res => {
+            const t = setTimeout(res, 4000);
+            img.onload = () => { clearTimeout(t); res(); };
+            img.onerror = () => { clearTimeout(t); res(); };
+          });
+        }));
 
-        el.style.transform = 'none';
-        el.style.position = 'fixed';
-        el.style.top = '0';
-        el.style.left = '0';
-        el.style.zIndex = '99999';
+        // One frame to ensure paint
+        await new Promise(r => requestAnimationFrame(r));
 
-        // 5. Small wait for browser to repaint
-        await new Promise(r => setTimeout(r, 150));
-
-        // 6. Screenshot at exact 1456×816
-        const canvas = await html2canvas(el, {
+        // Capture — container is at position fixed top:0 left:0
+        // so x:0 y:0 maps exactly to the slide content
+        const canvas = await html2canvas(container, {
           width: 1456,
           height: 816,
           scale: 1,
@@ -247,29 +271,24 @@ export default function PresentationPreview() {
           allowTaint: true,
           logging: false,
           backgroundColor: theme.backgroundColor,
-          imageTimeout: 10000,
+          imageTimeout: 8000,
           x: 0,
           y: 0,
           scrollX: 0,
           scrollY: 0,
+          windowWidth: 1456,
+          windowHeight: 816,
         });
 
-        // 7. Restore the transform immediately
-        el.style.transform = originalTransform;
-        el.style.position = originalPosition;
-        el.style.top = originalTop;
-        el.style.left = originalLeft;
-        el.style.zIndex = '';
-
-        // 8. Add to PDF
         pdf.addImage(
           canvas.toDataURL('image/jpeg', 0.95),
           'JPEG', 0, 0, 1456, 816
         );
-      }
 
-      // Restore user to slide they were on
-      setActiveSlideIdx(0);
+        // Clean up
+        slideRoot.unmount();
+        document.body.removeChild(container);
+      }
 
       const filename = (stored.title || 'presentation')
         .replace(/[^a-z0-9]/gi, '_')
