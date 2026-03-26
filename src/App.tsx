@@ -19,8 +19,6 @@ import DashboardLeads from "./pages/DashboardLeads";
 import DashboardSettings from "./pages/DashboardSettings";
 import PresentationsList from "./pages/PresentationsList";
 import CreatePresentation from "./pages/CreatePresentation";
-import PresentationPreview from "./pages/PresentationPreview";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -42,7 +40,6 @@ const App = () => (
               <Route path="listings/new" element={<CreateListing />} />
               <Route path="presentations" element={<PresentationsList />} />
               <Route path="presentations/new" element={<CreatePresentation />} />
-              <Route path="presentations/:id" element={<PresentationPreview />} />
               <Route path="analytics" element={<Dashboard />} />
               <Route path="collections" element={<DashboardCollections />} />
               <Route path="projects" element={<Dashboard />} />
