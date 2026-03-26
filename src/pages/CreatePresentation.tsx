@@ -386,7 +386,7 @@ export default function CreatePresentation() {
           <div className="flex-1 w-full bg-[#EAEAEA] relative overflow-hidden">
             {result.editUrl ? (
               <iframe 
-                src={result.editUrl} 
+                src={constructDownloadUrl(result.editUrl)} 
                 className="w-full h-full border-none"
                 style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                 title="Presenton Editor Studio"
