@@ -4,11 +4,13 @@ import { ArrowLeft, Loader2, FileType2, FileDown, Camera, X, Plus, Sparkles, Ext
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+const RAILWAY_URL = 'https://presenton-production-4e76.up.railway.app';
+
 const THEMES = [
-  { label: 'Signature Aura', value: 'edge-yellow' },
-  { label: 'Midnight Estate', value: 'professional-dark' },
-  { label: 'Editorial Cream', value: 'light-rose' },
-  { label: 'Glass & Steel', value: 'professional-blue' },
+  { label: 'Signature Aura', value: 'faint_yellow' },
+  { label: 'Midnight Estate', value: 'dark' },
+  { label: 'Editorial Cream', value: 'cream' },
+  { label: 'Glass & Steel', value: 'royal_blue' },
 ];
 
 const SLIDE_COUNTS = [6, 7, 8];
@@ -31,7 +33,7 @@ export default function CreatePresentation() {
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
   // Generation Settings
-  const [theme, setTheme] = useState('edge-yellow');
+  const [theme, setTheme] = useState('cream');
   const [slides, setSlides] = useState(7);
   
   const [result, setResult] = useState<{ downloadUrl: string; editUrl: string; presentationId: string } | null>(null);
@@ -79,62 +81,87 @@ export default function CreatePresentation() {
   }
 
   async function generatePresentation() {
-    // 1. Upload photos first
+    // Build photo URLs first
     const uploadedPhotoUrls = await uploadPhotos();
 
-    // 2. Build the comprehensive Prompt
-    let prompt = `Create a professional real estate property presentation for Indian real estate brokers.\n\n`;
-    prompt += `Property Details & Address:\n${propertyText}\n\n`;
+    // Build the prompt
+    let prompt = `Create a professional luxury real estate property presentation for Indian real estate brokers.\n\n`;
+    prompt += `Property Details:\n${propertyText}\n\n`;
     if (price) prompt += `Price: ${price}\n`;
     if (bhk) prompt += `Configuration: ${bhk}\n`;
     if (amenities) prompt += `Key Amenities: ${amenities}\n\n`;
-    
+
     if (brokerName || brokerPhone || brokerAgency) {
-      prompt += `Broker Contact Information (MUST BE RENDERED ON THE CONTACT SLIDE):\n`;
+      prompt += `Broker Contact (MUST appear on contact slide):\n`;
       if (brokerName) prompt += `Name: ${brokerName}\n`;
       if (brokerPhone) prompt += `Phone: ${brokerPhone}\n`;
       if (brokerAgency) prompt += `Agency: ${brokerAgency}\n`;
-      prompt += `\n`;
+      prompt += '\n';
     }
 
     if (uploadedPhotoUrls.length > 0) {
-      prompt += `Property Photos (Use these exact image URLs seamlessly in the presentation slides):\n`;
-      prompt += uploadedPhotoUrls.join('\n') + `\n\n`;
+      prompt += `Property Photos (embed these in slides):\n`;
+      prompt += uploadedPhotoUrls.join('\n') + '\n\n';
     }
 
-    prompt += `Requirements:\n- Elegant, clean and luxury design\n- Include slides for: property overview, key highlights, amenities, photo showcase, contact details\n- Keep text concise and highly impactful\n- Use Indian price formatting (Lakhs/Crores)\n- Tone: confident, premium, trustworthy`;
+    prompt += `Requirements:
+- Elegant, premium luxury design
+- Slides: property overview, key highlights, amenities, photo showcase, contact details
+- Keep text concise and highly impactful
+- Use Indian price formatting (Lakhs/Crores)
+- Tone: confident, premium, trustworthy
+- This is a high-value property for discerning buyers`;
 
-    // Presenton Cloud API v3 — the correct endpoint
-    const API_URL = 'https://api.presenton.ai/api/v3/presentation/generate';
-    const API_KEY = 'sk-presenton-23ae1e7405f7b2f895c0c863e1286624dabd8b51';
+    // CORRECT: multipart/form-data using FormData
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+    formData.append('n_slides', String(slides));
+    formData.append('language', 'English');
+    formData.append('theme', theme); // already mapped to correct value
+    formData.append('export_as', 'pptx');
 
     toast.info('Activating AI Art Director...');
 
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
-      },
-      body: JSON.stringify({
-        content: prompt,
-        n_slides: slides,
-        language: 'English',
-        standard_template: 'general',
-        export_as: 'pptx',
-      })
-    });
+    const res = await fetch(
+      `${RAILWAY_URL}/api/v1/ppt/generate/presentation`,
+      {
+        method: 'POST',
+        // DO NOT set Content-Type header — FormData sets it automatically
+        // with the correct boundary
+        body: formData,
+      }
+    );
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error('Presenton API error:', res.status, errText);
+      console.error('Presenton error:', res.status, errText);
+      
+      if (res.status === 503 || res.status === 502) {
+        throw new Error('Server is warming up. Please try again in 30 seconds.');
+      }
+      if (res.status === 429) {
+        throw new Error('Too many requests. Please wait a moment and try again.');
+      }
       throw new Error(`Generation failed (${res.status}). Please try again.`);
     }
 
     const data = await res.json();
+    console.log('Presenton response:', data);
+
+    // Handle both absolute and relative paths in response
+    const rawPath = data.path || data.file_path || '';
+    const downloadUrl = rawPath.startsWith('http') 
+      ? rawPath 
+      : `${RAILWAY_URL}${rawPath}`;
+
+    const rawEditPath = data.edit_path || '';
+    const editUrl = rawEditPath.startsWith('http')
+      ? rawEditPath
+      : `${RAILWAY_URL}${rawEditPath}`;
+
     return {
-      downloadUrl: data.path || '',
-      editUrl: data.edit_path || '',
+      downloadUrl,
+      editUrl,
       presentationId: data.presentation_id || '',
     };
   }
@@ -146,12 +173,22 @@ export default function CreatePresentation() {
     }
     setStep('B');
     try {
-      const resp = await generatePresentation();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(
+          'Request timed out. The server may be waking up — please try again.'
+        )), 120000) // 2 minute timeout
+      );
+
+      const resp = await Promise.race([
+        generatePresentation(),
+        timeoutPromise
+      ]) as { downloadUrl: string; editUrl: string; presentationId: string };
+
       setResult(resp);
 
       // Save to Supabase
       const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
+      if (userData.user && resp.presentationId) {
         await supabase.from('presentations' as any).insert({
           user_id: userData.user.id,
           title: propertyText.slice(0, 50) || 'Luxury Presentation',
@@ -172,37 +209,43 @@ export default function CreatePresentation() {
     }
   };
 
-  const constructDownloadUrl = (url: string) => {
-    if (!url) return '';
-    return url;
+  const handleDownloadPptx = async () => {
+    if (!result?.downloadUrl) return;
+    try {
+      toast.info('Downloading your presentation...');
+      // Fetch as blob to handle CORS properly
+      const response = await fetch(result.downloadUrl);
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `property-presentation-${Date.now()}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Downloaded!');
+    } catch (err) {
+      console.error('Download error:', err);
+      // Fallback: direct link
+      window.open(result.downloadUrl, '_blank');
+    }
   };
 
-  const handleDownloadPptx = () => {
+  const handleDownloadPdf = async () => {
     if (!result?.downloadUrl) return;
-    const a = document.createElement('a');
-    a.href = constructDownloadUrl(result.downloadUrl);
-    a.download = `property-presentation.pptx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const handleDownloadPdf = () => {
-    if (!result?.downloadUrl) return;
-    // Assuming the proxy can also return a PDF format if we replaced the extension
-    // Because we export as pptx natively, we'll download the PPTX or prompt an editor save
-    toast.info('Downloading presentation format...');
-    const a = document.createElement('a');
-    a.href = constructDownloadUrl(result.downloadUrl);
-    a.download = `property-presentation`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      toast.info('Downloading presentation (PDF attempt by system)...');
+      window.open(result.downloadUrl, '_blank');
+    } catch (err) {
+      console.error('Download error:', err);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#F7F7F7] font-sans">
-      {/* FORM PHASE (Centered Mobile-First Logic) */}
+      {/* FORM PHASE */}
       {step === 'A' && (
         <div className="max-w-[480px] w-full mx-auto p-4 md:p-6 pb-20">
           <header className="flex items-center gap-4 mb-8">
@@ -397,7 +440,17 @@ export default function CreatePresentation() {
               
               {result.editUrl ? (
                 <button
-                  onClick={() => window.open(constructDownloadUrl(result.editUrl), '_blank')}
+                  onClick={() => {
+                    if (result.editUrl) {
+                      window.open(result.editUrl, '_blank');
+                    } else {
+                      // Fallback: open Presenton dashboard
+                      window.open(
+                        `${RAILWAY_URL}/presentation/${result.presentationId}`,
+                        '_blank'
+                      );
+                    }
+                  }}
                   className="w-full h-[56px] relative overflow-hidden bg-[#1A5C3A] text-white rounded-[16px] font-bold text-[16px] flex items-center justify-center gap-2 hover:bg-[#14482D] transition-all shadow-md active:scale-[0.98]"
                 >
                   Enter Studio <ExternalLink size={18} />
