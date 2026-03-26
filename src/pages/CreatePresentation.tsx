@@ -114,7 +114,7 @@ export default function CreatePresentation() {
 
     // CORRECT: multipart/form-data using FormData
     const formData = new FormData();
-    formData.append('prompt', prompt);
+    formData.append('content', prompt);
     formData.append('n_slides', String(slides));
     formData.append('language', 'English');
     formData.append('theme', theme); // already mapped to correct value
