@@ -28,7 +28,6 @@ export default function StatsMonumental({ data, theme, slideHeight }: Props) {
 
       {/* Top eyebrow */}
       {data.eyebrow && (
-        <div style={{ position: 'absolute', top: '80px', textTransform: 'uppercase' as const, letterSpacing: '6px', fontSize: '16px', color: theme.accentColor, textAlign: 'center', fontFamily: theme.bodyFont, fontWeight: 600 }}>
           {data.eyebrow}
         </div>
       )}
@@ -41,15 +40,12 @@ export default function StatsMonumental({ data, theme, slideHeight }: Props) {
           <React.Fragment key={i}>
             {i > 0 && <div style={{ width: '2px', height: '160px', backgroundColor: theme.textColor, opacity: 0.12, flexShrink: 0, margin: '0 48px' }} />}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: getStatFontSize(s.value), fontFamily: theme.headingFont, color: theme.textColor, lineHeight: '0.88', letterSpacing: '-0.04em', fontWeight: 700, whiteSpace: 'nowrap' as const }}>
                 {s.value}
               </div>
               {s.unit && (
-                <div style={{ fontSize: '16px', letterSpacing: '4px', color: theme.accentColor, marginTop: '16px', textTransform: 'uppercase' as const, fontFamily: theme.bodyFont, fontWeight: 500 }}>
                   {s.unit}
                 </div>
               )}
-              <div style={{ fontSize: '14px', letterSpacing: '3px', color: theme.textColor, opacity: 0.5, marginTop: '10px', textTransform: 'uppercase' as const, fontFamily: theme.bodyFont }}>
                 {s.label}
               </div>
             </div>
@@ -58,7 +54,6 @@ export default function StatsMonumental({ data, theme, slideHeight }: Props) {
       </div>
 
       {data.headline && (
-        <div style={{ position: 'absolute', bottom: '80px', fontFamily: theme.headingFont, fontSize: '26px', textAlign: 'center', fontStyle: 'italic', color: theme.textColor, opacity: 0.35, padding: '0 120px', letterSpacing: '0.02em' }}>
           {data.headline}
         </div>
       )}

@@ -45,7 +45,6 @@ export default function GalleryMasonry({ data, theme, photos, slideHeight }: Pro
       {/* Bottom caption */}
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${captionH}px`, background: `linear-gradient(to top, ${theme.backgroundColor} 60%, transparent)`, padding: '0 60px', display: 'flex', alignItems: 'flex-end', paddingBottom: '48px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
-          {data.eyebrow && <span style={{ fontSize: '16px', letterSpacing: '4px', textTransform: 'uppercase' as const, color: theme.accentColor, fontWeight: 600 }}>{data.eyebrow}</span>}
           {data.eyebrow && data.headline && <span style={{ color: theme.textColor, opacity: 0.3, fontSize: '20px' }}>·</span>}
           {data.headline && <span style={{ fontSize: '36px', fontFamily: theme.headingFont, color: theme.textColor, fontWeight: 600 }}>{data.headline}</span>}
         </div>

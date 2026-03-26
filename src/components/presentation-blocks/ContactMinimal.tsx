@@ -42,7 +42,6 @@ export default function ContactMinimal({ data, theme, slideHeight }: Props) {
         )}
 
         {c?.tagline && (
-          <div style={{ fontSize: '16px', color: theme.textColor, opacity: 0.45, letterSpacing: '3px', textTransform: 'uppercase' as const, marginBottom: '52px', fontFamily: theme.bodyFont }}>{c.tagline}</div>
         )}
 
         {c?.name && (
@@ -50,20 +49,16 @@ export default function ContactMinimal({ data, theme, slideHeight }: Props) {
         )}
 
         {c?.agency && (
-          <div style={{ fontSize: '15px', color: theme.textColor, opacity: 0.55, letterSpacing: '2px', textTransform: 'uppercase' as const, marginBottom: '44px', fontFamily: theme.bodyFont }}>{c.agency}</div>
         )}
 
         {c?.phone && (
-          <div style={{ backgroundColor: theme.accentColor, color: '#FFFFFF', borderRadius: '999px', padding: '20px 64px', fontSize: '24px', fontWeight: 700, letterSpacing: '1px', marginBottom: '36px', display: 'inline-block', fontFamily: theme.bodyFont }}>{c.phone}</div>
         )}
 
         {c?.rera && c.rera !== 'N/A' && c.rera !== 'Not Available' && (
-          <div style={{ fontSize: '13px', color: theme.textColor, opacity: 0.28, letterSpacing: '2px', textTransform: 'uppercase' as const, fontFamily: theme.bodyFont }}>RERA: {c.rera}</div>
         )}
       </div>
 
       {/* Branding */}
-      <div style={{ position: 'absolute', bottom: '36px', left: '50%', transform: 'translateX(-50%)', fontSize: '12px', color: theme.textColor, opacity: 0.18, letterSpacing: '4px', textTransform: 'uppercase' as const, fontFamily: theme.bodyFont, whiteSpace: 'nowrap' as const }}>
         Created with PropSite
       </div>
     </div>

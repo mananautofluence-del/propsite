@@ -5,7 +5,7 @@ import { StoredPresentation, SlideData, ThemeConfig, PresentationPhoto, Generati
 import { ArrowLeft, Download, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
-import * as htmlToImage from 'html-to-image';
+import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
 
 import CoverEditorial from '@/components/presentation-blocks/CoverEditorial';
@@ -261,18 +261,28 @@ export default function PresentationPreview() {
         // One frame to ensure paint
         await new Promise(r => requestAnimationFrame(r));
 
-        // Capture — container is at position fixed top:0 left:0
-        // so x:0 y:0 maps exactly to the slide content
-        const dataUrl = await htmlToImage.toJpeg(container, {
-          quality: 0.95,
+        // html2canvas bypasses WebKit foreignObject restrictions on iOS
+        // width and height forcefully lock the canvas size to ignore devicePixelRatio scaling bugs
+        const canvas = await html2canvas(container, {
+          scale: 1, // Fixes stretched images on mobile retina
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          backgroundColor: theme.backgroundColor,
+          imageTimeout: 8000,
+          windowWidth: 1456,
+          windowHeight: 816,
           width: 1456,
           height: 816,
-          backgroundColor: theme.backgroundColor,
-          pixelRatio: 1,
-          skipFonts: false,
+          onclone: (doc) => {
+            // Apply a minor hack inside the cloned document if needed to force fonts
+          }
         });
 
-        pdf.addImage(dataUrl, 'JPEG', 0, 0, 1456, 816);
+        pdf.addImage(
+          canvas.toDataURL('image/jpeg', 0.95),
+          'JPEG', 0, 0, 1456, 816
+        );
 
         // Clean up
         slideRoot.unmount();

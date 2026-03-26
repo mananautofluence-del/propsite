@@ -66,7 +66,6 @@ export default function ImageLeftHeadlineNumbered({ data, theme, photos, pageNum
               fontWeight: 700,
               color: theme.textColor,
               lineHeight: 0.95,
-              letterSpacing: '-0.02em',
               marginBottom: '40px',
             }}>
               {data.headline}

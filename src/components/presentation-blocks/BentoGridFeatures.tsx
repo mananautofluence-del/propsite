@@ -22,7 +22,6 @@ export default function BentoGridFeatures({ data, theme, slideHeight }: Props) {
       {/* Header */}
       <div style={{ marginBottom: '36px', flexShrink: 0 }}>
         {data.eyebrow && (
-          <div style={{ fontSize: '16px', letterSpacing: '4px', textTransform: 'uppercase' as const, color: theme.accentColor, marginBottom: '16px', fontFamily: theme.bodyFont, fontWeight: 600 }}>
             {data.eyebrow}
           </div>
         )}

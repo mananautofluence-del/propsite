@@ -39,7 +39,6 @@ export default function CoverEditorial({ data, theme, photos, pageNumber }: Prop
             position: 'absolute', top: '80px',
             fontFamily: theme.headingFont, fontSize: '96px',
             lineHeight: 0.92, fontWeight: 700, color: theme.textColor,
-            letterSpacing: '-0.02em',
           }}>
             {data.headline}
           </div>

@@ -33,7 +33,6 @@ export default function CenteredNumberedCols({ data, theme, pageNumber }: Props)
               fontWeight: 700,
               color: theme.textColor,
               lineHeight: 0.95,
-              letterSpacing: '-0.02em',
             }}>
               {data.headline}
             </div>

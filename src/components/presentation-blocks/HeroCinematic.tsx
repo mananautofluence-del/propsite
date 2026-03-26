@@ -31,7 +31,6 @@ export default function HeroCinematic({ data, theme, photos, slideHeight }: Prop
       {/* Top branding */}
       <div style={{ position: 'absolute', top: '48px', left: '64px', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: theme.accentColor }} />
-        <div style={{ fontSize: '14px', letterSpacing: '4px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' as const, fontFamily: theme.bodyFont }}>PropSite</div>
       </div>
 
       {/* Bottom content */}
@@ -39,13 +38,11 @@ export default function HeroCinematic({ data, theme, photos, slideHeight }: Prop
         <div style={{ width: '56px', height: '3px', backgroundColor: theme.accentColor, marginBottom: '24px' }} />
 
         {data.eyebrow && (
-          <div style={{ textTransform: 'uppercase' as const, letterSpacing: '5px', fontSize: '16px', color: theme.accentColor, marginBottom: '24px', fontFamily: theme.bodyFont, fontWeight: 600 }}>
             {data.eyebrow}
           </div>
         )}
 
         {data.headline && (
-          <div style={{ fontSize: headlineSize, lineHeight: '0.95', fontFamily: theme.headingFont, color: '#FFFFFF', letterSpacing: '-0.03em', fontWeight: 700, marginBottom: '32px', textShadow: '0 2px 24px rgba(0,0,0,0.5)' }}>
             {data.headline}
           </div>
         )}
@@ -56,7 +53,6 @@ export default function HeroCinematic({ data, theme, photos, slideHeight }: Prop
               {data.subheadline}
             </div>
           )}
-          <div style={{ flexShrink: 0, padding: '12px 28px', border: `1px solid ${theme.accentColor}88`, borderRadius: '999px', fontSize: '14px', letterSpacing: '3px', color: theme.accentColor, textTransform: 'uppercase' as const, fontFamily: theme.bodyFont, whiteSpace: 'nowrap' as const }}>
             {data.eyebrow?.split('·')[1]?.trim() || 'Estate'}
           </div>
         </div>

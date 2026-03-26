@@ -32,14 +32,12 @@ export default function VisionQuote({ data, theme, slideHeight }: Props) {
       {/* Centered content */}
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '840px', textAlign: 'center', zIndex: 1 }}>
         {quoteText && (
-          <div style={{ fontSize, fontFamily: theme.headingFont, fontStyle: 'italic', lineHeight: '1.22', color: theme.textColor, letterSpacing: '-0.01em', fontWeight: 400 }}>
             {quoteText}
           </div>
         )}
         {(name || agency) && (
           <>
             <div style={{ width: '48px', height: '2px', backgroundColor: theme.accentColor, margin: '44px auto 20px' }} />
-            <div style={{ fontSize: '16px', letterSpacing: '3px', color: theme.accentColor, textTransform: 'uppercase' as const, fontFamily: theme.bodyFont, fontWeight: 500 }}>
               {name}{agency ? ` · ${agency}` : ''}
             </div>
           </>

@@ -24,7 +24,6 @@ export default function HeroEditorial({ data, theme, photos, slideHeight }: Prop
     <div style={{ width: '1080px', height: `${h}px`, boxSizing: 'border-box', position: 'relative', overflow: 'hidden', fontFamily: theme.bodyFont }}>
       {/* Left panel */}
       <div style={{ position: 'absolute', left: 0, top: 0, width: '520px', height: `${h}px`, backgroundColor: theme.backgroundColor, padding: '80px 72px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-        {data.eyebrow && <div style={{ textTransform: 'uppercase' as const, letterSpacing: '5px', fontSize: '16px', color: theme.accentColor, fontFamily: theme.bodyFont, fontWeight: 600 }}>{data.eyebrow}</div>}
         {data.headline && <div style={{ fontSize: headlineSize, lineHeight: '0.95', fontFamily: theme.headingFont, color: theme.textColor, marginTop: '28px', marginBottom: '36px', fontWeight: 700 }}>{data.headline}</div>}
         <div style={{ width: '48px', height: '2px', backgroundColor: theme.accentColor }} />
         {data.bodyText && <div style={{ fontSize: '22px', lineHeight: '1.65', color: theme.textColor, opacity: 0.75, marginTop: '28px', maxWidth: '380px', fontFamily: theme.bodyFont }}>{data.bodyText}</div>}

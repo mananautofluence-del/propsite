@@ -37,7 +37,6 @@ export default function ContactSplit({ data, theme, pageNumber }: Props) {
               fontWeight: 700,
               color: theme.textColor,
               lineHeight: 0.95,
-              letterSpacing: '-0.02em',
               marginBottom: '20px',
             }}>
               {data.headline}
@@ -100,7 +99,6 @@ export default function ContactSplit({ data, theme, pageNumber }: Props) {
             <div style={{
               fontSize: '12px',
               color: theme.textColor, opacity: 0.45,
-              letterSpacing: '2px',
               textTransform: 'uppercase' as const,
               fontFamily: theme.bodyFont,
               marginBottom: '28px',
@@ -139,7 +137,6 @@ export default function ContactSplit({ data, theme, pageNumber }: Props) {
             <div style={{
               fontSize: '11px',
               color: theme.textColor, opacity: 0.3,
-              letterSpacing: '1.5px',
               textTransform: 'uppercase' as const,
               fontFamily: theme.bodyFont,
               marginTop: '16px',
