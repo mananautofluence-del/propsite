@@ -10,6 +10,8 @@ type PresentationRow = {
   title: string;
   theme: string;
   created_at: string;
+  presentation_id: string;
+  presenton_url: string;
   content: { edit_url?: string; presentation_id?: string; download_url?: string };
 };
 
@@ -93,17 +95,18 @@ export default function PresentationsList() {
                     </div>
                   </div>
 
-                  {editUrl ? (
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
-                      onClick={() => window.open(editUrl, '_blank')}
-                      className="h-9 px-4 rounded-[10px] border border-[#EBEBEB] text-[#111111] text-[13px] font-semibold flex items-center gap-1.5 hover:bg-[#F7F7F7] transition-colors shrink-0"
+                      onClick={() => {
+                        const url = `${ppt.presenton_url || 'https://manan345345435-propsite.hf.space'}/api/v1/ppt/presentation/${ppt.presentation_id}/download?format=pptx`;
+                        window.open(url, '_blank');
+                      }}
+                      className="h-9 px-4 rounded-[10px] border border-[#EBEBEB] text-[#111111] text-[13px] font-semibold flex items-center gap-1.5 hover:bg-[#F7F7F7] transition-colors"
                     >
-                      <ExternalLink size={14} />
-                      <span className="hidden sm:inline">Edit</span>
+                      <FileText size={14} />
+                      <span>Download</span>
                     </button>
-                  ) : (
-                    <span className="text-[12px] text-[#888888] italic">Processing</span>
-                  )}
+                  </div>
                 </div>
               );
             })}

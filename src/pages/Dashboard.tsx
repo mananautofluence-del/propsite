@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState({ liveListings: 0, totalViews: 0, leads: 0, collections: 0 });
   const [recentListings, setRecentListings] = useState<any[]>([]);
+  const [presentations, setPresentations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'listings' | 'presentations'>('listings');
 
@@ -41,6 +42,15 @@ export default function Dashboard() {
       });
 
       setRecentListings(rows.slice(0, 4));
+
+      const { data: ppts } = await supabase
+        .from('presentations' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      setPresentations(ppts || []);
+
       setLoading(false);
     };
     fetchDashboardData();
@@ -136,11 +146,36 @@ export default function Dashboard() {
         </div>
 
         {activeTab === 'presentations' ? (
-          <div className="bg-white border border-[#EBEBEB] rounded-xl p-5 text-center shadow-sm">
-            <Presentation size={24} className="text-text-3 mx-auto mb-2" />
-            <h3 className="text-[13px] font-medium text-text-1">No presentations yet</h3>
-            <p className="text-[11px] text-text-2 mt-1 mb-3">Create your first presentation to impress clients.</p>
-            <Link to="/dashboard/presentations/new" className="bg-[hsl(var(--green-light))] hover:bg-[#DDF3E4] text-primary rounded-lg text-[12px] h-8 px-4 inline-flex items-center justify-center font-semibold transition-colors">Create Presentation</Link>
+          <div className="flex flex-col gap-2">
+            {presentations.length === 0 ? (
+              <div className="bg-white border border-[#EBEBEB] rounded-xl p-5 text-center shadow-sm">
+                <Presentation size={24} className="text-text-3 mx-auto mb-2" />
+                <h3 className="text-[13px] font-medium text-text-1">No presentations yet</h3>
+                <p className="text-[11px] text-text-2 mt-1 mb-3">Create your first presentation to impress clients.</p>
+                <Link to="/dashboard/presentations/new" className="bg-[hsl(var(--green-light))] hover:bg-[#DDF3E4] text-primary rounded-lg text-[12px] h-8 px-4 inline-flex items-center justify-center font-semibold transition-colors">Create Presentation</Link>
+              </div>
+            ) : (
+              presentations.map((ppt) => (
+                <div key={ppt.id} className="bg-white border border-[#EBEBEB] rounded-xl p-3 shadow-sm flex gap-3 items-center">
+                  <div className="w-10 h-10 rounded-lg bg-[#EAF3ED] flex items-center justify-center text-[#1A5C3A] shrink-0">
+                    <Presentation size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[13px] font-semibold text-text-1 truncate">{ppt.title || 'Untitled Presentation'}</h3>
+                    <p className="text-[11px] text-text-2 mt-0.5">{new Date(ppt.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const url = `${ppt.presenton_url}/api/v1/ppt/presentation/${ppt.presentation_id}/download?format=pptx`;
+                      window.open(url, '_blank');
+                    }}
+                    className="h-8 px-3 rounded-lg border border-[#EBEBEB] text-[11px] font-semibold hover:bg-gray-50 transition-colors shrink-0"
+                  >
+                    Download
+                  </button>
+                </div>
+              ))
+            )}
           </div>
         ) : (
           <>
