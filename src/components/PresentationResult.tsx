@@ -121,30 +121,61 @@ export default function PresentationResult({
 
   const handleDownload = async (format: 'pptx' | 'pdf') => {
     setIsDownloading(format);
+    console.log('=== Download attempt ===', { format, presentationId, presenton_url });
+    console.log('=== Presentation data for download ===', JSON.stringify(presentationData));
+
     try {
-      let blob: Blob | null = null;
-      // Try export endpoint first
-      const r1 = await fetch(
-        `${presenton_url}/api/v1/ppt/presentation/${presentationId}/export?format=${format}`
-      );
-      if (r1.ok) {
-        blob = await r1.blob();
-      } else {
-        // Fallback to download endpoint
-        const r2 = await fetch(
-          `${presenton_url}/api/v1/ppt/presentation/${presentationId}/download?format=${format}`
-        );
-        if (r2.ok) {
-          blob = await r2.blob();
-        }
+      // Check if presentationData has a direct download path
+      const directPath = presentationData?.path || presentationData?.pptx_path || presentationData?.file_path || presentationData?.download_url;
+      if (directPath) {
+        console.log('=== Direct download path found ===', directPath);
       }
+
+      let blob: Blob | null = null;
+
+      // Attempt 1: /export?format=
+      try {
+        const r1 = await fetch(
+          `${presenton_url}/api/v1/ppt/presentation/${presentationId}/export?format=${format}`
+        );
+        console.log('Export endpoint status:', r1.status);
+        if (r1.ok) blob = await r1.blob();
+      } catch (e) { console.log('Export fetch error:', e); }
+
+      // Attempt 2: /download?format=
+      if (!blob || blob.size === 0) {
+        try {
+          const r2 = await fetch(
+            `${presenton_url}/api/v1/ppt/presentation/${presentationId}/download?format=${format}`
+          );
+          console.log('Download endpoint status:', r2.status);
+          if (r2.ok) blob = await r2.blob();
+        } catch (e) { console.log('Download fetch error:', e); }
+      }
+
+      // Attempt 3: /download (no query param)
+      if (!blob || blob.size === 0) {
+        try {
+          const r3 = await fetch(
+            `${presenton_url}/api/v1/ppt/presentation/${presentationId}/download`
+          );
+          console.log('Download (no param) endpoint status:', r3.status);
+          if (r3.ok) blob = await r3.blob();
+        } catch (e) { console.log('Download (no param) fetch error:', e); }
+      }
+
       if (blob && blob.size > 0) {
         triggerDownload(blob, `presentation.${format}`);
         toast.success(`${format.toUpperCase()} downloaded!`);
       } else {
-        throw new Error('Empty response');
+        // Final fallback: open in new tab
+        console.log('All blob attempts failed, falling back to window.open');
+        const fallbackUrl = `${presenton_url}/api/v1/ppt/presentation/${presentationId}/export?format=${format}`;
+        window.open(fallbackUrl, '_blank');
+        toast.success(`Opening ${format.toUpperCase()} download...`);
       }
-    } catch {
+    } catch (err) {
+      console.error('Download error:', err);
       toast.error(`Download failed. Please try again.`);
     } finally {
       setIsDownloading(null);

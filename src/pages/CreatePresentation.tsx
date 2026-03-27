@@ -116,19 +116,38 @@ Requirements:
 
       const formData = new FormData();
       formData.append('content', prompt);
-      formData.append('n_slides', slides.toString());
+      formData.append('n_slides', String(slides));
       formData.append('language', 'English');
       formData.append('theme', theme);
+
+      // Debug: log what we're sending
+      console.log('=== Sending to Presenton ===');
+      for (const [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
 
       const res = await fetch(`${PRESENTON_URL}/api/v1/ppt/presentation/generate`, {
         method: 'POST',
         body: formData,
       });
 
-      if (!res.ok) throw new Error('Generation failed');
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('Generation failed:', res.status, errText);
+        throw new Error(`Generation failed: ${res.status}`);
+      }
+
       const data = await res.json();
-      const pId = data.presentation_id;
-      setPresentationId(pId);
+      console.log('=== Generate API response ===', JSON.stringify(data));
+
+      // Try all possible field names for the ID
+      const presId = data.presentation_id || data.id || data.presentationId;
+      if (!presId) {
+        console.error('No presentation ID in response:', JSON.stringify(data));
+        throw new Error('No presentation ID returned from API');
+      }
+      console.log('=== Presentation ID ===', presId);
+      setPresentationId(presId);
 
       // Save to Supabase
       const { data: userData } = await supabase.auth.getUser();
@@ -136,24 +155,27 @@ Requirements:
         await supabase.from('presentations' as any).insert({
           user_id: userData.user.id,
           title: propertyText.split('\n')[0].slice(0, 60),
-          presentation_id: pId,
+          presentation_id: presId,
           presenton_url: PRESENTON_URL,
           created_at: new Date().toISOString()
         });
       }
 
-      // Fetch full presentation data for the result screen
-      const dataRes = await fetch(`${PRESENTON_URL}/api/v1/ppt/presentation/${pId}`);
+      // Fetch full presentation data using presId directly (not state, which is async)
+      const dataRes = await fetch(`${PRESENTON_URL}/api/v1/ppt/presentation/${presId}`);
       if (dataRes.ok) {
         const pData = await dataRes.json();
+        console.log('=== Presentation data ===', JSON.stringify(pData));
         setPresentationData(pData);
+      } else {
+        console.error('Failed to fetch presentation data:', dataRes.status);
       }
 
       setStep('RESULT');
       toast.success('Presentation Ready!');
     } catch (err: any) {
-      console.error(err);
-      toast.error('Failed to generate. Please try again.');
+      console.error('Generation error:', err);
+      toast.error(err.message || 'Failed to generate. Please try again.');
       setStep('FORM');
     }
   };
