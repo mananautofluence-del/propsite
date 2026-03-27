@@ -121,8 +121,8 @@ Requirements:
       formData.append('n_slides', slides.toString());
       formData.append('theme', theme);
       
-      images.forEach((img) => {
-        formData.append('images', img.file);
+      photoFiles.forEach((file) => {
+        formData.append('images', file);
       });
 
       console.log('=== Sending to Presenton (FormData) ===');
