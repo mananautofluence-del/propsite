@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, FileDown, Camera, X, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Camera, X, Plus, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import PresentationResult from '@/components/PresentationResult';
 
 const PRESENTON_URL = import.meta.env.VITE_PRESENTON_URL || 'https://manan345345435-propsite.hf.space';
 
@@ -15,16 +16,10 @@ const THEMES = [
 
 const SLIDE_COUNTS = [3, 4, 5, 6];
 
-interface SlideData {
-  title: string;
-  content: string[];
-  image_url?: string;
-}
-
 export default function CreatePresentation() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'FORM' | 'LOADING' | 'RESULT'>('FORM');
-  
+
   // Form State
   const [propertyText, setPropertyText] = useState('');
   const [price, setPrice] = useState('');
@@ -42,11 +37,10 @@ export default function CreatePresentation() {
   // Generation Settings
   const [theme, setTheme] = useState('cream');
   const [slides, setSlides] = useState(6);
-  
+
   // Result State
   const [presentationId, setPresentationId] = useState<string | null>(null);
   const [presentationData, setPresentationData] = useState<any | null>(null);
-  const [isDownloading, setIsDownloading] = useState<'pptx' | 'pdf' | null>(null);
 
   const handlePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -148,7 +142,7 @@ Requirements:
         });
       }
 
-      // Fetch presentation data for preview
+      // Fetch full presentation data for the result screen
       const dataRes = await fetch(`${PRESENTON_URL}/api/v1/ppt/presentation/${pId}`);
       if (dataRes.ok) {
         const pData = await dataRes.json();
@@ -164,27 +158,31 @@ Requirements:
     }
   };
 
-  const handleDownload = async (format: 'pptx' | 'pdf') => {
-    if (!presentationId) return;
-    setIsDownloading(format);
-    try {
-      const res = await fetch(`${PRESENTON_URL}/api/v1/ppt/presentation/${presentationId}/download?format=${format}`);
-      if (!res.ok) throw new Error('Download failed');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `presentation.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      toast.error('Download failed');
-    } finally {
-      setIsDownloading(null);
-    }
-  };
+  // ─── RESULT SCREEN ───
+  if (step === 'RESULT' && presentationId) {
+    return (
+      <PresentationResult
+        presentationId={presentationId}
+        presentationData={presentationData}
+        presenton_url={PRESENTON_URL}
+        onCreateAnother={() => {
+          setStep('FORM');
+          setPropertyText('');
+          setPrice('');
+          setBhk('');
+          setAmenities('');
+          setBrokerName('');
+          setBrokerPhone('');
+          setBrokerAgency('');
+          setReraNumber('');
+          setPhotoFiles([]);
+          setPhotoUrls([]);
+          setPresentationId(null);
+          setPresentationData(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F7F7F7] font-sans">
@@ -283,7 +281,7 @@ Requirements:
         </div>
       )}
 
-      {/* STEP 3: LOADING */}
+      {/* STEP 2: LOADING */}
       {step === 'LOADING' && (
         <div className="min-h-screen bg-[#F7F7F7] flex flex-col items-center justify-center p-6 text-center">
           <div className="relative mb-8">
@@ -291,7 +289,7 @@ Requirements:
           </div>
           <h2 className="text-[20px] font-bold text-[#111111] mb-2">Generating your presentation...</h2>
           <p className="text-[14px] text-[#888888] mb-12">This takes 20–30 seconds</p>
-          
+
           <div className="w-full max-w-[280px] h-1.5 bg-[#EBEBEB] rounded-full overflow-hidden absolute bottom-20">
             <div className="h-full bg-[#1A5C3A] animate-[loading_20s_ease-in-out_infinite]" style={{ width: '40%' }}></div>
           </div>
@@ -302,79 +300,6 @@ Requirements:
               100% { width: 95%; }
             }
           `}</style>
-        </div>
-      )}
-
-      {/* STEP 4: RESULT */}
-      {step === 'RESULT' && (
-        <div className="max-w-[480px] w-full mx-auto p-4 md:p-6 pb-20 bg-[#F7F7F7]">
-          <header className="flex items-center gap-4 mb-6">
-            <button onClick={() => setStep('FORM')} className="w-9 h-9 bg-white border border-[#EBEBEB] flex items-center justify-center rounded-full">
-              <ArrowLeft size={18} className="text-[#111111]" />
-            </button>
-            <h1 className="text-[18px] font-bold text-[#111111]">Result</h1>
-          </header>
-
-          {/* Success Card */}
-          <div className="bg-white p-8 rounded-[24px] border border-[#EBEBEB] shadow-sm mb-6 text-center">
-            <div className="w-20 h-20 bg-[#F2F8F4] rounded-full flex items-center justify-center mx-auto mb-6 text-[#1A5C3A]">
-              <CheckCircle2 size={48} />
-            </div>
-            <h2 className="text-[22px] font-bold text-[#111111] mb-2">Presentation Ready!</h2>
-            <p className="text-[14px] text-[#888888] leading-relaxed truncate px-4">
-              {propertyText.split('\n')[0].slice(0, 60)}
-            </p>
-          </div>
-
-          {/* Download Cluster */}
-          <div className="flex flex-col gap-3 mb-8">
-            <button
-              onClick={() => handleDownload('pptx')}
-              disabled={!!isDownloading}
-              className="w-full h-[52px] bg-[#1A5C3A] text-white rounded-[12px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all disabled:opacity-70"
-            >
-              {isDownloading === 'pptx' ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown size={20} />}
-              ⬇ Download PPTX
-            </button>
-            <button
-              onClick={() => handleDownload('pdf')}
-              disabled={!!isDownloading}
-              className="w-full h-[52px] bg-white border-2 border-[#1A5C3A] text-[#1A5C3A] rounded-[12px] font-bold text-[15px] flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-all disabled:opacity-70"
-            >
-              {isDownloading === 'pdf' ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown size={20} />}
-              ⬇ Download PDF
-            </button>
-          </div>
-
-          {/* Slides Preview */}
-          <div className="mb-10">
-            <h3 className="text-[16px] font-bold text-[#111111] mb-4">Your Slides</h3>
-            <div className="flex flex-col gap-4">
-              {presentationData?.slides?.map((slide: SlideData, i: number) => (
-                <div key={i} className="bg-white rounded-xl p-4 shadow-sm border border-[#EBEBEB]">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-[11px] font-bold text-[#888888] tracking-wider uppercase">Slide {String(i + 1).padStart(2, '0')}</span>
-                  </div>
-                  <h4 className="text-[15px] font-bold text-[#111111] mb-1">{slide.title}</h4>
-                  <p className="text-[13px] text-[#666666] line-clamp-2 leading-relaxed">
-                    {slide.content?.[0] || 'View details in the downloaded deck.'}
-                  </p>
-                </div>
-              ))}
-              {!presentationData?.slides && (
-                <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-[#EBEBEB]">
-                  <p className="text-[13px] text-[#888888]">Generating slide previews...</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            onClick={() => setStep('FORM')}
-            className="w-full text-center py-4 text-[14px] font-semibold text-[#1A5C3A] hover:underline"
-          >
-            Create Another Presentation
-          </button>
         </div>
       )}
     </div>

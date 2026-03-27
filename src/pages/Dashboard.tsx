@@ -165,9 +165,22 @@ export default function Dashboard() {
                     <p className="text-[11px] text-text-2 mt-0.5">{new Date(ppt.created_at).toLocaleDateString()}</p>
                   </div>
                   <button 
-                    onClick={() => {
-                      const url = `${ppt.presenton_url}/api/v1/ppt/presentation/${ppt.presentation_id}/download?format=pptx`;
-                      window.open(url, '_blank');
+                    onClick={async () => {
+                      const base = ppt.presenton_url || 'https://manan345345435-propsite.hf.space';
+                      try {
+                        let blob: Blob | null = null;
+                        const r1 = await fetch(`${base}/api/v1/ppt/presentation/${ppt.presentation_id}/export?format=pptx`);
+                        if (r1.ok) { blob = await r1.blob(); }
+                        else {
+                          const r2 = await fetch(`${base}/api/v1/ppt/presentation/${ppt.presentation_id}/download?format=pptx`);
+                          if (r2.ok) blob = await r2.blob();
+                        }
+                        if (blob && blob.size > 0) {
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a'); a.href = url; a.download = 'presentation.pptx';
+                          document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                        }
+                      } catch { /* silent */ }
                     }}
                     className="h-8 px-3 rounded-lg border border-[#EBEBEB] text-[11px] font-semibold hover:bg-gray-50 transition-colors shrink-0"
                   >

@@ -97,9 +97,22 @@ export default function PresentationsList() {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                      onClick={() => {
-                        const url = `${ppt.presenton_url || 'https://manan345345435-propsite.hf.space'}/api/v1/ppt/presentation/${ppt.presentation_id}/download?format=pptx`;
-                        window.open(url, '_blank');
+                      onClick={async () => {
+                        const base = ppt.presenton_url || 'https://manan345345435-propsite.hf.space';
+                        try {
+                          let blob: Blob | null = null;
+                          const r1 = await fetch(`${base}/api/v1/ppt/presentation/${ppt.presentation_id}/export?format=pptx`);
+                          if (r1.ok) { blob = await r1.blob(); }
+                          else {
+                            const r2 = await fetch(`${base}/api/v1/ppt/presentation/${ppt.presentation_id}/download?format=pptx`);
+                            if (r2.ok) blob = await r2.blob();
+                          }
+                          if (blob && blob.size > 0) {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a'); a.href = url; a.download = 'presentation.pptx';
+                            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+                          }
+                        } catch { /* silent */ }
                       }}
                       className="h-9 px-4 rounded-[10px] border border-[#EBEBEB] text-[#111111] text-[13px] font-semibold flex items-center gap-1.5 hover:bg-[#F7F7F7] transition-colors"
                     >
