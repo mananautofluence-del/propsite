@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Camera, X, Plus, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import PresentationResult from '@/components/PresentationResult';
 
 const PRESENTON_URL = import.meta.env.VITE_PRESENTON_URL || 'https://manan345345435-propsite.hf.space';
 
@@ -41,6 +40,8 @@ export default function CreatePresentation() {
   // Result State
   const [presentationId, setPresentationId] = useState<string | null>(null);
   const [presentationData, setPresentationData] = useState<any | null>(null);
+  const [editorUrl, setEditorUrl] = useState('');
+  const [pptxUrl, setPptxUrl] = useState('');
 
   const handlePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -139,43 +140,50 @@ Requirements:
       const data = await res.json();
       console.log('=== Generate API response ===', JSON.stringify(data));
 
-      // Try all possible field names for the ID
       const presId = 
         data?.presentation_id || 
         data?.id || 
-        data?.presentationId ||
-        data?.presentation?.id ||
-        data?.data?.id;
+        data?.presentationId;
 
       if (!presId) {
-        console.error('No presentation ID in response:', JSON.stringify(data));
-        throw new Error('Presenton did not return a presentation ID. Response: ' + JSON.stringify(data));
+        throw new Error('No ID returned: ' + JSON.stringify(data));
       }
-      console.log('Extracted presentation ID:', presId);
 
+      // Build the editor URL from edit_path field
+      // Presenton returns: edit_path = "/presentation?id=UUID"
+      const editPath = data?.edit_path || data?.editPath || '';
+      const editorUrl = editPath.startsWith('http') 
+        ? editPath 
+        : `${PRESENTON_URL}${editPath || `/presentation?id=${presId}`}`;
+
+      // Build direct PPTX download URL from path field  
+      // Presenton returns: path = "/static/user_data/UUID/filename.pptx"
+      const pptxPath = data?.path || data?.file_path || '';
+      const pptxUrl = pptxPath.startsWith('http')
+        ? pptxPath
+        : `${PRESENTON_URL}${pptxPath}`;
+
+      console.log('Editor URL:', editorUrl);
+      console.log('PPTX URL:', pptxUrl);
 
       // Save to Supabase
       const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
-        await supabase.from('presentations' as any).insert({
-          user_id: userData.user.id,
-          title: propertyText.split('\n')[0].slice(0, 60),
-          presentation_id: presId,
-          presenton_url: PRESENTON_URL,
-          created_at: new Date().toISOString()
-        });
+      if (userData?.user) {
+        try {
+          await supabase.from('presentations' as any).insert({
+            user_id: userData.user.id,
+            title: propertyText.split('\n')[0].slice(0, 60),
+            presentation_id: presId,
+            presenton_url: PRESENTON_URL,
+            created_at: new Date().toISOString()
+          });
+        } catch (e) {
+          console.log('Supabase error:', e);
+        }
       }
 
-      // Fetch full presentation data using presId directly (not state, which is async)
-      const dataRes = await fetch(`${PRESENTON_URL}/api/v1/ppt/presentation/${presId}`);
-      if (dataRes.ok) {
-        const pData = await dataRes.json();
-        console.log('=== Presentation data ===', JSON.stringify(pData));
-        setPresentationData(pData);
-      } else {
-        console.error('Failed to fetch presentation data:', dataRes.status);
-      }
-
+      setEditorUrl(editorUrl);
+      setPptxUrl(pptxUrl);
       setPresentationId(presId);
       setStep('RESULT');
       toast.success('Presentation Ready!');
@@ -187,28 +195,114 @@ Requirements:
   };
 
   // ─── RESULT SCREEN ───
-  if (step === 'RESULT' && presentationId) {
+  if (step === 'RESULT') {
     return (
-      <PresentationResult
-        presentationId={presentationId}
-        presentationData={presentationData}
-        presenton_url={PRESENTON_URL}
-        onCreateAnother={() => {
-          setStep('FORM');
-          setPropertyText('');
-          setPrice('');
-          setBhk('');
-          setAmenities('');
-          setBrokerName('');
-          setBrokerPhone('');
-          setBrokerAgency('');
-          setReraNumber('');
-          setPhotoFiles([]);
-          setPhotoUrls([]);
-          setPresentationId(null);
-          setPresentationData(null);
-        }}
-      />
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#F7F7F7',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px 20px',
+        fontFamily: 'DM Sans, sans-serif',
+      }}>
+        {/* Success icon */}
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%',
+          backgroundColor: '#F0FBF4',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 24,
+        }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+            stroke="#1A5C3A" strokeWidth="2.5" strokeLinecap="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+
+        {/* Title */}
+        <h1 style={{
+          fontSize: 22, fontWeight: 700, color: '#111',
+          marginBottom: 8, textAlign: 'center',
+        }}>
+          Presentation Ready!
+        </h1>
+        <p style={{
+          fontSize: 14, color: '#888', textAlign: 'center',
+          marginBottom: 40, maxWidth: 320, lineHeight: 1.5,
+        }}>
+          Your AI-generated property presentation is ready.
+          Open the editor to view, edit slides, and download.
+        </p>
+
+        {/* Primary CTA */}
+        <button
+          onClick={() => window.open(editorUrl, '_blank')}
+          style={{
+            width: '100%', maxWidth: 400, height: 56,
+            backgroundColor: '#1A5C3A', color: '#FFFFFF',
+            borderRadius: 14, border: 'none', cursor: 'pointer',
+            fontSize: 16, fontWeight: 700,
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 8,
+            marginBottom: 12,
+          }}
+        >
+          Open Editor & Download →
+        </button>
+
+        {/* Direct PPTX download */}
+        {pptxUrl && (
+          <button
+            onClick={async () => {
+              try {
+                const r = await fetch(pptxUrl);
+                if (r.ok) {
+                  const blob = await r.blob();
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = 'property-presentation.pptx';
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                } else {
+                  window.open(pptxUrl, '_blank');
+                }
+              } catch {
+                window.open(pptxUrl, '_blank');
+              }
+            }}
+            style={{
+              width: '100%', maxWidth: 400, height: 48,
+              backgroundColor: 'white', color: '#1A5C3A',
+              borderRadius: 14, border: '2px solid #1A5C3A',
+              cursor: 'pointer', fontSize: 15, fontWeight: 600,
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', gap: 8,
+              marginBottom: 32,
+            }}
+          >
+            ⬇ Download PPTX Directly
+          </button>
+        )}
+
+        {/* Create another */}
+        <button
+          onClick={() => {
+            setStep('FORM');
+            setPropertyText('');
+            setEditorUrl('');
+            setPptxUrl('');
+            setPresentationId('');
+          }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#1A5C3A', fontSize: 14, textDecoration: 'underline',
+          }}
+        >
+          ← Create Another Presentation
+        </button>
+      </div>
     );
   }
 
