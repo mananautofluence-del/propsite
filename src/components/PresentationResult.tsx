@@ -2,18 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, FileDown, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface SlideImage {
-  url?: string;
-}
-
-interface Slide {
-  id: string;
-  slide_number: number;
+interface EditData {
   title: string;
-  description: string;
-  bullet_points: string[];
-  image?: SlideImage;
-  image_url?: string;
+  content: string;
 }
 
 interface PresentationResultProps {
@@ -40,9 +31,18 @@ export default function PresentationResult({
   presenton_url,
   onCreateAnother,
 }: PresentationResultProps) {
-  const slides: Slide[] = presentationData?.slides || [];
+  useEffect(() => {
+    console.log('Full presentation data:', JSON.stringify(presentationData, null, 2));
+  }, [presentationData]);
+
+  const slides = 
+    presentationData?.slides || 
+    presentationData?.presentation?.slides || 
+    presentationData?.data?.slides || 
+    [];
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [editedSlides, setEditedSlides] = useState<Slide[]>([...slides]);
+  const [editData, setEditData] = useState<EditData>({ title: '', content: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState<'pptx' | 'pdf' | null>(null);
 
@@ -52,12 +52,18 @@ export default function PresentationResult({
   const slideContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setEditedSlides([...slides]);
-  }, [presentationData]);
+    const currentSlide = slides[currentIndex];
+    if (currentSlide) {
+      setEditData({
+        title: currentSlide.name || currentSlide.title || currentSlide.heading || '',
+        content: currentSlide.content || currentSlide.description || currentSlide.body || ''
+      });
+    }
+  }, [currentIndex, slides]);
 
-  const currentSlide = editedSlides[currentIndex];
+  const currentSlide = slides[currentIndex] || {};
 
-  const goNext = () => setCurrentIndex(i => Math.min(i + 1, editedSlides.length - 1));
+  const goNext = () => setCurrentIndex(i => Math.min(i + 1, slides.length - 1));
   const goPrev = () => setCurrentIndex(i => Math.max(i - 1, 0));
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -72,27 +78,12 @@ export default function PresentationResult({
     }
   };
 
-  const getSlideImageUrl = (slide: Slide) => {
-    return slide.image?.url || slide.image_url || null;
-  };
-
-  const updateSlideField = (field: keyof Slide, value: any) => {
-    setEditedSlides(prev => {
-      const copy = [...prev];
-      copy[currentIndex] = { ...copy[currentIndex], [field]: value };
-      return copy;
-    });
-  };
-
-  const updateBulletPoint = (bulletIndex: number, value: string) => {
-    setEditedSlides(prev => {
-      const copy = [...prev];
-      const bullets = [...(copy[currentIndex].bullet_points || [])];
-      bullets[bulletIndex] = value;
-      copy[currentIndex] = { ...copy[currentIndex], bullet_points: bullets };
-      return copy;
-    });
-  };
+  const imgUrl = 
+    currentSlide.images?.[0]?.url || 
+    currentSlide.image?.url || 
+    currentSlide.image_url || 
+    currentSlide.thumbnail || 
+    null;
 
   const saveSlideChanges = async () => {
     if (!currentSlide?.id) return;
@@ -104,13 +95,21 @@ export default function PresentationResult({
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: currentSlide.title,
-            description: currentSlide.description,
-            bullet_points: currentSlide.bullet_points,
+            name: editData.title,
+            title: editData.title,
+            content: editData.content,
+            description: editData.content,
           }),
         }
       );
       if (!res.ok) throw new Error('Save failed');
+      
+      // Update local slide object so it reflects visually without refetch
+      currentSlide.name = editData.title;
+      currentSlide.title = editData.title;
+      currentSlide.content = editData.content;
+      currentSlide.description = editData.content;
+      
       toast.success('Saved!');
     } catch {
       toast.error('Could not save. Try again.');
@@ -119,25 +118,21 @@ export default function PresentationResult({
     }
   };
 
+  // Ensure download URLs are exactly as requested:
+  // 1. /export?format=pptx
+  // 2. /download?format=pptx
+  // 3. /download
   const handleDownload = async (format: 'pptx' | 'pdf') => {
     setIsDownloading(format);
     console.log('=== Download attempt ===', { format, presentationId, presenton_url });
     console.log('=== Presentation data for download ===', JSON.stringify(presentationData));
 
     try {
-      // Check if presentationData has a direct download path
-      const directPath = presentationData?.path || presentationData?.pptx_path || presentationData?.file_path || presentationData?.download_url;
-      if (directPath) {
-        console.log('=== Direct download path found ===', directPath);
-      }
-
       let blob: Blob | null = null;
 
       // Attempt 1: /export?format=
       try {
-        const r1 = await fetch(
-          `${presenton_url}/api/v1/ppt/presentation/${presentationId}/export?format=${format}`
-        );
+        const r1 = await fetch(`${presenton_url}/api/v1/ppt/presentation/${presentationId}/export?format=${format}`);
         console.log('Export endpoint status:', r1.status);
         if (r1.ok) blob = await r1.blob();
       } catch (e) { console.log('Export fetch error:', e); }
@@ -145,9 +140,7 @@ export default function PresentationResult({
       // Attempt 2: /download?format=
       if (!blob || blob.size === 0) {
         try {
-          const r2 = await fetch(
-            `${presenton_url}/api/v1/ppt/presentation/${presentationId}/download?format=${format}`
-          );
+          const r2 = await fetch(`${presenton_url}/api/v1/ppt/presentation/${presentationId}/download?format=${format}`);
           console.log('Download endpoint status:', r2.status);
           if (r2.ok) blob = await r2.blob();
         } catch (e) { console.log('Download fetch error:', e); }
@@ -156,19 +149,16 @@ export default function PresentationResult({
       // Attempt 3: /download (no query param)
       if (!blob || blob.size === 0) {
         try {
-          const r3 = await fetch(
-            `${presenton_url}/api/v1/ppt/presentation/${presentationId}/download`
-          );
+          const r3 = await fetch(`${presenton_url}/api/v1/ppt/presentation/${presentationId}/download`);
           console.log('Download (no param) endpoint status:', r3.status);
           if (r3.ok) blob = await r3.blob();
         } catch (e) { console.log('Download (no param) fetch error:', e); }
       }
 
-      if (blob && blob.size > 0) {
+      if (blob && blob.size > 0 && blob.type !== 'application/json') { // Ensure not JSON error
         triggerDownload(blob, `presentation.${format}`);
         toast.success(`${format.toUpperCase()} downloaded!`);
       } else {
-        // Final fallback: open in new tab
         console.log('All blob attempts failed, falling back to window.open');
         const fallbackUrl = `${presenton_url}/api/v1/ppt/presentation/${presentationId}/export?format=${format}`;
         window.open(fallbackUrl, '_blank');
@@ -182,15 +172,24 @@ export default function PresentationResult({
     }
   };
 
-  if (!editedSlides.length) {
+  if (!slides.length) {
     return (
-      <div className="min-h-screen bg-[#F7F7F7] flex items-center justify-center">
-        <p className="text-[#888] text-sm">No slides found.</p>
+      <div className="min-h-screen bg-[#F7F7F7] flex flex-col pt-10 px-4">
+        <button onClick={onCreateAnother} className="w-9 h-9 mb-4 flex items-center justify-center rounded-full hover:bg-gray-200 bg-white shadow-sm transition-colors">
+          <ArrowLeft size={20} className="text-[#111]" />
+        </button>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <p className="text-[#888] text-sm mb-4">No slides found in presentation data.</p>
+          <pre className="text-xs text-left bg-gray-100 p-4 rounded max-w-full overflow-x-auto">
+            {JSON.stringify(presentationData || {}, null, 2).slice(0, 500)}
+          </pre>
+        </div>
       </div>
     );
   }
 
-  const imgUrl = getSlideImageUrl(currentSlide);
+  const currentTitle = editData.title || currentSlide?.name || currentSlide?.title || currentSlide?.heading || 'Slide';
+  const currentContent = editData.content || currentSlide?.content || currentSlide?.description || currentSlide?.body || '';
 
   return (
     <div className="min-h-screen bg-[#F7F7F7] font-['DM_Sans',sans-serif] flex flex-col pb-[100px]">
@@ -218,42 +217,39 @@ export default function PresentationResult({
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           className="relative w-full rounded-2xl overflow-hidden shadow-sm border border-[#EBEBEB] bg-white"
-          style={{ paddingTop: '56.25%' }}
+          style={{ 
+            paddingTop: '56.25%', 
+            background: imgUrl ? 'transparent' : 'linear-gradient(135deg, #1A5C3A, #0d3320)' 
+          }}
         >
           <div className="absolute inset-0">
-            {imgUrl ? (
+            {imgUrl && (
               <>
                 <img
                   src={imgUrl}
-                  alt={currentSlide.title}
+                  alt={currentTitle}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               </>
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-[#1A5C3A] to-[#0D3320]" />
             )}
 
             {/* Slide content overlay */}
-            <div className="absolute inset-0 flex flex-col justify-end p-5">
-              <span className="text-[11px] font-bold text-white/50 tracking-widest uppercase mb-2">
-                {String(currentIndex + 1).padStart(2, '0')} / {String(editedSlides.length).padStart(2, '0')}
+            <div className="absolute inset-0 flex flex-col justify-between p-4">
+              <span className="text-[13px] font-medium text-white/60">
+                {String(currentIndex + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
               </span>
-              <h2 className="text-[20px] font-bold text-white leading-tight mb-1.5">
-                {currentSlide.title}
-              </h2>
-              {currentSlide.description && (
-                <p className="text-[14px] text-white/85 leading-relaxed line-clamp-3">
-                  {currentSlide.description}
-                </p>
-              )}
-              {currentSlide.bullet_points?.length > 0 && !currentSlide.description && (
-                <ul className="mt-1 space-y-0.5">
-                  {currentSlide.bullet_points.slice(0, 3).map((bp, i) => (
-                    <li key={i} className="text-[13px] text-white/80">• {bp}</li>
-                  ))}
-                </ul>
-              )}
+              
+              <div className="mt-auto">
+                <h2 className="text-[18px] font-bold text-white mb-1.5 leading-snug">
+                  {currentTitle}
+                </h2>
+                {currentContent && (
+                  <p className="text-[13px] text-white/80 leading-relaxed line-clamp-2">
+                    {currentContent}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Prev / Next arrows */}
@@ -265,7 +261,7 @@ export default function PresentationResult({
                 <ChevronLeft size={18} className="text-[#111]" />
               </button>
             )}
-            {currentIndex < editedSlides.length - 1 && (
+            {currentIndex < slides.length - 1 && (
               <button
                 onClick={goNext}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center shadow-md hover:bg-white transition-colors"
@@ -278,7 +274,7 @@ export default function PresentationResult({
 
         {/* Navigation dots */}
         <div className="flex items-center justify-center gap-1.5 mt-3">
-          {editedSlides.map((_, i) => (
+          {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentIndex(i)}
@@ -311,10 +307,10 @@ export default function PresentationResult({
 
           <div className="flex flex-col gap-3">
             <div>
-              <label className="text-[12px] font-medium text-[#888] block mb-1">Slide Title</label>
+               <label className="text-[12px] font-medium text-[#888] block mb-1">Slide Title</label>
               <input
-                value={currentSlide.title || ''}
-                onChange={e => updateSlideField('title', e.target.value)}
+                value={editData.title}
+                onChange={e => setEditData(prev => ({ ...prev, title: e.target.value }))}
                 className="w-full h-10 px-3 bg-[#F7F7F7] border border-transparent rounded-xl text-[14px] text-[#111] focus:outline-none focus:border-[#1A5C3A] focus:bg-white transition-colors"
               />
             </div>
@@ -322,29 +318,12 @@ export default function PresentationResult({
             <div>
               <label className="text-[12px] font-medium text-[#888] block mb-1">Description</label>
               <textarea
-                value={currentSlide.description || ''}
-                onChange={e => updateSlideField('description', e.target.value)}
+                value={editData.content}
+                onChange={e => setEditData(prev => ({ ...prev, content: e.target.value }))}
                 className="w-full px-3 py-2.5 bg-[#F7F7F7] border border-transparent rounded-xl text-[14px] text-[#111] focus:outline-none focus:border-[#1A5C3A] focus:bg-white transition-colors"
                 style={{ minHeight: '72px', resize: 'vertical' }}
               />
             </div>
-
-            {currentSlide.bullet_points?.length > 0 && (
-              <div>
-                <label className="text-[12px] font-medium text-[#888] block mb-1">Key Points</label>
-                <div className="flex flex-col gap-2">
-                  {currentSlide.bullet_points.map((bp, i) => (
-                    <input
-                      key={i}
-                      value={bp}
-                      onChange={e => updateBulletPoint(i, e.target.value)}
-                      className="w-full h-10 px-3 bg-[#F7F7F7] border border-transparent rounded-xl text-[14px] text-[#111] focus:outline-none focus:border-[#1A5C3A] focus:bg-white transition-colors"
-                      placeholder={`Point ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

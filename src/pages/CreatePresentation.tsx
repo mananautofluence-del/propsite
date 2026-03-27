@@ -140,13 +140,19 @@ Requirements:
       console.log('=== Generate API response ===', JSON.stringify(data));
 
       // Try all possible field names for the ID
-      const presId = data.presentation_id || data.id || data.presentationId;
+      const presId = 
+        data?.presentation_id || 
+        data?.id || 
+        data?.presentationId ||
+        data?.presentation?.id ||
+        data?.data?.id;
+
       if (!presId) {
         console.error('No presentation ID in response:', JSON.stringify(data));
-        throw new Error('No presentation ID returned from API');
+        throw new Error('Presenton did not return a presentation ID. Response: ' + JSON.stringify(data));
       }
-      console.log('=== Presentation ID ===', presId);
-      setPresentationId(presId);
+      console.log('Extracted presentation ID:', presId);
+
 
       // Save to Supabase
       const { data: userData } = await supabase.auth.getUser();
@@ -170,6 +176,7 @@ Requirements:
         console.error('Failed to fetch presentation data:', dataRes.status);
       }
 
+      setPresentationId(presId);
       setStep('RESULT');
       toast.success('Presentation Ready!');
     } catch (err: any) {
