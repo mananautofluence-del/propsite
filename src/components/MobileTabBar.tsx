@@ -11,7 +11,6 @@ const TABS = [
 
 const MORE_ITEMS = [
   { to: '/dashboard/collections', label: 'Collections' },
-  { to: '/dashboard/presentations', label: 'Presentations' },
   { to: '/dashboard/settings', label: 'Settings' },
 ];
 

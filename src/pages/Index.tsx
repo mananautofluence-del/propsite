@@ -42,9 +42,6 @@ export default function Index() {
             <Link to="/create" className="btn-primary h-12 px-8 text-[15px] flex items-center gap-2">
               Create Free Listing <ArrowRight size={18} />
             </Link>
-            <Link to="/create-presentation" className="bg-[#1A1A1A] hover:bg-black text-white h-12 px-8 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 shadow-md transition-transform hover:scale-[1.01] active:scale-[0.98]">
-              Create Free Presentation <Sparkles size={18} />
-            </Link>
           </div>
           <p className="text-[13px] text-text-3 font-sans">No signup required · Free forever for 3 listings</p>
         </div>
@@ -167,9 +164,6 @@ export default function Index() {
           <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
             <Link to="/create" className="btn-primary h-12 px-8 text-[15px] inline-flex items-center gap-2">
               Create Free Listing <ArrowRight size={18} />
-            </Link>
-            <Link to="/create-presentation" className="bg-[#1A1A1A] hover:bg-black text-white h-12 px-8 rounded-xl font-bold text-[15px] flex items-center justify-center gap-2 shadow-md transition-transform hover:scale-[1.01] active:scale-[0.98]">
-              Create Free Presentation <Sparkles size={18} />
             </Link>
           </div>
         </div>

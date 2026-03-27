@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { Building2, Eye, FolderOpen, Flame, Plus, Link as LinkIcon, ExternalLink, Zap, Presentation } from 'lucide-react';
+import { Building2, Eye, FolderOpen, Flame, Plus, Link as LinkIcon, ExternalLink, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Dashboard() {
@@ -11,9 +11,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState({ liveListings: 0, totalViews: 0, leads: 0, collections: 0 });
   const [recentListings, setRecentListings] = useState<any[]>([]);
-  const [presentations, setPresentations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'listings' | 'presentations'>('listings');
 
   useEffect(() => {
     if (!user) return;
@@ -42,14 +40,6 @@ export default function Dashboard() {
       });
 
       setRecentListings(rows.slice(0, 4));
-
-      const { data: ppts } = await supabase
-        .from('presentations' as any)
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(4);
-      setPresentations(ppts || []);
 
       setLoading(false);
     };
@@ -101,19 +91,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Primary Actions */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1">
         <Link
           to="/create"
-          className="bg-primary hover:bg-primary-hover text-primary-foreground h-11 rounded-xl flex items-center justify-center gap-2 text-[14px] font-medium shadow-md transition-transform hover:scale-[1.01] active:scale-[0.98]"
+          className="bg-primary hover:bg-primary-hover text-primary-foreground h-12 rounded-xl flex items-center justify-center gap-2 text-[15px] font-bold shadow-md transition-transform hover:scale-[1.01] active:scale-[0.98]"
         >
-          <Building2 size={16} /> Create Listing
-        </Link>
-        <Link
-          to="/dashboard/presentations/new"
-          className="bg-[hsl(var(--green-light))] hover:bg-[#DDF3E4] text-primary h-11 rounded-xl flex items-center justify-center gap-2 text-[14px] font-medium shadow-sm transition-transform hover:scale-[1.01] active:scale-[0.98]"
-        >
-          <Presentation size={16} /> Make Presentation
+          <Plus size={18} /> Create New Listing
         </Link>
       </div>
 
@@ -131,116 +114,58 @@ export default function Dashboard() {
       {/* Content Tabs */}
       <div>
         <div className="flex items-center gap-5 border-b border-[#EBEBEB] mb-4">
-          <button
-            onClick={() => setActiveTab('listings')}
-            className={`pb-2 text-[14px] font-bold font-sans transition-colors ${activeTab === 'listings' ? 'text-text-1 border-b-2 border-primary' : 'text-text-3 border-b-2 border-transparent'}`}
-          >
-             My Listings
-          </button>
-          <button
-            onClick={() => setActiveTab('presentations')}
-            className={`pb-2 text-[14px] font-bold font-sans transition-colors ${activeTab === 'presentations' ? 'text-text-1 border-b-2 border-primary' : 'text-text-3 border-b-2 border-transparent'}`}
-          >
-             My Presentations
-          </button>
+          <h2 className="pb-2 text-[14px] font-bold font-sans text-text-1 border-b-2 border-primary">
+             Recent Listings
+          </h2>
         </div>
 
-        {activeTab === 'presentations' ? (
-          <div className="flex flex-col gap-2">
-            {presentations.length === 0 ? (
-              <div className="bg-white border border-[#EBEBEB] rounded-xl p-5 text-center shadow-sm">
-                <Presentation size={24} className="text-text-3 mx-auto mb-2" />
-                <h3 className="text-[13px] font-medium text-text-1">No presentations yet</h3>
-                <p className="text-[11px] text-text-2 mt-1 mb-3">Create your first presentation to impress clients.</p>
-                <Link to="/dashboard/presentations/new" className="bg-[hsl(var(--green-light))] hover:bg-[#DDF3E4] text-primary rounded-lg text-[12px] h-8 px-4 inline-flex items-center justify-center font-semibold transition-colors">Create Presentation</Link>
-              </div>
-            ) : (
-              presentations.map((ppt) => (
-                <div key={ppt.id} className="bg-white border border-[#EBEBEB] rounded-xl p-3 shadow-sm flex gap-3 items-center">
-                  <div className="w-10 h-10 rounded-lg bg-[#EAF3ED] flex items-center justify-center text-[#1A5C3A] shrink-0">
-                    <Presentation size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-[13px] font-semibold text-text-1 truncate">{ppt.title || 'Untitled Presentation'}</h3>
-                    <p className="text-[11px] text-text-2 mt-0.5">{new Date(ppt.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <button 
-                    onClick={async () => {
-                      const base = ppt.presenton_url || 'https://manan345345435-propsite.hf.space';
-                      try {
-                        let blob: Blob | null = null;
-                        const r1 = await fetch(`${base}/api/v1/ppt/presentation/${ppt.presentation_id}/export?format=pptx`);
-                        if (r1.ok) { blob = await r1.blob(); }
-                        else {
-                          const r2 = await fetch(`${base}/api/v1/ppt/presentation/${ppt.presentation_id}/download?format=pptx`);
-                          if (r2.ok) blob = await r2.blob();
-                        }
-                        if (blob && blob.size > 0) {
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a'); a.href = url; a.download = 'presentation.pptx';
-                          document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-                        }
-                      } catch { /* silent */ }
-                    }}
-                    className="h-8 px-3 rounded-lg border border-[#EBEBEB] text-[11px] font-semibold hover:bg-gray-50 transition-colors shrink-0"
-                  >
-                    Download
-                  </button>
-                </div>
-              ))
-            )}
+        {recentListings.length === 0 ? (
+          <div className="bg-white border border-[#EBEBEB] rounded-xl p-5 text-center shadow-sm">
+            <Building2 size={24} className="text-text-3 mx-auto mb-2" />
+            <h3 className="text-[13px] font-medium text-text-1">No listings yet</h3>
+            <p className="text-[11px] text-text-2 mt-1 mb-3">Create your first listing to get started.</p>
+            <Link to="/create" className="btn-secondary text-[12px] h-8 px-4 inline-flex items-center justify-center">Create Listing</Link>
           </div>
         ) : (
-          <>
-            {recentListings.length === 0 ? (
-              <div className="bg-white border border-[#EBEBEB] rounded-xl p-5 text-center shadow-sm">
-                <Building2 size={24} className="text-text-3 mx-auto mb-2" />
-                <h3 className="text-[13px] font-medium text-text-1">No listings yet</h3>
-                <p className="text-[11px] text-text-2 mt-1 mb-3">Create your first listing to get started.</p>
-                <Link to="/create" className="btn-secondary text-[12px] h-8 px-4 inline-flex items-center justify-center">Create Listing</Link>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {recentListings.map((l: any) => {
-                  const photos = l.listing_photos || [];
-                  const heroUrl = (photos.find((p: any) => p.is_hero) || photos[0])?.url;
-                  return (
-                    <div key={l.id} className="bg-white border border-[#EBEBEB] rounded-xl p-2.5 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex gap-3 items-center" onClick={() => navigate(`/l/${l.slug}`)}>
-                      <div className="w-14 h-14 rounded-lg bg-surface-2 overflow-hidden shrink-0">
-                        {heroUrl ? (
-                          <img src={heroUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-lg">🏠</div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-[13px] font-semibold text-text-1 truncate">{l.headline || 'Untitled Listing'}</h3>
-                        <div className="text-[11px] text-text-2 mt-0.5 truncate">
-                          {l.price ? `₹${l.price.toLocaleString('en-IN')}` : 'Price on Request'} · {l.status === 'live' ? 'Live' : 'Draft'}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          onClick={(e) => handleCopyLink(e, l.slug)}
-                          className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center text-text-2 hover:text-text-1 hover:bg-[#EBEBEB] transition-colors"
-                          title="Copy link"
-                        >
-                          <LinkIcon size={14} />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); navigate(`/l/${l.slug}`); }}
-                          className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center text-text-2 hover:text-text-1 hover:bg-[#EBEBEB] transition-colors"
-                          title="View listing"
-                        >
-                          <ExternalLink size={14} />
-                        </button>
-                      </div>
+          <div className="flex flex-col gap-2">
+            {recentListings.map((l: any) => {
+              const photos = l.listing_photos || [];
+              const heroUrl = (photos.find((p: any) => p.is_hero) || photos[0])?.url;
+              return (
+                <div key={l.id} className="bg-white border border-[#EBEBEB] rounded-xl p-2.5 shadow-sm hover:shadow-md transition-shadow cursor-pointer flex gap-3 items-center" onClick={() => navigate(`/l/${l.slug}`)}>
+                  <div className="w-14 h-14 rounded-lg bg-surface-2 overflow-hidden shrink-0">
+                    {heroUrl ? (
+                      <img src={heroUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-lg">🏠</div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[13px] font-semibold text-text-1 truncate">{l.headline || 'Untitled Listing'}</h3>
+                    <div className="text-[11px] text-text-2 mt-0.5 truncate">
+                      {l.price ? `₹${l.price.toLocaleString('en-IN')}` : 'Price on Request'} · {l.status === 'live' ? 'Live' : 'Draft'}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={(e) => handleCopyLink(e, l.slug)}
+                      className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center text-text-2 hover:text-text-1 hover:bg-[#EBEBEB] transition-colors"
+                      title="Copy link"
+                    >
+                      <LinkIcon size={14} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/l/${l.slug}`); }}
+                      className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center text-text-2 hover:text-text-1 hover:bg-[#EBEBEB] transition-colors"
+                      title="View listing"
+                    >
+                      <ExternalLink size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
