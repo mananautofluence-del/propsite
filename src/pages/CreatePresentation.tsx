@@ -115,20 +115,21 @@ Requirements:
 - Tone: confident, trustworthy, premium
 - NO stock images. ONLY use provided photos.`;
 
-      const payload = {
-        content: prompt,
-        n_slides: slides,
-        language: 'English',
-        theme: theme,
-      };
+      const formData = new FormData();
+      formData.append('content', prompt);
+      formData.append('language', 'English');
+      formData.append('n_slides', slides.toString());
+      formData.append('theme', theme);
+      
+      images.forEach((img) => {
+        formData.append('images', img.file);
+      });
 
-      // Debug: log what we're sending
-      console.log('=== Sending to Presenton (JSON) ===', JSON.stringify(payload));
+      console.log('=== Sending to Presenton (FormData) ===');
 
       const res = await fetch(`${PRESENTON_URL}/api/v1/ppt/presentation/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       if (!res.ok) {
